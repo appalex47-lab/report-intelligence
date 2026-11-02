@@ -6,3 +6,4 @@ __pycache__/
 templates/**/*.pptx
 salida/
 build_out/
+salida_revision/
