@@ -93,7 +93,7 @@ def test_end_to_end_clean_workbook_is_downloadable(tmp_path):
     assert res.can_generate
     b = build_aetops_mensual(res, per, Path(TPL[0]), tmp_path / "out")
     assert b.downloadable, [(i.id, i.slide, i.message) for i in b.qa.issues if i.severity == "error"]
-    assert b.pptx.exists() and b.pdf.exists() and len(b.pngs) == 11
+    assert b.pptx.exists() and b.pdf.exists() and len(b.pngs) == 13        # 11 + resumen + recomendaciones
     assert b.fill.stale == []
     p = Presentation(b.pptx)                                    # sigue siendo editable: tablas y textos reales
     count = lambda prs: sum(1 for s in prs.slides for sh in s.shapes if getattr(sh, "has_table", False) and sh.has_table)  # noqa: E731

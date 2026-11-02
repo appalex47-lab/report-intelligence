@@ -40,6 +40,12 @@ def pp_s(d: Decimal | None) -> str:
     return "0 pp" if q == 0 else (f"+{q:,.0f} pp" if q > 0 else f"{q:,.0f} pp")
 
 
+def pp_abs(d: Decimal | None) -> str:
+    if d is None:
+        return ND
+    return f"{quantize_half_up(abs(d) * 100, 0):,.0f} pp"
+
+
 def money(d: Decimal | None, sign: bool = False) -> str:
     if d is None:
         return ND

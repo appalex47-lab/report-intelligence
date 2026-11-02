@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 NUMBER = re.compile(r"[+\-]?\$?\d+(?:,\d{3})*(?:\.\d+)?(?:\s?[MK])?%?(?:\s?pp)?")
 CAUSAL = ("debido a", "por falta de", "porque", "gracias a", "causado", "se debe", "a raíz de",
           "por culpa", "como consecuencia de una")
-KINDS = ("hecho", "interpretacion", "hipotesis", "info_insuficiente")
+KINDS = ("hecho", "interpretacion", "recomendacion", "contexto", "hipotesis", "info_insuficiente")
 
 
 @dataclass
@@ -57,10 +57,10 @@ def verify(p: Para) -> list[str]:
     problems = []
     if p.kind not in KINDS:
         problems.append(f"tipo inválido '{p.kind}'")
-    if p.kind in ("hecho", "interpretacion") and any(c in p.plain.lower() for c in CAUSAL):
+    if p.kind in ("hecho", "interpretacion", "recomendacion") and any(c in p.plain.lower() for c in CAUSAL):
         problems.append("vocabulario causal en un hecho/interpretación")
-    if p.kind == "interpretacion" and not p.basis:
-        problems.append("interpretación sin regla (basis)")
+    if p.kind in ("interpretacion", "recomendacion") and not p.basis:
+        problems.append(f"{p.kind} sin regla (basis)")
     if p.kind == "hipotesis":
         problems.append("hipótesis no permitida en modo determinista")
     for m in NUMBER.finditer(p.plain):

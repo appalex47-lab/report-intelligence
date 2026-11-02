@@ -146,12 +146,16 @@ def _picture_hashes(slide) -> list[str]:
     return sorted(out)
 
 
-def check_editable_and_static(out: Path, template: Path, rep: QAReport) -> None:
+def check_editable_and_static(out: Path, template: Path, rep: QAReport, slide_map: list[int] | None = None) -> None:
+    """`slide_map[i]` = diapositiva de la plantilla de la que proviene la i-ésima del resultado (las clonadas)."""
     a, b = Presentation(template), Presentation(out)
-    if len(a.slides) != len(b.slides):
-        rep.add("SLIDE_COUNT_CHANGED", "error", None, "El número de diapositivas cambió respecto a la plantilla.")
+    slide_map = slide_map or list(range(len(a.slides)))
+    if len(slide_map) != len(b.slides):
+        rep.add("SLIDE_COUNT_CHANGED", "error", None,
+                f"El resultado tiene {len(b.slides)} diapositivas y se esperaban {len(slide_map)}.")
         return
-    for n, (sa, sb) in enumerate(zip(a.slides, b.slides), 1):
+    for n, (it, sb) in enumerate(zip(slide_map, b.slides), 1):
+        sa = a.slides[it]
         ta = sum(1 for s in sa.shapes if getattr(s, "has_table", False) and s.has_table)
         tb = sum(1 for s in sb.shapes if getattr(s, "has_table", False) and s.has_table)
         if ta != tb:
@@ -183,15 +187,18 @@ def static_zones(template: Path, slide_idx: int) -> dict[str, tuple[float, float
     return zones
 
 
-def check_static_regions(png_out: list[Path], png_tpl: list[Path], rep: QAReport, template: Path | None = None) -> None:
+def check_static_regions(png_out: list[Path], png_tpl: list[Path], rep: QAReport, template: Path | None = None,
+                         slide_map: list[int] | None = None) -> None:
     """Logos, barras y pie de página deben ser idénticos a los de la plantilla renderizada (geometría real del PPTX)."""
-    for n, (po, pt) in enumerate(zip(png_out, png_tpl), 1):
+    slide_map = slide_map or list(range(len(png_out)))
+    for n, (po, ti) in enumerate(zip(png_out, slide_map), 1):
+        pt = png_tpl[ti]
         io, it = Image.open(po).convert("L"), Image.open(pt).convert("L")
         if io.size != it.size:
             rep.add("RENDER_SIZE_DIFF", "error", n, "El render tiene otro tamaño que la plantilla.")
             continue
         W, H = io.size
-        zones = static_zones(template, n - 1) if template else {
+        zones = static_zones(template, ti) if template else {
             "barra superior": (0.0, 0.0, 1.0, 0.07), "logo inferior": (0.80, 0.90, 1.0, 1.0)}
         for name, (x0, y0, x1, y1) in zones.items():
             box = (int(x0 * W), int(y0 * H), max(int(x1 * W), int(x0 * W) + 1), max(int(y1 * H), int(y0 * H) + 1))

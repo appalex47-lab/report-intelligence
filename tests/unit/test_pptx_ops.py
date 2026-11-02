@@ -96,3 +96,26 @@ def test_shape_by_name_fails_loudly_when_template_changes():
     import pytest
     with pytest.raises(KeyError):
         ops.shape_by_name(s, "No existe")
+
+
+def test_set_simple_text_keeps_title_formatting():
+    from pptx.util import Pt
+    prs = Presentation()
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    tb = s.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
+    tb.text_frame.text = "Conclusiones Clave"
+    r = tb.text_frame.paragraphs[0].runs[0]
+    r.font.bold, r.font.size = True, Pt(20)
+    ops.set_simple_text(tb, "Resumen Ejecutivo")
+    r2 = tb.text_frame.paragraphs[0].runs[0]
+    assert tb.text_frame.text == "Resumen Ejecutivo" and r2.font.bold is True and r2.font.size.pt == 20
+
+
+def test_set_paragraphs_can_force_left_alignment():
+    prs = Presentation()
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    tb = s.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(2))
+    tb.text_frame.text = "x"
+    tb.text_frame.paragraphs[0].alignment = 4                      # justificado
+    ops.set_paragraphs(tb, ["uno", "dos"], align="l")
+    assert all(p._p.pPr is not None and p._p.pPr.get("algn") == "l" for p in tb.text_frame.paragraphs)

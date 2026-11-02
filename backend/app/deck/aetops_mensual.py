@@ -38,6 +38,7 @@ class FillReport:
     bound: list[tuple[int, str]] = field(default_factory=list)      # (n.º de diapositiva, shape)
     narrative: dict = field(default_factory=dict)                   # clave -> [Para] (con tipo, regla y cifras)
     narrative_problems: list[str] = field(default_factory=list)     # cifras sin evidencia, vocabulario causal…
+    recommendations: list = field(default_factory=list)             # Rec (prioridad, puntaje, acción)
     edited_unverified: list[str] = field(default_factory=list)      # ediciones manuales con cifras nuevas
 
 

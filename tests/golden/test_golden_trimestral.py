@@ -23,11 +23,51 @@ pytestmark = pytest.mark.skipif(not (TPL and XL and shutil.which("soffice")),
 Q3 = Period("AETOPS", "trimestral", 2026, 3)
 
 
+def repaired_q3(dst: Path) -> Path:
+    """Copia del Q3 real con la tabla de negados por línea alineada a la de productos (Σ por 'Alta'):
+    simula que el dueño del Excel corrigió la contradicción detectada."""
+    import openpyxl
+    wb = openpyxl.load_workbook(XL[0], data_only=True)
+    ws = wb["Negados"]
+    agg: dict[str, list] = {}
+    for r in range(3, ws.max_row + 1):
+        name, alta = ws.cell(r, 1).value, ws.cell(r, 2).value
+        if name is None or alta is None:
+            continue
+        a = agg.setdefault(str(alta), [0, 0, 0.0])
+        a[0] += ws.cell(r, 3).value or 0
+        a[1] += ws.cell(r, 4).value or 0
+        a[2] += ws.cell(r, 5).value or 0
+    total = sum(v[2] for v in agg.values())
+    for r in range(3, 3 + 8):                                            # bloque O:S
+        for c in range(15, 20):
+            ws.cell(r, c).value = None
+    for i, (alta, (ped, cant, monto)) in enumerate(sorted(agg.items(), key=lambda kv: -kv[1][2])):
+        for c, v in zip(range(15, 20), (alta, ped, cant, monto, monto / total)):
+            ws.cell(3 + i, c).value = v
+    wb.save(dst)
+    return dst
+
+
 @pytest.fixture(scope="module")
-def built(tmp_path_factory):
-    res = run_aetops(XL[0], "trimestral", Q3)
-    assert res.can_generate
+def q3_fixed(tmp_path_factory):
+    return repaired_q3(tmp_path_factory.mktemp("fix") / "q3_corregido.xlsx")
+
+
+@pytest.fixture(scope="module")
+def built(tmp_path_factory, q3_fixed):
+    res = run_aetops(q3_fixed, "trimestral", Q3)
+    assert res.can_generate, [(f.id, f.message) for f in res.findings if f.severity == "block"]
     return res, build_aetops(res, Q3, Path(TPL[0]), tmp_path_factory.mktemp("q3"))
+
+
+def test_real_q3_excel_is_blocked_because_negados_totals_contradict():
+    res = run_aetops(XL[0], "trimestral", Q3)
+    blocks = [f for f in res.findings if f.severity == "block"]
+    assert [f.id for f in blocks] == ["TOTALS_MISMATCH"] and "Negados" in blocks[0].message
+    with pytest.raises(Exception) as e:
+        build_aetops(res, Q3, Path(TPL[0]), Path("/tmp/no_se_genera"))
+    assert "TOTALS_MISMATCH" in str(e.value)
 
 
 def all_text(prs):
@@ -51,7 +91,7 @@ def test_original_q1_template_passes_qa_baseline(tmp_path):
 def test_real_q3_report_is_publishable(built):
     res, b = built
     assert b.downloadable, [(i.id, i.slide, i.message) for i in b.qa.issues if i.severity == "error"]
-    assert len(b.pngs) == 8 and b.pdf.exists() and b.fill.stale == [] and b.fill.narrative_problems == []
+    assert len(b.pngs) == 10 and b.pdf.exists() and b.fill.stale == [] and b.fill.narrative_problems == []
 
 
 def test_quarter_labels_replace_the_template_ones(built):
@@ -66,10 +106,10 @@ def test_quarter_labels_replace_the_template_ones(built):
 def test_values_come_from_the_workbook(built):
     res, b = built
     p = Presentation(b.pptx)
-    pano = [sh for sh in p.slides[0].shapes if sh.has_table][0].table
+    pano = [sh for sh in p.slides[1].shapes if sh.has_table][0].table
     assert pano.cell(3, 1).text == "$33,925,038" and pano.cell(2, 1).text == "$21,310,695"
     assert pano.cell(3, 2).text == "6,119" and pano.cell(2, 0).text == "2025"
-    canal = [sh for sh in p.slides[2].shapes if sh.has_table][0].table
+    canal = [sh for sh in p.slides[3].shapes if sh.has_table][0].table
     names = [canal.cell(r, 0).text for r in range(len(canal.rows)) if canal.cell(r, 1).text == " "]
     assert names == [g.name for g in res.tables["aetops.canal.yoy"].groups]       # sin el bloque de Telegram viejo
 
@@ -77,7 +117,7 @@ def test_values_come_from_the_workbook(built):
 def test_no_excel_heatmap_leftovers_and_no_negative_zero(built):
     _, b = built
     p = Presentation(b.pptx)
-    neg = [sh for sh in p.slides[6].shapes if sh.has_table][0].table
+    neg = [sh for sh in p.slides[7].shapes if sh.has_table][0].table
     fills = [c._tc.xpath("./a:tcPr/a:solidFill/a:srgbClr/@val") for r in list(neg.rows)[1:12] for c in list(r.cells)[2:]]
     assert not [f for f in fills if f]                                     # el mapa de calor viejo no sobrevive
     assert not [t for t in all_text(p) if t.strip() in ("-0%", "-$0")]
@@ -95,8 +135,8 @@ def test_narrative_is_quarterly_and_analytical(built):
     assert data.exists() and "interpretacion" in data.read_text(encoding="utf-8")
 
 
-def test_manual_edits_are_verified_against_known_figures(tmp_path):
-    res = run_aetops(XL[0], "trimestral", Q3)
+def test_manual_edits_are_verified_against_known_figures(tmp_path, q3_fixed):
+    res = run_aetops(q3_fixed, "trimestral", Q3)
     ok = build_aetops(res, Q3, Path(TPL[0]), tmp_path / "a", narrative={"conclusiones": ["La venta creció +59% vs Q3 2025."]})
     assert not [i for i in ok.qa.issues if i.id == "EDITED_TEXT_UNVERIFIED"]
     bad = build_aetops(res, Q3, Path(TPL[0]), tmp_path / "b", narrative={"conclusiones": ["La venta creció +99%."]})
@@ -111,5 +151,32 @@ def test_fewer_rows_than_the_template_still_renders_cleanly(tmp_path):
     b = build_aetops(res, Q3, Path(TPL[0]), tmp_path / "out")
     assert b.downloadable, [(i.id, i.slide, i.message) for i in b.qa.issues if i.severity == "error"]
     p = Presentation(b.pptx)
-    canal = [sh for sh in p.slides[2].shapes if sh.has_table][0].table
+    canal = [sh for sh in p.slides[3].shapes if sh.has_table][0].table
     assert len(canal.rows) == 2 + 4 * 2                                        # 2 canales: se eliminaron bloques y separador
+
+
+def test_executive_summary_first_and_recommendations_last(built):
+    res, b = built
+    p = Presentation(b.pptx)
+    assert len(p.slides) == 10
+    first = " ".join(sh.text_frame.text for sh in p.slides[0].shapes if sh.has_text_frame)
+    last = " ".join(sh.text_frame.text for sh in p.slides[9].shapes if sh.has_text_frame)
+    assert "Resumen Ejecutivo" in first and "Dónde estamos" in first and "Descubrimientos del periodo" in first
+    assert "Qué hacer" in first and "[ALTA]" in first
+    assert "Recomendaciones" in last and "Escenario ilustrativo" in last and "Seguimiento:" in last
+    assert "Conclusiones Clave" in " ".join(sh.text_frame.text for sh in p.slides[8].shapes if sh.has_text_frame)
+
+
+def test_recommendations_are_typed_justified_and_verified(built):
+    _, b = built
+    recs = [p for p in b.fill.narrative["recomendaciones"]]
+    assert recs and all(p.kind == "recomendacion" and p.basis for p in recs)
+    assert [p.plain.split("]")[0] for p in recs][0].endswith("ALTA")                 # ordenadas por prioridad
+    assert not b.fill.narrative_problems
+    negado = next(p for p in recs if "abasto" in p.plain)
+    assert "sin stock" in negado.plain and "ilustrativo" in negado.plain and "no pronóstico" in negado.basis
+
+
+def test_added_slides_keep_static_elements_and_pass_qa(built):
+    _, b = built
+    assert b.downloadable and not [i for i in b.qa.issues if i.id in ("STATIC_REGION_CHANGED", "PICTURES_CHANGED")]

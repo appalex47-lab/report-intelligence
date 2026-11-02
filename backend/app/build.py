@@ -11,6 +11,9 @@ from pptx import Presentation
 
 from .deck.aetops_mensual import FillReport, fill_aetops_mensual
 from .deck.aetops_trimestral import fill_aetops_trimestral
+from .deck.extras import add_executive_slides
+from .narrative.executive import build_executive
+from .narrative.writer import fit, to_paragraphs, verify_all
 from .models import Period
 from .pipeline import Result
 from .qa import checks
@@ -40,7 +43,7 @@ def _sha(p: Path) -> str:
 
 def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
                          narrative: dict | None = None, allow_blockers: bool = False,
-                         fix_titles: bool = True) -> BuildResult:
+                         fix_titles: bool = True, executive: bool = True) -> BuildResult:
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
     if blockers and not allow_blockers:
@@ -50,6 +53,14 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     prs = Presentation(template)
     fill_fn = fill_aetops_mensual if period.periodicity == "mensual" else fill_aetops_trimestral
     fill = fill_fn(prs, result, period, narrative, fix_titles)
+    slide_map = None
+    if executive:                                   # resumen ejecutivo (inicio) + recomendaciones (final)
+        ex = build_executive(result, period)
+        fill.narrative_problems += verify_all(ex.resumen + ex.recomendaciones)
+        slide_map, kept_res, kept_rec = add_executive_slides(prs, ex.resumen, ex.recomendaciones, to_paragraphs, fit)
+        fill.narrative["resumen_ejecutivo"], fill.narrative["recomendaciones"] = kept_res, kept_rec
+        fill.narrative["descubrimientos"] = [p for _, p in ex.descubrimientos]
+        fill.recommendations = ex.recs
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_AETOP_{stem}_{period.year}.pptx"
     prs.save(pptx)
@@ -62,8 +73,8 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
 
     qa = checks.QAReport()
     checks.check_render(pptx, pdf, qa)
-    checks.check_editable_and_static(pptx, template, qa)
-    checks.check_static_regions(pngs, tpl_pngs, qa, template)
+    checks.check_editable_and_static(pptx, template, qa, slide_map)
+    checks.check_static_regions(pngs, tpl_pngs, qa, template, slide_map)
     checks.check_stale(fill, qa)
     for prob in fill.narrative_problems:
         qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")

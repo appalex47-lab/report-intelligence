@@ -1,7 +1,7 @@
 # Objetivo del reporte y narrativa ejecutiva
 
-> **Estado:** propuesta construida a partir del análisis de los reportes originales (AETOPS Agosto 2026, Q1 2026, Nov 2025;
-> GLP-1 Agosto 2026). Los puntos marcados **[Validar]** son decisiones del dueño del reporte.
+> **Estado:** propósito y reglas construidos a partir de los reportes originales (AETOPS Agosto 2026, Q1 2026, Nov 2025;
+> GLP-1 Agosto 2026). Decisiones del dueño del reporte ya cerradas: ver §8. Lo que sigue **[Validar]** está abierto.
 
 ## 1. Para qué existe el reporte (propuesta)
 
@@ -21,8 +21,11 @@
 
 **Audiencia [Validar]:** dirección comercial / E-Commerce. Lectura ejecutiva: 5 minutos, sin tecnicismos.
 
+**El reporte también recomienda.** Cierra con acciones priorizadas (qué hacer, por qué, cuánto está en juego, qué métrica seguir).
+
 **Lo que el reporte NO hace:** no atribuye causas que los datos no demuestran (campañas, desabasto, estacionalidad,
-precios). Eso corresponde a quien conoce el negocio y se redacta a mano en la revisión.
+precios). Cuando solo hay una coincidencia, la acción es *revisar/validar*, no *corregir*. Las causas las aporta quien conoce el
+negocio (ver «Contexto del periodo», §10).
 
 ## 2. Qué cambia respecto a la narrativa anterior
 
@@ -77,10 +80,60 @@ $M/$K; porcentajes con signo (+67 %); un párrafo por idea; sin adjetivos de cau
 Solo para **redactar mejor** los insights ya verificados (variar estilo, hilar párrafos). No puede introducir cifras ni causas;
 sus hipótesis, si se piden, salen marcadas. Todo pasa por el mismo verificador. Apagada por defecto.
 
-## 8. Decisiones por validar con el dueño del reporte
+## 8. Decisiones con el dueño del reporte
 
-1. ¿Es correcto el **propósito** de la sección 1 y la audiencia?
-2. ¿Qué cuenta como **relevante** (umbrales de la sección 4)?
-3. **Negado:** ¿es "venta no concretada por disponibilidad"? De eso depende hablar de "oportunidad de recuperación".
-4. ¿El reporte debe incluir **recomendaciones/acciones** o solo lectura? (Hoy: lectura + "qué vigilar", sin acciones.)
-5. **Pedidos por canal** suman 2.1× el total: ¿cuál es la definición correcta? Mientras tanto no se usan en la narrativa.
+| # | Tema | Estado |
+|---|---|---|
+| 1 | **Negado** | ✅ *Producto sin stock que se negó a la venta.* Con esa definición se puede decir "venta que no se concretó por no tener el producto" y hablar de abasto. |
+| 2 | **Recomendaciones y acciones** | ✅ Sí: el reporte las incluye (resumen ejecutivo + diapositiva final). |
+| 3 | **Alcance de la narrativa** | ✅ "Que explique dónde estamos, los descubrimientos del periodo y las recomendaciones", no solo tablas. |
+| 4 | **Umbrales de relevancia** | ➡️ Se adopta la recomendación de la sección 9.1 (materialidad + banda de estabilidad). Ajustable. |
+| 5 | **Pedidos por canal** (suman 2.1× el total) | ⏳ Abierto. Mientras tanto no se usan en la narrativa. |
+| 6 | **%Δ y Ticket de GLP-1**; si el mes del libro viene parcial | ⏳ Abierto. |
+| 7 | **Criterio de categorías del trimestral** (las 3 que más suman y las 3 que más restan en pesos) | ⏳ Abierto: se mantiene hasta que se confirme. |
+
+## 9. Descubrimientos y recomendaciones (implementado)
+
+**Descubrimiento** = hallazgo con puntaje de materialidad (qué parte de la venta total mueve). El resumen muestra los 4 mayores.
+**Recomendación** = regla → acción, con evidencia, impacto en *escenario* y métrica de seguimiento.
+
+| Regla (dispara si…) | Acción sugerida | Accionabilidad |
+|---|---|---|
+| Negados ≥ 1 % de la venta | Priorizar el abasto de los productos más negados · *escenario ilustrativo: recuperar 25 % del monto negado* | 1.5 |
+| Un producto cae **y** aparece en negados | Revisar la disponibilidad de ese producto (coincidencia, no causa) | 1.5 |
+| Una línea/canal ≥ 50 % de la venta | Proteger esa línea (abasto y continuidad de sus productos principales) | 1.0 |
+| Crece, pero cede ≥ 5 pp de participación | Investigar qué lo limita (revisar pacientes y valor por paciente) | 0.7 |
+| Venta ↑ con pacientes ↓ | Validar la sostenibilidad (captación de pacientes) | 0.7 |
+| Venta ↓ con piezas ≥ 0 | Revisar mezcla y precio | 0.7 |
+| Una métrica del panorama cae ≥ 5 % | Vigilar esa métrica | 0.5 |
+
+**Prioridad** = impacto (% de la venta) × accionabilidad: ALTA ≥ 7 %, MEDIA ≥ 3 %, BAJA debajo. Lo que se puede corregir directo (abasto)
+pesa más que lo que solo pide investigar. Máximo 5 recomendaciones por reporte.
+
+**Escenarios, no pronósticos.** El impacto se expresa como aritmética con su supuesto a la vista ("si se recuperara 25 %…").
+
+### 9.1 Umbrales recomendados
+- **Banda de estabilidad 5 %** para totales (YoY/MoM): por debajo se dice "estable".
+- **Materialidad 1 % de la venta** para mencionar un grupo o producto: evita titulares como "+342 %" sobre una base mínima.
+- **Participación:** 2 pp para mencionarla; 5 pp para recomendar investigar.
+- **Concentración:** ≥ 50 % de la venta.
+- Revisar los umbrales con **6 meses de historial** (ver §10): una banda fija es provisional; la variabilidad real de cada indicador la reemplazará.
+
+## 10. Lo que falta para llegar al nivel del prompt maestro (§7)
+
+| El prompt pide | Estado | Qué hace falta |
+|---|---|---|
+| Identificar variaciones relevantes | ✅ | — |
+| Explicar cambios importantes | ✅ (descomposición, aportes, patrones) | — |
+| Comparar periodos y generar conclusiones | ✅ | — |
+| Proponer observaciones ejecutivas | ✅ (resumen y recomendaciones) | — |
+| **Detectar tendencias** | ❌ | **Historial**: guardar cada reporte generado (KPIs) para ver 3-6-12 meses. Hoy solo hay dos puntos en cada archivo. |
+| **Detectar desviaciones** | ❌ | Una referencia: **meta/presupuesto** por mes/línea, o la variabilidad histórica. |
+| Distinguir hecho / interpretación / hipótesis / información insuficiente | ✅ (+ recomendación) | — |
+| Respetar el estilo de los originales | ✅ | — |
+| Permitir edición manual | ✅ (`narrative.json`, con verificación) | UI de revisión |
+| **Explicar causas** | ⚠️ solo con datos | **«Contexto del periodo»**: campo de texto donde el equipo aporta campañas, cambios de precio, incidencias de abasto (como el aviso manual del deck de GLP-1). Se publica marcado como contexto aportado, no verificado. |
+| IA para redactar mejor (Cohere) | ⏳ Fase 6 | Opcional; solo reformula insights ya verificados |
+
+**Siguiente mejora recomendada:** el **historial** (tendencias) y el **contexto del periodo**: son los dos que más acercan el reporte a
+"dónde estamos parados y por qué".

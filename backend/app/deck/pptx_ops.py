@@ -150,7 +150,7 @@ def sync_frame_height(shape) -> None:
 _BOLD = re.compile(r"(\*\*.+?\*\*)")
 
 
-def set_paragraphs(shape, paragraphs: list[str]) -> None:
+def set_paragraphs(shape, paragraphs: list[str], align: str | None = None) -> None:
     """Sustituye el texto de un cuadro conservando el formato del 1.er run y el patrón del original
     (párrafos separados por párrafo vacío). `**x**` = negrita."""
     tf = shape.text_frame
@@ -171,7 +171,12 @@ def set_paragraphs(shape, paragraphs: list[str]) -> None:
     for text in paragraphs:
         p = etree.SubElement(txBody, qn("a:p"))
         if base_ppr is not None:
-            p.append(copy.deepcopy(base_ppr))
+            ppr = copy.deepcopy(base_ppr)
+            if align:
+                ppr.set("algn", align)
+            p.append(ppr)
+        elif align:
+            etree.SubElement(p, qn("a:pPr")).set("algn", align)
         for part in _BOLD.split(text):
             if not part:
                 continue
@@ -186,7 +191,17 @@ def set_paragraphs(shape, paragraphs: list[str]) -> None:
 
 
 def set_simple_text(shape, text: str) -> None:
-    set_paragraphs(shape, [text])
+    """Sustituye el texto de un título conservando TODO su formato (negrita, color, tamaño)."""
+    p = shape.text_frame.paragraphs[0]
+    runs = p.runs
+    if not runs:
+        set_paragraphs(shape, [text])
+        return
+    runs[0].text = text
+    for r in runs[1:]:
+        r._r.getparent().remove(r._r)
+    for extra in shape.text_frame.paragraphs[1:]:
+        extra._p.getparent().remove(extra._p)
 
 
 def shape_by_name(slide, name: str):

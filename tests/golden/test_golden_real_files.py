@@ -101,4 +101,6 @@ def test_quarterly_q3_real_file_loads_with_yoy_only():
     assert not any(k.endswith(".mom") for k in res.tables)
     assert res.tables["aetops.panorama.yoy"].groups[0].current.values["monto"].v == 33925038
     assert len(res.tables["aetops.categoria.yoy"].groups) == 13
-    assert res.can_generate, [(f.id, f.message) for f in res.findings if f.severity == "block"]
+    # el Excel Q3 trae dos totales de negados que se contradicen (productos 6.14 M vs líneas 1.66 M): no se publica
+    blocks = [f for f in res.findings if f.severity == "block"]
+    assert [f.id for f in blocks] == ["TOTALS_MISMATCH"] and "Negados" in blocks[0].message and not res.can_generate
