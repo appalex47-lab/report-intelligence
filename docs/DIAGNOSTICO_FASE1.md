@@ -131,6 +131,13 @@ Problemas [V]:
 - `Tiempo de interacción` es texto `hh:mm:ss`.
 - Cabeceras con errores tipográficos de origen: `& de rebote`, `{`.
 
+### 4.3 Hallazgos adicionales (Fase 4a, detectados por el motor sobre el Excel real)
+
+- **Pedidos por canal sobrecontados:** Σ pedidos de los 4 canales = 2,998 vs 1,427 del panorama (≈2.1×). Los Tickets pegados por canal sí cuadran con el total (Monto ÷ ticket = 395 + 385 + 448 + 199 = 1,427). El PPTX publica esos pedidos inflados (p. ej. Llamadas Google +186 %). En líneas y panorama, Ticket = Monto ÷ Pedidos **sí** coincide. **[P]** Definir cómo se cuentan los pedidos por canal. Mientras tanto el motor usa el Ticket pegado en canales y lo marca (`TICKET_FORMULA_UNVERIFIED`).
+- **Grupo con periodo distinto en la misma tabla:** en canales MoM, WHATSAPP dice "Julio → Agosto" y los demás "Agosto → Septiembre" (`PERIOD_LABELS_INCONSISTENT`).
+- **Redondeo:** el PPTX usa mitad hacia arriba (0.625 → +63 %); `round()` de Python daría 62 %. El formato de presentación lo implementa explícitamente.
+- Share de canal y línea = Monto ÷ **total del panorama del mismo periodo** (verificado: APP FESA 2025 = 16.47 %). Resuelve la duda de denominador para AETOPS.
+
 ---
 
 ## 5. Brecha: app actual vs originales

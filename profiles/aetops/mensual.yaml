@@ -1,0 +1,45 @@
+# Perfil de importación AETOPS (hoja Base). Es DATO, no código:
+# un cambio de estructura se resuelve aquí + una prueba, sin tocar el motor.
+profile: aetops-mensual
+version: 1
+sheet: Base
+label_col: B                 # columna de rótulos (periodos, anclas de grupo)
+section_markers: [yoy, mom]  # texto (normalizado) que abre una sección
+
+# Cómo se reconoce el tipo de sección por su fila de encabezados
+kinds:
+  panorama:
+    header_b: [año]
+    header_c: [monto venta]
+  canal:
+    header_b: [canal]
+  linea:
+    header_b: [aetop]
+  categoria:
+    header_b: [año]
+    header_c: [categoria]
+
+# Clave canónica -> alias de encabezado aceptados (normalizados: sin acentos, minúsculas)
+metrics:
+  monto: [monto venta]
+  piezas: [piezas, piezas vendidas]
+  pacientes: [pacientes]
+  pedidos: [pedidos]
+  ticket: [ticket promedio]
+  productos: [producto vendidos, productos vendidos, producto]
+  share: [share]
+  size_b: [size b]
+  v_paciente: [v. paciente, v paciente]
+
+# De dónde sale el Ticket Promedio por tipo de sección:
+#   ratio  = Monto ÷ Pedidos (verificado en panorama y líneas)
+#   pasted = valor del Excel. En canales NO coincide con Monto ÷ Pedidos: la columna
+#            Pedidos por canal suma 2.1x el total, mientras que los tickets pegados sí
+#            cuadran con el total. Pendiente de validación con el dueño del reporte.
+ticket_source:
+  panorama: ratio
+  linea: ratio
+  canal: pasted
+
+# Secciones sin parser todavía (se reportan como info, no se ignoran en silencio)
+unsupported_kinds: [categoria]
