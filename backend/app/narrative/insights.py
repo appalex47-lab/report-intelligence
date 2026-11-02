@@ -86,6 +86,9 @@ def flags(c: Contribution, total_pct: Decimal | None, pedidos_ok: bool = True,
     if (c.pct is not None and c.pct > rules.small_base_growth
             and c.share_prev is not None and c.share_prev < rules.small_base_share):
         f.add("base_pequena")
+    m0, m1 = _v(g.previous, "monto"), _v(g.current, "monto")
+    if m0 is not None and m1 is not None and m0 > 0 and m1 == 0:
+        f.add("sin_venta_actual")
     if c.pp is not None and abs(c.pp) >= rules.share_pp:
         f.add("gana_share" if c.pp > 0 else "pierde_share")
     if (c.pct is not None and c.pct > 0 and total_pct is not None and total_pct > 0 and c.pct < total_pct
@@ -114,3 +117,19 @@ def concentration(rows, total: Decimal | None, n: int) -> tuple[Decimal, Decimal
 def mixed_lines(growth, decline) -> list[str]:
     g, d = {r.aetop for r in growth}, {r.aetop for r in decline}
     return sorted(g & d)
+
+
+# --------------------------------------------------------------------------- presiones del panorama
+PRESSURE_METRICS = (("ticket", "ticket promedio"), ("productos", "productos vendidos"),
+                    ("size_b", "Size B"), ("v_paciente", "valor por paciente"),
+                    ("pedidos", "pedidos"), ("pacientes", "pacientes"), ("piezas", "piezas"))
+
+
+def pressures(g: Group, rules: NarrativeRules = RULES) -> list[tuple[str, Decimal]]:
+    """Métricas del panorama que bajan más que el umbral de relevancia (la 'presión' que el analista destaca)."""
+    out = []
+    for key, label in PRESSURE_METRICS:
+        v = g.pct[key].v if key in g.pct else None
+        if v is not None and v <= -rules.relevance:
+            out.append((label, v))
+    return sorted(out, key=lambda t: t[1])

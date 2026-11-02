@@ -168,18 +168,33 @@ def check_editable_and_static(out: Path, template: Path, rep: QAReport) -> None:
                 rep.add("PLACEHOLDER_LEFT", "error", n, f"Marcador sin rellenar en '{s.name}'.")
 
 
-def check_static_regions(png_out: list[Path], png_tpl: list[Path], rep: QAReport) -> None:
-    """Barras, logos y pie de página deben ser idénticos a los de la plantilla renderizada."""
-    zones = {"barra superior": (0.0, 0.0, 1.0, 0.07), "logo superior": (0.80, 0.04, 1.0, 0.17),
-             "logo inferior": (0.80, 0.90, 1.0, 1.0), "barra inferior": (0.0, 0.985, 1.0, 1.0)}
+def static_zones(template: Path, slide_idx: int) -> dict[str, tuple[float, float, float, float]]:
+    """Cajas (fracciones de la diapositiva) de los elementos fijos de la plantilla: imágenes, barras y pie de página."""
+    prs = Presentation(template)
+    W, H = prs.slide_width, prs.slide_height
+    zones = {}
+    for sh in prs.slides[slide_idx].shapes:
+        fixed = sh.shape_type == 13 or sh.name.startswith("Rect") or (sh.is_placeholder and "pie" in sh.name.lower())
+        if not fixed or not sh.width or not sh.height:
+            continue
+        m = 0.004                                                      # margen para el antialiasing
+        zones[sh.name] = (max(sh.left / W - m, 0), max(sh.top / H - m, 0),
+                          min((sh.left + sh.width) / W + m, 1), min((sh.top + sh.height) / H + m, 1))
+    return zones
+
+
+def check_static_regions(png_out: list[Path], png_tpl: list[Path], rep: QAReport, template: Path | None = None) -> None:
+    """Logos, barras y pie de página deben ser idénticos a los de la plantilla renderizada (geometría real del PPTX)."""
     for n, (po, pt) in enumerate(zip(png_out, png_tpl), 1):
         io, it = Image.open(po).convert("L"), Image.open(pt).convert("L")
         if io.size != it.size:
             rep.add("RENDER_SIZE_DIFF", "error", n, "El render tiene otro tamaño que la plantilla.")
             continue
         W, H = io.size
+        zones = static_zones(template, n - 1) if template else {
+            "barra superior": (0.0, 0.0, 1.0, 0.07), "logo inferior": (0.80, 0.90, 1.0, 1.0)}
         for name, (x0, y0, x1, y1) in zones.items():
-            box = (int(x0 * W), int(y0 * H), int(x1 * W), int(y1 * H))
+            box = (int(x0 * W), int(y0 * H), max(int(x1 * W), int(x0 * W) + 1), max(int(y1 * H), int(y0 * H) + 1))
             d = ImageChops.difference(io.crop(box), it.crop(box))
             mean = ImageStat.Stat(d).mean[0]
             if mean > STATIC_DIFF_MAX:

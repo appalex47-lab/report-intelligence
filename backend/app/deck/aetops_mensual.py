@@ -66,6 +66,7 @@ class TW:
     def __init__(self, n: int, name: str, shape, table, rep: FillReport):
         self.n, self.name, self.shape, self.t, self.rep = n, name, shape, table, rep
         self.touched: set[tuple[int, int]] = set()
+        self.skip_rows: set[int] = set()            # filas que se eliminarán: no cuentan como datos viejos
 
     def cell(self, r: int, c: int):
         return self.t.cell(r, c)
@@ -83,7 +84,7 @@ class TW:
             self.put(r, c, "", fill=None)
 
     def delta(self, r: int, c: int, v):
-        style = ops.delta_style(v.v)
+        style = ops.delta_style(v.v, 0)
         self.put(r, c, F.fmt_pct(v, 0, sign=False), fill=style[0] if style else None,
                  font=style[1] if style else None)
 
@@ -93,6 +94,8 @@ class TW:
 
     def check_stale(self):
         for r, row in enumerate(self.t.rows):
+            if r in self.skip_rows:
+                continue
             for c, cell in enumerate(row.cells):
                 if (r, c) not in self.touched and not cell.is_spanned and DATA_RX.search(ops.cell_text(cell)):
                     self.rep.stale.append(f"diap. {self.n} '{self.name}' fila {r} col {c}: '{ops.cell_text(cell)[:30]}'")
@@ -160,6 +163,38 @@ def fill_grouped(fl: Filler, n: int, name: str, tbl, header_cols: int = 8):
     w.finish()
 
 
+def fill_grouped_starts(fl: Filler, n: int, name: str, tbl, starts: list[int], rows: int, cols: int = 8):
+    """Como fill_grouped pero con bloques de 4 filas en posiciones fijas (puede haber filas separadoras).
+    Los bloques sobrantes se eliminan junto con su separador."""
+    w = fl.table(n, name, rows=rows, cols=cols)
+    groups = tbl.groups
+    used = min(len(groups), len(starts))
+    if len(groups) > len(starts):
+        fl.rep.notes.append(f"Diap. {n} '{name}': {len(groups)} grupos y la plantilla admite {len(starts)}; "
+                            f"se omiten: {', '.join(g.name for g in groups[len(starts):])}.")
+    for c in range(1, cols):
+        w.blank(0, c)
+    keys = ["monto", "piezas", "pacientes", "pedidos", "ticket", "productos", "share"]
+    for g, r0 in zip(groups[:used], starts):
+        w.put(r0, 0, g.name)
+        for c in range(1, cols):
+            w.put(r0, c, "\u00a0")
+        for off, side in ((1, g.previous), (2, g.current)):
+            w.put(r0 + off, 0, fit_label(side.label))
+            for c, k in enumerate(keys, 1):
+                w.put(r0 + off, c, fmt_metric(k, side.values[k]))
+        w.put(r0 + 3, 0, "")
+        for c, k in enumerate(keys, 1):
+            w.delta(r0 + 3, c, g.pct[k])
+    if used < len(starts):
+        first_del = (starts[used - 1] + 4) if used else starts[0]
+        w.skip_rows.update(range(first_del, w.nrows))
+    w.check_stale()
+    if used < len(starts):
+        ops.delete_rows(w.t, first_del, w.nrows)
+    ops.sync_frame_height(w.shape)
+
+
 def _fill_cat_block(w: TW, r0: int, g: Group | None):
     keys = ["monto", "piezas", "pacientes", "pedidos", "ticket", "productos", "share"]
     if g is None:                                                      # bloque sin categoría: se vacía
@@ -178,13 +213,14 @@ def _fill_cat_block(w: TW, r0: int, g: Group | None):
     w.put(r0 + 2, 1, "")
 
 
-def fill_cat_blocks(fl: Filler, n: int, name: str, blocks: list[tuple[int, list[Group | None], int]], rows: int):
+def fill_cat_blocks(fl: Filler, n: int, name: str, blocks: list[tuple[int, list[Group | None], int]], rows: int,
+                    has_title: bool = True):
     """blocks = [(fila_inicial_de_datos, [grupo o None por bloque de 3 filas], filas_separadoras_previas)].
     La fila r0-2 es el título. Los bloques sin categoría se ELIMINAN (y la tabla secundaria completa si
     queda vacía); la primera tabla conserva al menos título y cabecera."""
     w = fl.table(n, name, rows=rows, cols=9)
     for r0, gs, _ in blocks:
-        for c in range(1, 9):                                           # fila-título: solo 'YoY'/'MoM'
+        for c in range(1, 9 if has_title else 0):                       # fila-título: solo 'YoY'/'MoM'
             w.blank(r0 - 2, c)
         for i, g in enumerate(gs):
             _fill_cat_block(w, r0 + 3 * i, g)
@@ -194,31 +230,38 @@ def fill_cat_blocks(fl: Filler, n: int, name: str, blocks: list[tuple[int, list[
         used = sum(g is not None for g in gs)
         end = r0 + 3 * len(gs)
         if used == 0 and idx > 0:
-            ops.delete_rows(w.t, r0 - 2 - spacer, rows if idx == len(blocks) - 1 else end)
+            ops.delete_rows(w.t, r0 - (2 if has_title else 1) - spacer, rows if idx == len(blocks) - 1 else end)
         elif used < len(gs):
             ops.delete_rows(w.t, r0 + 3 * used, end)
     ops.sync_frame_height(w.shape)
 
 
-def fill_productos(fl: Filler, n: int, name: str, rows, capacity: int, rep: FillReport):
-    w = fl.table(n, name, cols=7)
+def fill_productos(fl: Filler, n: int, name: str, rows, capacity: int, rep: FillReport, sivec: bool = True,
+                   headers: dict[int, str] | None = None):
+    """Con `sivec` la tabla tiene 7 columnas; sin él, 6 (Producto, AETOP, Canales, Actual, Anterior, Delta).
+    `headers` {columna: texto} actualiza rótulos fijos de la plantilla (p. ej. 'Venta Q1 Actual 2026')."""
+    w = fl.table(n, name, cols=7 if sivec else 6)
+    for c, text in (headers or {}).items():
+        w.put(0, c, text)
     rows = rows[:capacity]
     if len(rows) < capacity:
         rep.notes.append(f"Diap. {n} '{name}': {len(rows)} producto(s) de {capacity}; se eliminaron filas.")
     ops.resize_rows(w.t, 1, w.nrows, 1, max(len(rows), 1))
+    o = 0 if sivec else -1                                              # desplazamiento de columnas
     new = 0
     for i, r in enumerate(rows, 1):
-        w.put(i, 0, r.sivec)
-        w.put(i, 1, r.producto)
-        w.put(i, 2, r.aetop)
-        w.put(i, 3, F.fmt_num(r.canales, 0))
-        w.put(i, 4, F.fmt_money(r.actual, 0))
-        w.put(i, 5, "" if r.anterior.v is None else F.fmt_money(r.anterior, 0))     # sin venta previa: vacío
+        if sivec:
+            w.put(i, 0, r.sivec)
+        w.put(i, 1 + o, r.producto)
+        w.put(i, 2 + o, r.aetop)
+        w.put(i, 3 + o, F.fmt_num(r.canales, 0))
+        w.put(i, 4 + o, F.fmt_money(r.actual, 0))
+        w.put(i, 5 + o, "" if r.anterior.v is None else F.fmt_money(r.anterior, 0))     # sin venta previa: vacío
         style = ops.delta_style(r.delta.v)
-        w.put(i, 6, F.fmt_money(r.delta, 0), fill=style[0] if style else None, font=style[1] if style else None)
+        w.put(i, 6 + o, F.fmt_money(r.delta, 0), fill=style[0] if style else None, font=style[1] if style else None)
         new += r.delta.status == "new_item"
     if not rows:
-        for c in range(7):
+        for c in range(7 if sivec else 6):
             w.blank(1, c)
     if new:
         rep.notes.append(f"Diap. {n} '{name}': {new} producto(s) sin venta previa (Delta = venta actual).")
@@ -248,7 +291,7 @@ def fill_negados(fl: Filler, n: int, alta, producto, rep: FillReport):
         w.put(i, 2, F.fmt_num(r.pedidos, 0), fill=None)                 # sin el mapa de calor de Excel
         w.put(i, 3, F.fmt_num(r.cantidad, 0), fill=None)
         w.put(i, 4, F.fmt_money(r.monto, 0), fill=None)
-        w.put(i, 5, F.fmt_pct(r.share, 0, sign=False))
+        w.put(i, 5, F.fmt_pct(r.share, 0, sign=False), fill=None)
     sums = 1 + max(len(prows), 1)
     src = arows or allp
     sp = sum((r.pedidos.v for r in src if r.pedidos.v is not None), Decimal(0))

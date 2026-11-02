@@ -12,7 +12,8 @@ from .rules import RULES, NarrativeRules
 from .writer import Para, fit, para, verify_all
 
 ND = "n/d"
-KIND = {"canal": ("el canal", "canales"), "línea": ("la línea", "líneas"), "categoría": ("la categoría", "categorías")}
+KIND = {"canal": ("el canal", "canales", "otros"), "línea": ("la línea", "líneas", "otras"),
+        "categoría": ("la categoría", "categorías", "otras")}
 
 
 @dataclass(frozen=True)
@@ -86,14 +87,21 @@ def labels_for_products(rows) -> dict[str, str]:
 
 
 # ----------------------------------------------------------------------------- 1 · panorama
-def s_panorama(yoy: Group, mom: Group, period: Period, rules: NarrativeRules) -> list[Para]:
-    c, m = yoy.current.values, mom.current.values
+def s_panorama(yoy: Group, mom: Group | None, period: Period, rules: NarrativeRules) -> list[Para]:
+    c = yoy.current.values
+    prev_y = period.prev_year_label
     ps: list[Para] = []
-    ps.append(para("hecho", lambda w: (
-        f"En {w.t(period.month_name)}, la venta total AETOP llega a {w.n(money(val(yoy.current, 'monto')))}, "
-        f"{w.n(pct_d(pct_of(yoy, 'monto')))} vs {w.t(yoy.previous.label)} y "
-        f"{w.n(pct_d(pct_of(mom, 'monto')))} vs {w.t(period.previous_month_name)}."), 0,
-        evidence=[_src(c["monto"])]))
+    if mom is not None:
+        ps.append(para("hecho", lambda w: (
+            f"En {w.t(period.label)}, la venta total AETOP llega a {w.n(money(val(yoy.current, 'monto')))}, "
+            f"{w.n(pct_d(pct_of(yoy, 'monto')))} vs {w.t(prev_y)} y "
+            f"{w.n(pct_d(pct_of(mom, 'monto')))} vs {w.t(period.previous_month_name)}."), 0,
+            evidence=[_src(c["monto"])]))
+    else:
+        ps.append(para("hecho", lambda w: (
+            f"En {w.t(period.label)}, la venta total AETOP llega a {w.n(money(val(yoy.current, 'monto')))} y "
+            f"{verb(pct_of(yoy, 'monto'), rules)} {w.n(pct_d(pct_of(yoy, 'monto')))} vs {w.t(prev_y)}."), 0,
+            evidence=[_src(c["monto"])]))
     ps.append(para("hecho", lambda w: (
         f"En el comparativo anual, pacientes {w.n(pct_d(pct_of(yoy, 'pacientes')))}, piezas "
         f"{w.n(pct_d(pct_of(yoy, 'piezas')))} y pedidos {w.n(pct_d(pct_of(yoy, 'pedidos')))}; el ticket promedio "
@@ -111,18 +119,27 @@ def s_panorama(yoy: Group, mom: Group, period: Period, rules: NarrativeRules) ->
             f"El cambio anual en venta se explica {lead}: pacientes y piezas por paciente aportan "
             f"{w.n(pct_d(vol, False))} del cambio y el valor por pieza {w.n(pct_d(price, False))}."), 1,
             basis="Venta = Pacientes × (Piezas/Paciente) × (Venta/Pieza); aporte = ln(factor₁/factor₀) ÷ ln(venta₁/venta₀)"))
-    ps.append(para("hecho", lambda w: (
-        f"Contra {w.t(period.previous_month_name)}, piezas {w.n(pct_d(pct_of(mom, 'piezas')))}, pacientes "
-        f"{w.n(pct_d(pct_of(mom, 'pacientes')))} y pedidos {w.n(pct_d(pct_of(mom, 'pedidos')))}; el avance mensual es "
-        f"{_cmp(pct_of(mom, 'monto'), pct_of(yoy, 'monto'))} al anual."), 2))
-    py, pm, pmo = pct_of(yoy, "productos"), pct_of(yoy, "monto"), pct_of(mom, "productos")
+    press = I.pressures(yoy, rules)
+    if press:
+        ps.append(para("hecho", lambda w: (
+            "La principal presión se observa en " + ", ".join(
+                f"{lbl} ({w.n(pct_d(v))})" for lbl, v in press[:4]) + "."), 1))
+    if mom is not None:
+        ps.append(para("hecho", lambda w: (
+            f"Contra {w.t(period.previous_month_name)}, piezas {w.n(pct_d(pct_of(mom, 'piezas')))}, pacientes "
+            f"{w.n(pct_d(pct_of(mom, 'pacientes')))} y pedidos {w.n(pct_d(pct_of(mom, 'pedidos')))}; el avance mensual es "
+            f"{_cmp(pct_of(mom, 'monto'), pct_of(yoy, 'monto'))} al anual."), 2))
+    py, pm = pct_of(yoy, "productos"), pct_of(yoy, "monto")
     if py is not None and pm is not None:
         less = py < pm
+        pmo = pct_of(mom, "productos") if mom is not None else None
         ps.append(para("interpretacion" if less else "hecho", lambda w: (
-            f"Se venden {w.n(count(val(yoy.current, 'productos')))} productos ({w.n(pct_d(py))} vs "
-            f"{w.t(yoy.previous.label)} y {w.n(pct_d(pmo))} vs {w.t(period.previous_month_name)}); "
+            f"Se venden {w.n(count(val(yoy.current, 'productos')))} productos ({w.n(pct_d(py))} vs {w.t(prev_y)}"
+            + (f" y {w.n(pct_d(pmo))} vs {w.t(period.previous_month_name)}" if pmo is not None else "") + "); "
             + ("la amplitud de portafolio crece menos que la venta, por lo que el avance se sostiene más por volumen "
-               "y valor que por más productos." if less else "la amplitud de portafolio acompaña a la venta.")), 3,
+               "y valor que por más productos." if less and (pm or 0) > 0 else
+               "la amplitud de portafolio acompaña a la venta." if not less else
+               "la amplitud de portafolio cae menos que la venta.")), 3,
             basis="productos vendidos Δ% < venta Δ%" if less else ""))
     return ps
 
@@ -148,9 +165,9 @@ def _src(v) -> str:
 # ----------------------------------------------------------------------------- 2-5, 8-9 · grupos
 def _group_sentence(c: I.Contribution, kind: str, total_pct, rules, pedidos_ok: bool, prev_name: str) -> Para:
     g = c.group
-    plural = KIND[kind][1]
+    plural, otros = KIND[kind][1], KIND[kind][2]
     fl = I.flags(c, total_pct, pedidos_ok, rules)
-    interp = fl & {"valor_sobre_volumen", "caida_por_mezcla", "base_pequena", "crece_menos_que_total"}
+    interp = fl & {"valor_sobre_volumen", "caida_por_mezcla", "base_pequena", "crece_menos_que_total", "sin_venta_actual"}
     basis = []
 
     def build(w):
@@ -165,7 +182,7 @@ def _group_sentence(c: I.Contribution, kind: str, total_pct, rules, pedidos_ok: 
         s += " (" + ", ".join(extras) + ")"
         if "crece_menos_que_total" in fl:
             s += (f", pero pierde participación ({w.n(pct_d(c.share_prev, False))} → {w.n(pct_d(c.share_cur, False))}): "
-                  f"otros {plural} crecen más rápido")
+                  f"{otros} {plural} crecen más rápido")
             basis.append("crece menos que el total y su share baja")
         elif "gana_share" in fl:
             s += f" y gana participación ({w.n(pct_d(c.share_prev, False))} → {w.n(pct_d(c.share_cur, False))})"
@@ -179,6 +196,9 @@ def _group_sentence(c: I.Contribution, kind: str, total_pct, rules, pedidos_ok: 
         if "caida_por_mezcla" in fl:
             s += (f" La caída es de valor más que de volumen: las piezas {w.n(pct_d(pct_of(g, 'piezas')))}.")
             basis.append("venta ↓ con piezas ≥ 0")
+        if "sin_venta_actual" in fl:
+            s += f" No registra venta en el periodo (antes {w.n(money(val(g.previous, 'monto')))})."
+            basis.append("monto actual = 0 con monto previo > 0")
         if "base_pequena" in fl:
             s += f" Parte de una base pequeña (share previo {w.n(pct_d(c.share_prev, False))})."
             basis.append("crecimiento > 100 % con share previo < 5 %")
@@ -197,7 +217,7 @@ def s_groups(kind: str, groups: list[Group], pano: Group, period: Period, rules:
     cs = I.contributions(groups, tp, tc)
     if not cs:
         return [para("info_insuficiente", lambda w: f"Sin {kind}s para mostrar.", 0)]
-    prev_name = period.previous_month_name if mom else pano.previous.label
+    prev_name = period.previous_month_name if mom else period.prev_year_label
     net = (tc - tp) if tp is not None and tc is not None else None
     ps: list[Para] = []
     lead = None
@@ -240,7 +260,7 @@ def s_groups(kind: str, groups: list[Group], pano: Group, period: Period, rules:
 
 
 # ----------------------------------------------------------------------------- 6-7 · productos
-def s_productos(top, growth, decline, pano: Group, rules: NarrativeRules) -> list[Para]:
+def s_productos(top, growth, decline, pano: Group, rules: NarrativeRules, vs: str = "el mes anterior") -> list[Para]:
     allp = list(top) + list(growth) + list(decline)
     names = labels_for_products(allp)
     total = val(pano.current, "monto")
@@ -258,7 +278,7 @@ def s_productos(top, growth, decline, pano: Group, rules: NarrativeRules) -> lis
         tot = sum(net.values(), Decimal(0))
         new = [r for r in top if r.delta.status == "new_item"]
         ps.append(para("hecho", lambda w: (
-            f"Entre los {w.n(str(len(top)))} productos listados, el cambio vs el mes anterior es "
+            f"Entre los {w.n(str(len(top)))} productos listados, el cambio vs {w.t(vs)} es "
             f"{w.n(money(tot, True))}: " + ", ".join(
                 f"{w.b(k)} {w.n(money(v, True))}" for k, v in sorted(net.items(), key=lambda kv: -abs(kv[1])))
             + (f"; incluye {w.n(str(len(new)))} producto(s) sin venta previa." if new else ".")), 1))
@@ -287,7 +307,7 @@ def s_movers(rows, kind: str, pano: Group, names: dict[str, str], rules: Narrati
     ps.append(para("hecho", lambda w: (
         f"Los {w.n(str(len(rows)))} de la lista suman {w.n(money(tot, True))}; se concentran en "
         + " y ".join(f"{w.b(k)} ({w.n(pct_d(v / tot, False))})" for k, v in big if tot != 0)
-        + (f", equivalente a {w.n(pct_d(abs(tot / net), False))} del cambio mensual en venta."
+        + (f", equivalente a {w.n(pct_d(abs(tot / net), False))} del cambio en venta."
            if net and net != 0 and (tot > 0) == (net > 0) else ".")), 1)
         if tot != 0 else para("info_insuficiente", lambda w: "Sin neto para comparar.", 9))
     return ps
@@ -304,7 +324,7 @@ def s_negados(alta, producto, pano: Group, rules: NarrativeRules) -> list[Para]:
     ratio = (tot / sales) if tot is not None and sales else None
     ps.append(para("hecho", lambda w: (
         f"El monto negado total asciende a {w.n(money(tot))}"
-        + (f", equivalente a {w.n(pct_d(ratio, False))} de la venta del mes" if ratio is not None else "")
+        + (f", equivalente a {w.n(pct_d(ratio, False))} de la venta del periodo" if ratio is not None else "")
         + f", concentrado principalmente en {w.b(rows[0].name)} con {w.n(money(rows[0].monto.v))} y "
           f"{w.n(pct_d(rows[0].share.v, False))} del total"
         + (f", seguido de {w.b(rows[1].name)} con {w.n(money(rows[1].monto.v))} y {w.n(pct_d(rows[1].share.v, False))}."
@@ -336,8 +356,11 @@ def s_negados(alta, producto, pano: Group, rules: NarrativeRules) -> list[Para]:
 # ----------------------------------------------------------------------------- 11 · conclusiones
 def s_conclusiones(yoy, mom, canal, linea, prod, neg_total, pano_yoy, period, rules) -> list[Para]:
     def line(label, key):
-        a, b = pct_of(yoy, key), pct_of(mom, key)
+        a = pct_of(yoy, key)
         v = "creció" if (a or 0) > 0 else "cayó" if (a or 0) < 0 else "se mantuvo"
+        if mom is None:
+            return para("hecho", lambda w: f"{label} {v} {w.n(pct_d(a))} vs {w.t(period.prev_year_label)}", 0)
+        b = pct_of(mom, key)
         return para("hecho", lambda w: f"{label} {v} {w.n(pct_d(a))} YoY y {w.n(pct_d(b))} MoM", 0)
     ps = [line("El monto de venta", "monto"), line("La cantidad de piezas", "piezas"),
           line("La cantidad de pacientes", "pacientes"), line("La cantidad de pedidos", "pedidos"),
@@ -347,11 +370,16 @@ def s_conclusiones(yoy, mom, canal, linea, prod, neg_total, pano_yoy, period, ru
     if dec:
         vol = Decimal(str(round(dec.volume, 4)))
         who = "volumen" if dec.volume >= 0.6 else "valor por pieza" if dec.price >= 0.6 else "volumen y valor por pieza"
+        mom_txt = (lambda w: f" y {w.n(pct_d(pct_of(mom, 'monto')))} MoM") if mom is not None else (lambda w: "")
         ps.append(para("interpretacion", lambda w: (
-            f"En {w.t(period.month_name)}, la venta llega a {w.n(money(val(yoy.current, 'monto')))} "
-            f"({w.n(pct_d(pct_of(yoy, 'monto')))} YoY y {w.n(pct_d(pct_of(mom, 'monto')))} MoM); el cambio anual se "
+            f"En {w.t(period.label)}, la venta llega a {w.n(money(val(yoy.current, 'monto')))} "
+            f"({w.n(pct_d(pct_of(yoy, 'monto')))} YoY{mom_txt(w)}); el cambio anual se "
             f"explica principalmente por {who} ({w.n(pct_d(vol, False))} del cambio)."), 1,
             basis="descomposición de la venta (pacientes × piezas por paciente × valor por pieza)"))
+    press = I.pressures(yoy, rules)
+    if press:
+        ps.append(para("hecho", lambda w: (
+            "Presiones del periodo: " + ", ".join(f"{lbl} ({w.n(pct_d(v))})" for lbl, v in press[:3]) + "."), 2))
     tp, tc = val(pano_yoy.previous, "monto"), val(pano_yoy.current, "monto")
     for kind, groups in (("canal", canal), ("línea", linea)):
         cs = I.contributions(groups, tp, tc)
@@ -372,7 +400,7 @@ def s_conclusiones(yoy, mom, canal, linea, prod, neg_total, pano_yoy, period, ru
         ratio = neg_total / val(yoy.current, "monto") if val(yoy.current, "monto") else None
         ps.append(para("interpretacion", lambda w: (
             f"Los negados suman {w.n(money(neg_total))}"
-            + (f" ({w.n(pct_d(ratio, False))} de la venta del mes)" if ratio is not None else "")
+            + (f" ({w.n(pct_d(ratio, False))} de la venta del periodo)" if ratio is not None else "")
             + ": venta no concretada que conviene revisar para su recuperación."), 5,
             basis="definición de negado (venta no concretada) — pendiente de validar"))
     return ps
@@ -414,3 +442,36 @@ def compose_aetops_mensual(result: Result, period: Period, boxes: dict[str, Box]
 
 def check(narr: dict[str, list[Para]]) -> list[str]:
     return verify_all([p for ps in narr.values() for p in ps])
+
+
+def compose_aetops_trimestral(result: Result, period: Period, boxes: dict[str, Box], cat_shown: list[Group],
+                              rules: NarrativeRules = RULES) -> dict[str, list[Para]]:
+    """Trimestral: solo comparativo YoY (mismo trimestre del año anterior)."""
+    T = result.tables
+    py = T["aetops.panorama.yoy"].groups[0]
+    pedidos_ok = not any(f.id == "TOTALS_MISMATCH" and "canal" in f.message and "pedidos" in f.message
+                         for f in result.findings)
+    prod = {k: result.products[f"aetops.productos.{k}"].rows for k in ("top", "growth", "decline")}
+    names = labels_for_products(prod["top"] + prod["growth"] + prod["decline"])
+    neg_alta, neg_prod = result.negados.get("aetops.negados.alta"), result.negados.get("aetops.negados.producto")
+    movers = (s_movers(prod["growth"], "growth", py, names, rules) +
+              s_movers(prod["decline"], "decline", py, names, rules))
+    for p in movers[2:]:
+        p.priority += 1
+    out = {
+        "panorama": s_panorama(py, None, period, rules),
+        "linea_yoy": s_groups("línea", T["aetops.linea.yoy"].groups, py, period, rules),
+        "canal_yoy": s_groups("canal", T["aetops.canal.yoy"].groups, py, period, rules, pedidos_ok),
+        "productos": s_productos(prod["top"], prod["growth"], prod["decline"], py, rules, vs=period.prev_year_label),
+        "movers": movers,
+        "cat_yoy": s_groups("categoría", cat_shown, py, period, rules, max_detail=3),
+        "negados": s_negados(neg_alta, neg_prod, py, rules),
+        "conclusiones": s_conclusiones(py, None, T["aetops.canal.yoy"].groups, T["aetops.linea.yoy"].groups, prod,
+                                       neg_alta.total.v if neg_alta else None, py, period, rules),
+    }
+    for key, paras in out.items():
+        box = boxes.get(key)
+        vis = [p for p in paras if p.visible]
+        hidden = [p for p in paras if not p.visible]
+        out[key] = (fit(vis, box.cpl, box.lines) if box else vis) + hidden
+    return out

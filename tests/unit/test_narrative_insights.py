@@ -188,3 +188,25 @@ def test_fit_label_abbreviates_only_what_does_not_fit():
 def test_verifier_does_not_swallow_punctuation_after_numbers():
     p = para("hecho", lambda w: f"AE-A {w.n('+$300')}, AE-B {w.n('+$50')}; total {w.n('1,500')}.")
     assert verify(p) == []
+
+
+def test_zero_rounding_has_no_sign_and_is_neutral():
+    from backend.app import format as F
+    from backend.app.deck import pptx_ops as ops
+    assert F.fmt_pct(V("-0.003"), 0, sign=False) == "0%" and F.fmt_pct(V("-0.004"), 0) == "0%"
+    assert F.fmt_money(V("-0.4"), 0) == "$0"
+    assert ops.delta_style(Decimal("-0.003"), 0) == ops.NEU           # se ve '0%': neutro
+    assert ops.delta_style(Decimal("-0.003")) == ops.NEG              # sin redondeo, conserva el signo real
+
+
+def test_other_groups_agree_in_gender_in_the_pierde_share_sentence():
+    from backend.app.narrative.aetops import _group_sentence
+    cases = {"línea": "otras líneas", "categoría": "otras categorías", "canal": "otros canales"}
+    for kind, phrase in cases.items():
+        g = group("X", (1000, 100, 100, 50, "0.3"), (1100, 105, 98, 52, "0.25"))
+        c = I.contributions([g], Decimal(3000), Decimal(4000))[0]
+        p = _group_sentence(c, kind, Decimal("0.33"), RULES_, True, "2025")
+        assert phrase in p.plain, (kind, p.plain)
+
+
+from backend.app.narrative.rules import RULES as RULES_  # noqa: E402

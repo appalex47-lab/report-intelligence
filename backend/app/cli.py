@@ -80,12 +80,12 @@ def main(argv: list[str]) -> int:
 
 
 def _build(res, prof, per, args):
-    from .build import ReportBlocked, build_aetops_mensual
-    if prof != "mensual" or per is None or "--salida" not in args:
-        print("Para generar: --perfil mensual --periodo AAAA-N --plantilla X.pptx --salida carpeta/")
+    from .build import ReportBlocked, build_aetops
+    if per is None or "--salida" not in args:
+        print("Para generar: --perfil mensual|trimestral --periodo AAAA-N --plantilla X.pptx --salida carpeta/")
         return 2
     try:
-        b = build_aetops_mensual(res, per, Path(args[args.index("--plantilla") + 1]),
+        b = build_aetops(res, per, Path(args[args.index("--plantilla") + 1]),
                                  Path(args[args.index("--salida") + 1]))
     except ReportBlocked as e:
         print(f"\nNO SE GENERA: hallazgos bloqueantes sin resolver ({e}).")

@@ -130,5 +130,5 @@ def test_narrative_reaches_the_analysts_conclusions_with_real_data(filled):
     assert "AE-B" in linea and "pierde participación" in linea
     pano = _text(rep, "panorama")
     assert "+67% vs 2025" in pano and "volumen" in pano
-    assert "21% de la venta del mes" in _text(rep, "negados")
+    assert "21% de la venta del periodo" in _text(rep, "negados")
     assert any(not p.visible and p.kind == "info_insuficiente" for p in rep.narrative["canal_yoy"])

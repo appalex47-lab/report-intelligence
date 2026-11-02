@@ -1,4 +1,4 @@
-# Backend — Fases 4a–4c (motor AETOPS y GLP-1) y 5a (PPTX/PDF AETOPS mensual)
+# Backend — Fases 4a–4c (motor AETOPS y GLP-1), 5a–5b (PPTX/PDF AETOPS mensual y trimestral) y narrativa v2
 
 Implementa, según `docs/ARQUITECTURA.md`, para AETOPS: importador por bloques (`Base`, `Tablas`, `Negados`),
 motor de cálculo (panorama, canales, líneas y categorías YoY/MoM; productos Top/crecimiento/decrecimiento;
@@ -22,12 +22,13 @@ python tools/make_glp1_synthetic.py data/GLP1_sintetico_limpio.xlsx            #
 - Productos: un producto sin venta previa es `new_item` (Delta = venta actual), no 0.
 - `format.py`: único lugar donde se redondea (mitad hacia arriba, como Excel y los PPTX).
 
-## Generación AETOPS mensual (5a)
+## Generación AETOPS mensual y trimestral (5a, 5b)
 `build.py` → `deck/aetops_mensual.py` rellena **en su lugar** el PPTX original (11 diapositivas), `render.py` convierte a PDF con LibreOffice (fuente sustituta Carlito solo para el render, `docker/fonts.conf`) y `qa/checks.py` decide si se habilita la descarga.
 - Con hallazgos bloqueantes del Excel **no se genera** (`ReportBlocked`).
 - QA (error = descarga bloqueada): páginas PDF = diapositivas; texto fuera de página; contenido invadiendo el pie; palabras superpuestas; texto del PPTX ausente en el PDF; tablas/imágenes/cuadros distintos a la plantilla; barras/logos/pie distintos al render de la plantilla; datos viejos de la plantilla sin sustituir; marcadores sin rellenar. Las reglas se calibraron con el PPTX original (debe pasar sin errores).
 - Tablas, textos e imágenes siguen siendo objetos de PowerPoint (nada se rasteriza).
-- Plantilla: `templates/README.md` (no se versiona).
+- Plantilla: `templates/README.md` (no se versiona). **Trimestral** (`deck/aetops_trimestral.py`): compara solo contra el mismo trimestre del año anterior; ajusta los bloques de canales (con su fila separadora), el Top sin columna Sivec, las dos tablas de categorías (las 3 que más suman y las 3 que más restan en pesos) y la tabla de negados con su mini-tabla por línea; actualiza los rótulos "Venta Q1…" al trimestre pedido.
+- El QA compara logos, barras y pie de página usando la **geometría real** de esos elementos en la plantilla (no zonas fijas).
 - **Narrativa** (`narrative/`): `insights.py` calcula hallazgos (descomposición volumen/valor, aporte al crecimiento, cambio de participación, base pequeña, lectura mixta, negados vs venta); `aetops.py` los redacta al estilo del analista y ajusta el texto al cuadro; `writer.py` registra cada cifra y **verifica** que toda cifra tenga evidencia y que no haya vocabulario causal. Cada párrafo es hecho, interpretación (con su regla) o información insuficiente. Se exporta `narrative.json` para edición. Propósito y reglas: `docs/OBJETIVO_Y_NARRATIVA.md`.
 
 ## GLP-1 (4c)
@@ -37,7 +38,7 @@ python tools/make_glp1_synthetic.py data/GLP1_sintetico_limpio.xlsx            #
 - Share se recalcula (Σ del bloque). **%Δ y Ticket: se publica el valor pegado** porque, en los libros reales, ninguno equivale al recálculo (ver `DIAGNOSTICO_FASE1.md` §4.5); el recálculo queda como contraste.
 
 ## Limitaciones conocidas
-- 5a: solo AETOPS mensual; la narrativa es determinista (sin IA). Sin mapa de calor en la tabla de negados (Excel).
+- 5a/5b: AETOPS mensual y trimestral. **GLP-1 mensual y trimestral aún sin generador de PPTX** (los datos ya se importan y validan). La narrativa es determinista con insights verificados (sin IA). Sin mapa de calor en la tabla de negados (Excel).
 - Categorías: la plantilla muestra 7 (YoY) u 8 (MoM); el original elige a mano cuáles. Se toman por venta (YoY) o por signo del cambio (MoM) y las omitidas se informan. **[P]** regla editorial.
 - Los títulos cruzados Líneas/Canales del original se corrigen y se informa (`fix_titles=False` los conserva).
 - Productos: se leen los bloques de `Tablas` tal como los arma el Excel; no se recalcula el Top desde el universo completo (hojas `Venta <mes>`).

@@ -75,3 +75,59 @@ def test_placeholders_left_in_text_are_flagged(tmp_path):
     rep = checks.QAReport()
     checks.check_editable_and_static(out, tpl, rep)
     assert "PLACEHOLDER_LEFT" in {i.id for i in rep.issues}
+
+
+def _logo(tmp_path):
+    from PIL import Image
+    p = tmp_path / "logo.png"
+    Image.new("RGB", (200, 100), (232, 98, 42)).save(p)
+    return p
+
+
+def test_a_moved_or_missing_logo_is_flagged_using_real_geometry(tmp_path):
+    from backend.app.render import pdf_to_pngs
+    logo = _logo(tmp_path)
+
+    def tpl(s):
+        s.shapes.add_picture(str(logo), Inches(10.5), Inches(0.2), Inches(2), Inches(1))
+
+    def moved(s):
+        s.shapes.add_picture(str(logo), Inches(8.0), Inches(2.0), Inches(2), Inches(1))
+
+    def missing(s):
+        text(s, 1, 4, 3, 0.5, "sin logo")
+
+    t = deck(tmp_path, "tpl", tpl)
+    tp = pdf_to_pngs(convert_to_pdf(t, tmp_path / "t"), tmp_path / "t" / "png")
+    for name, builder in (("moved", moved), ("missing", missing)):
+        o = deck(tmp_path, name, builder)
+        op = pdf_to_pngs(convert_to_pdf(o, tmp_path / name), tmp_path / name / "png")
+        rep = checks.QAReport()
+        checks.check_static_regions(op, tp, rep, t)
+        assert "STATIC_REGION_CHANGED" in {i.id for i in rep.issues}, name
+    same = deck(tmp_path, "same", tpl)
+    sp = pdf_to_pngs(convert_to_pdf(same, tmp_path / "s"), tmp_path / "s" / "png")
+    rep = checks.QAReport()
+    checks.check_static_regions(sp, tp, rep, t)
+    assert rep.passed
+
+
+def test_content_overlapping_a_fixed_logo_zone_does_not_hide_the_logo_check(tmp_path):
+    """Una tabla que pasa por debajo del logo NO debe dar falsos positivos si el logo no se tocó."""
+    from backend.app.render import pdf_to_pngs
+    logo = _logo(tmp_path)
+
+    def tpl(s):
+        s.shapes.add_picture(str(logo), Inches(10.5), Inches(0.2), Inches(2), Inches(0.6))
+        text(s, 1, 1.0, 5, 0.5, "x")
+
+    def out(s):
+        s.shapes.add_picture(str(logo), Inches(10.5), Inches(0.2), Inches(2), Inches(0.6))
+        text(s, 11, 1.0, 2, 0.5, "contenido bajo el logo")           # texto en la zona alta-derecha, fuera del logo
+
+    t, o = deck(tmp_path, "t", tpl), deck(tmp_path, "o", out)
+    tp = pdf_to_pngs(convert_to_pdf(t, tmp_path / "tt"), tmp_path / "tt" / "png")
+    op = pdf_to_pngs(convert_to_pdf(o, tmp_path / "oo"), tmp_path / "oo" / "png")
+    rep = checks.QAReport()
+    checks.check_static_regions(op, tp, rep, t)
+    assert rep.passed, [i.message for i in rep.issues]

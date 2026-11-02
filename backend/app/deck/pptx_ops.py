@@ -21,10 +21,14 @@ NEG = ("FFC7CE", "9C0006")
 NEU = ("FFEB9C", "9C5700")
 
 
-def delta_style(v: Decimal | None) -> tuple[str, str] | None:
-    """Verde si sube, rojo si baja, amarillo si es exactamente 0; sin dato -> sin color."""
+def delta_style(v: Decimal | None, decimals: int | None = None) -> tuple[str, str] | None:
+    """Verde si sube, rojo si baja, amarillo si es 0; sin dato -> sin color.
+    Con `decimals`, el signo se toma del valor REDONDEADO que se muestra (un -0.3 % que se ve '0%' es neutro)."""
     if v is None:
         return None
+    if decimals is not None:
+        from ..format import quantize_half_up
+        v = quantize_half_up(v * 100, decimals)
     return POS if v > 0 else NEG if v < 0 else NEU
 
 

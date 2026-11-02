@@ -10,6 +10,7 @@ from pathlib import Path
 from pptx import Presentation
 
 from .deck.aetops_mensual import FillReport, fill_aetops_mensual
+from .deck.aetops_trimestral import fill_aetops_trimestral
 from .models import Period
 from .pipeline import Result
 from .qa import checks
@@ -37,7 +38,7 @@ def _sha(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
-def build_aetops_mensual(result: Result, period: Period, template: Path, out_dir: Path,
+def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
                          narrative: dict | None = None, allow_blockers: bool = False,
                          fix_titles: bool = True) -> BuildResult:
     template, out_dir = Path(template), Path(out_dir)
@@ -47,8 +48,10 @@ def build_aetops_mensual(result: Result, period: Period, template: Path, out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
     prs = Presentation(template)
-    fill = fill_aetops_mensual(prs, result, period, narrative, fix_titles)
-    pptx = out_dir / f"Resultados_AETOP_{period.month_name.capitalize()}_{period.year}.pptx"
+    fill_fn = fill_aetops_mensual if period.periodicity == "mensual" else fill_aetops_trimestral
+    fill = fill_fn(prs, result, period, narrative, fix_titles)
+    stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
+    pptx = out_dir / f"Resultados_AETOP_{stem}_{period.year}.pptx"
     prs.save(pptx)
 
     pdf = convert_to_pdf(pptx, out_dir)
@@ -60,7 +63,7 @@ def build_aetops_mensual(result: Result, period: Period, template: Path, out_dir
     qa = checks.QAReport()
     checks.check_render(pptx, pdf, qa)
     checks.check_editable_and_static(pptx, template, qa)
-    checks.check_static_regions(pngs, tpl_pngs, qa)
+    checks.check_static_regions(pngs, tpl_pngs, qa, template)
     checks.check_stale(fill, qa)
     for prob in fill.narrative_problems:
         qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")
@@ -82,7 +85,7 @@ def build_aetops_mensual(result: Result, period: Period, template: Path, out_dir
                "Generado ignorando hallazgos bloqueantes (solo desarrollo): NO apto para descarga.")
 
     manifest = {
-        "periodo": f"{period.month_name} {period.year}", "plantilla": template.name,
+        "periodo": period.label if period.periodicity == "trimestral" else f"{period.month_name} {period.year}", "plantilla": template.name,
         "plantilla_sha256": _sha(template), "pptx_sha256": _sha(pptx), "pdf_sha256": _sha(pdf),
         "qa_passed": qa.passed, "hallazgos_bloqueantes": [f.id for f in blockers],
         "fuente_render": "Carlito (sustituye Aptos Narrow solo en PDF/QA)",
@@ -91,3 +94,6 @@ def build_aetops_mensual(result: Result, period: Period, template: Path, out_dir
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     shutil.rmtree(tpl_dir, ignore_errors=True)
     return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest)
+
+
+build_aetops_mensual = build_aetops          # nombre de la 5a (compatibilidad)

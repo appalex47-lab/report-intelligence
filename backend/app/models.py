@@ -71,6 +71,15 @@ class Period:
     index: int          # mes 1-12 o trimestre 1-4
 
     @property
+    def label(self) -> str:
+        """'agosto' (mensual) o 'Q3 2026' (trimestral): lo que va en el texto."""
+        return self.month_name if self.periodicity == "mensual" else f"Q{self.index} {self.year}"
+
+    @property
+    def prev_year_label(self) -> str:
+        return f"Q{self.index} {self.year - 1}" if self.periodicity == "trimestral" else str(self.year - 1)
+
+    @property
     def month_name(self) -> str:
         return MONTHS[self.index - 1]
 

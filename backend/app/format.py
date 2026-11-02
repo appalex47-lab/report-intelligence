@@ -20,6 +20,8 @@ def fmt_pct(v: Value, decimals: int = 0, sign: bool = True) -> str:
     if v.v is None:
         return DASH
     q = quantize_half_up(v.v * 100, decimals)
+    if q == 0:
+        return f"{0:,.{decimals}f}%"                   # sin '-0%'
     s = f"{q:,.{decimals}f}%"
     return ("+" + s) if sign and q > 0 else s
 
@@ -28,7 +30,7 @@ def fmt_money(v: Value, decimals: int = 0) -> str:
     if v.v is None:
         return DASH
     q = quantize_half_up(v.v, decimals)
-    return ("-$" if q < 0 else "$") + f"{abs(q):,.{decimals}f}"
+    return ("-$" if q < 0 else "$") + f"{abs(q):,.{decimals}f}"            # q == 0 nunca es negativo
 
 
 def fmt_num(v: Value, decimals: int = 0) -> str:
