@@ -1,4 +1,4 @@
-# Backend — Fases 4a, 4b y 4c (motor AETOPS y GLP-1)
+# Backend — Fases 4a–4c (motor AETOPS y GLP-1) y 5a (PPTX/PDF AETOPS mensual)
 
 Implementa, según `docs/ARQUITECTURA.md`, para AETOPS: importador por bloques (`Base`, `Tablas`, `Negados`),
 motor de cálculo (panorama, canales, líneas y categorías YoY/MoM; productos Top/crecimiento/decrecimiento;
@@ -22,6 +22,13 @@ python tools/make_glp1_synthetic.py data/GLP1_sintetico_limpio.xlsx            #
 - Productos: un producto sin venta previa es `new_item` (Delta = venta actual), no 0.
 - `format.py`: único lugar donde se redondea (mitad hacia arriba, como Excel y los PPTX).
 
+## Generación AETOPS mensual (5a)
+`build.py` → `deck/aetops_mensual.py` rellena **en su lugar** el PPTX original (11 diapositivas), `render.py` convierte a PDF con LibreOffice (fuente sustituta Carlito solo para el render, `docker/fonts.conf`) y `qa/checks.py` decide si se habilita la descarga.
+- Con hallazgos bloqueantes del Excel **no se genera** (`ReportBlocked`).
+- QA (error = descarga bloqueada): páginas PDF = diapositivas; texto fuera de página; contenido invadiendo el pie; palabras superpuestas; texto del PPTX ausente en el PDF; tablas/imágenes/cuadros distintos a la plantilla; barras/logos/pie distintos al render de la plantilla; datos viejos de la plantilla sin sustituir; marcadores sin rellenar. Las reglas se calibraron con el PPTX original (debe pasar sin errores).
+- Tablas, textos e imágenes siguen siendo objetos de PowerPoint (nada se rasteriza).
+- Plantilla: `templates/README.md` (no se versiona).
+
 ## GLP-1 (4c)
 - `importer/glp1_blocks.py` + `profiles/glp1/*.yaml`: localiza 17 tablas de las hojas 1–9 por el texto de su encabezado (no por posición), incluye bloques apilados, lado a lado, el bloque del periodo anterior y el embudo (sin encabezado).
 - Una columna desconocida **dentro** de las esperadas bloquea; lo que está más allá (bloque vecino) se ignora. Erratas conocidas (`& de rebote`, `Carritos abadonados`) se aceptan con aviso.
@@ -29,6 +36,9 @@ python tools/make_glp1_synthetic.py data/GLP1_sintetico_limpio.xlsx            #
 - Share se recalcula (Σ del bloque). **%Δ y Ticket: se publica el valor pegado** porque, en los libros reales, ninguno equivale al recálculo (ver `DIAGNOSTICO_FASE1.md` §4.5); el recálculo queda como contraste.
 
 ## Limitaciones conocidas
+- 5a: solo AETOPS mensual; la narrativa es determinista (sin IA). Sin mapa de calor en la tabla de negados (Excel).
+- Categorías: la plantilla muestra 7 (YoY) u 8 (MoM); el original elige a mano cuáles. Se toman por venta (YoY) o por signo del cambio (MoM) y las omitidas se informan. **[P]** regla editorial.
+- Los títulos cruzados Líneas/Canales del original se corrigen y se informa (`fix_titles=False` los conserva).
 - Productos: se leen los bloques de `Tablas` tal como los arma el Excel; no se recalcula el Top desde el universo completo (hojas `Venta <mes>`).
 - `Negados`: el segundo bloque de productos (duplicado en el mensual, distinto en el Q3) se ignora y no se valida todavía. Sin `config/rules.yaml`: tolerancias fijas en `validator/rules.py`.
 - Ticket por canal: se usa el valor pegado (ver hallazgo en `docs/DIAGNOSTICO_FASE1.md` §4.3).

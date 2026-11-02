@@ -1,4 +1,5 @@
 """python -m backend.app.cli <libro.xlsx> [--unidad aetops|glp1] [--perfil mensual|trimestral] [--periodo AAAA-N]
+                           [--plantilla plantilla.pptx --salida carpeta/]   (genera PPTX+PDF+QA; AETOPS mensual)
 
 --periodo: año y mes (mensual) o trimestre (trimestral); ej. 2026-9 o 2026-3.
 Sin --periodo no se valida contra el periodo esperado.
@@ -8,6 +9,8 @@ from __future__ import annotations
 import sys
 
 from .models import Period
+from pathlib import Path
+
 from .pipeline import run_aetops, run_glp1
 
 
@@ -71,7 +74,28 @@ def main(argv: list[str]) -> int:
     for f in res.findings:
         print(f"  [{f.severity.upper():5}] {f.id}: {f.message} ({f.evidence})")
     print(f"\nPuede generar: {res.can_generate}")
+    if "--plantilla" in args:
+        return _build(res, prof, per, args)
     return 0 if res.can_generate else 1
+
+
+def _build(res, prof, per, args):
+    from .build import ReportBlocked, build_aetops_mensual
+    if prof != "mensual" or per is None or "--salida" not in args:
+        print("Para generar: --perfil mensual --periodo AAAA-N --plantilla X.pptx --salida carpeta/")
+        return 2
+    try:
+        b = build_aetops_mensual(res, per, Path(args[args.index("--plantilla") + 1]),
+                                 Path(args[args.index("--salida") + 1]))
+    except ReportBlocked as e:
+        print(f"\nNO SE GENERA: hallazgos bloqueantes sin resolver ({e}).")
+        return 1
+    print(f"\nPPTX: {b.pptx}\nPDF:  {b.pdf}\nQA {'APROBADO' if b.qa.passed else 'RECHAZADO'}; "
+          f"descarga {'habilitada' if b.downloadable else 'BLOQUEADA'}")
+    for i in b.qa.issues:
+        if i.severity != "info" or i.id in ("FILL_NOTE", "LABEL_CROSSED_FIXED"):
+            print(f"  [{i.severity.upper():5}] {i.id}" + (f" (diap. {i.slide})" if i.slide else "") + f": {i.message}")
+    return 0 if b.downloadable else 1
 
 
 if __name__ == "__main__":
