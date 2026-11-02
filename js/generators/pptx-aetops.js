@@ -119,15 +119,14 @@ export function generateAetopsPptx(data, config) {
     s.addTable(rows, tableOpts(0.4, 1.35, 12.5, [2.0, 2.8, 2.8, 2.2, 2.7]));
 
     if (data.byLine.some(l => l.montoActual != null)) {
-      s.addChart(pptx.charts.BAR, {
+      const labels = data.byLine.map(l => l.linea);
+      s.addChart(pptx.charts.BAR, [
+        { name: 'Actual', labels, values: data.byLine.map(l => l.montoActual || 0) },
+        { name: 'Anterior', labels, values: data.byLine.map(l => l.montoAnterior || 0) },
+      ], {
         x: 0.4, y: 3.6, w: 12.5, h: 3.2,
-        barGrouping: 'clustered', showLegend: true, legendPos: 'b',
+        barDir: 'col', barGrouping: 'clustered', showLegend: true, legendPos: 'b',
         chartColors: [COLORS.primary, '5B9BD5'],
-        categories: data.byLine.map(l => l.linea),
-        series: [
-          { name: 'Actual', values: data.byLine.map(l => l.montoActual || 0) },
-          { name: 'Anterior', values: data.byLine.map(l => l.montoAnterior || 0) },
-        ],
       });
     }
     addFooter(s, pptx, slideNum);
@@ -153,15 +152,14 @@ export function generateAetopsPptx(data, config) {
     s.addTable(rows, tableOpts(0.4, 1.35, 12.5, [3.2, 2.5, 2.5, 2.0, 2.3]));
 
     if (data.byChannel.some(c => c.montoActual != null)) {
-      s.addChart(pptx.charts.BAR, {
+      const labels = data.byChannel.map(c => c.canal);
+      s.addChart(pptx.charts.BAR, [
+        { name: 'Actual', labels, values: data.byChannel.map(c => c.montoActual || 0) },
+        { name: 'Anterior', labels, values: data.byChannel.map(c => c.montoAnterior || 0) },
+      ], {
         x: 0.4, y: 3.5, w: 12.5, h: 3.3,
-        barGrouping: 'clustered', showLegend: true, legendPos: 'b',
+        barDir: 'col', barGrouping: 'clustered', showLegend: true, legendPos: 'b',
         chartColors: [COLORS.primary, '5B9BD5'],
-        categories: data.byChannel.map(c => c.canal),
-        series: [
-          { name: 'Actual', values: data.byChannel.map(c => c.montoActual || 0) },
-          { name: 'Anterior', values: data.byChannel.map(c => c.montoAnterior || 0) },
-        ],
       });
     }
     addFooter(s, pptx, slideNum);
