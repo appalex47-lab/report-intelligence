@@ -60,7 +60,7 @@ Variables: `REPORT_RUNS_DIR` (corridas, def. `runs/`), `REPORT_HISTORY_DB` (def.
 
 Flujo: Cargar → Validar → Metas y contexto → Revisar narrativa (edición con verificación de cifras) → Generar (QA; la descarga
 se bloquea si el QA no aprueba) + pestaña Historial y tendencias. Metas: obligatorias en AETOPS, opcionales en GLP-1.
-GLP-1: carga y validación; el generador de la presentación aún no existe (el API responde 501).
+GLP-1 mensual: genera la presentación desde datos crudos (`ventas`+`catalogo`+`trafico`+`negados`); GLP-1 trimestral aún no tiene plantilla ni generador (el API responde 501).
 
 Machotes de captura: `python tools/make_machotes.py --todos --periodo 2026-9 --salida machotes/` (o desde la pantalla de carga).
 

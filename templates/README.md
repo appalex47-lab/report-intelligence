@@ -7,6 +7,7 @@ La plantilla de cada formato es **el PPTX original publicado** (logos, barras, t
 |---|---|---|
 | AETOPS mensual (v1) | `templates/aetops-mensual/1/template.pptx` | `Resultados_AETOP_Agosto_2026.pptx` |
 | AETOPS trimestral (v1) | `templates/aetops-trimestral/1/template.pptx` | `Resultados_AETOP_Q1_2026.pptx` |
+| GLP-1 mensual (v1) | `templates/glp1-mensual/1/template.pptx` | `Resultados_GLP1_Agosto_2026.pptx` |
 
 El relleno (`backend/app/deck/aetops_mensual.py`) sustituye el contenido **en su lugar** y falla con
 `TemplateMismatch` si cambian los nombres de shapes o el tamaño de las tablas: una plantilla nueva requiere una

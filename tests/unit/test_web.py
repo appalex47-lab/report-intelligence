@@ -63,7 +63,7 @@ def test_files_whitelist_and_no_download_before_generate(client):
     assert client.get(f"/api/runs/{rid}/result").status_code == 404
 
 
-def test_glp1_validates_but_generator_unavailable(client):
+def _unused_test_glp1_generator_unavailable(client):
     rid = _run(client, "glp1")
     ex = ROOT / "data/GLP1_sintetico_limpio.xlsx"
     assert _upload(client, rid, ex).status_code == 200
@@ -128,3 +128,28 @@ def test_generate_from_raw_data(client, tmp_path):
     info = g.json()
     assert info["pptx"] and info["slides"]
     print([i for i in info["qa"]["issues"] if i["severity"] != "info"])
+
+
+def test_glp1_raw_validates_via_api(client, tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("mg", ROOT / "tools/make_raw_glp1_synthetic.py")
+    mg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mg)
+    rid = _run(client, "glp1")
+    assert _upload(client, rid, mg.build(tmp_path / "g.xlsx")).status_code == 200
+    a = client.get(f"/api/runs/{rid}/analysis").json()
+    assert not [f for f in a["findings"] if f["severity"] == "block"] and a["targets_required"] is False
+
+
+@pytest.mark.skipif(not (ROOT / "templates/glp1-mensual/1/template.pptx").exists(), reason="plantilla GLP-1 real no disponible")
+def test_glp1_generate_via_api(client, tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("mg", ROOT / "tools/make_raw_glp1_synthetic.py")
+    mg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mg)
+    rid = _run(client, "glp1")
+    _upload(client, rid, mg.build(tmp_path / "g.xlsx"))
+    n = client.get(f"/api/runs/{rid}/narrative")
+    assert n.status_code == 200 and n.json()["secciones"][0]["clave"] == "quien"
+    g = client.post(f"/api/runs/{rid}/generate")
+    assert g.status_code == 200 and g.json()["downloadable"] and g.json()["pptx"].startswith("Resultados_GLP1")

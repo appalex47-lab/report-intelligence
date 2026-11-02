@@ -14,9 +14,10 @@ from pathlib import Path
 
 from pptx import Presentation
 
-from ..build import ReportBlocked, build_aetops
-from ..deck.aetops_mensual import fill_aetops_mensual
+from ..build import ReportBlocked, build_aetops, build_glp1
+from ..deck.aetops_mensual import DataMissing, TemplateMismatch, fill_aetops_mensual
 from ..deck.aetops_trimestral import fill_aetops_trimestral
+from ..deck.glp1_mensual import fill_glp1_mensual
 from ..history import store as hist
 from ..models import Period
 from ..narrative import trends
@@ -39,6 +40,8 @@ SLIDE_TITLES = {
     "linea_yoy": "Líneas YoY", "linea_mom": "Líneas MoM", "canal_yoy": "Canales YoY", "canal_mom": "Canales MoM",
     "productos": "Productos", "movers": "Mayores alzas y bajas", "cat_yoy": "Categorías YoY", "cat_mom": "Categorías MoM",
     "negados": "Negados", "conclusiones": "Conclusiones",
+    "quien": "¿Quién busca GLP1?", "producto_sexo": "Producto por sexo", "region": "Región", "pago": "Pago y entrega",
+    "funnel": "Embudo y negados", "programas": "Programas", "fuentes": "Fuentes de tráfico",
 }
 
 
@@ -193,12 +196,16 @@ def analyze(run_id: str) -> dict:
     if st["unit"] == "aetops":
         att = [{"nombre": a.name, "real": float(a.actual), "meta": float(a.target), "cumplimiento": float(a.pct),
                 "brecha": float(a.gap), "estado": a.status} for a in attainment(res, _targets(st))]
-    return {"run": public(st), "can_generate": res.can_generate and st["unit"] == "aetops", "findings": findings,
+    gen_ok = st["unit"] == "aetops" or (st["periodicity"] == "mensual" and _has_template(st))
+    return {"run": public(st), "can_generate": res.can_generate and gen_ok, "findings": findings,
             "kpis": _kpis(res, st), "cumplimiento": att,
             "targets_required": st["unit"] == "aetops", "targets_lines": [],
-            "generator_available": st["unit"] == "aetops",
-            "message": None if st["unit"] == "aetops" else
-            "GLP-1: la validación está disponible; el generador de la presentación aún no está construido."}
+            "generator_available": gen_ok,
+            "message": None if gen_ok else "GLP-1 trimestral: la validación está disponible; aún no hay plantilla ni generador trimestral."}
+
+
+def _has_template(st: dict) -> bool:
+    return (TEMPLATES_DIR / f"{st['unit']}-{st['periodicity']}" / "1" / "template.pptx").exists()
 
 
 def template_path(st: dict) -> Path:
@@ -215,12 +222,22 @@ def _paras(ps: list[Para]) -> list[dict]:
 
 def narrative(run_id: str) -> dict:
     st = _load(run_id)
-    if st["unit"] != "aetops":
-        raise ServiceError("La narrativa de GLP-1 aún no está disponible.", 501)
     res = _run_engine(run_id, st)
     if not res.can_generate:
         raise ServiceError("Hay hallazgos bloqueantes: corrígelos antes de revisar la narrativa.", 409)
     per, tpl = period_of(st), template_path(st)
+    if st["unit"] == "glp1":
+        if per.periodicity != "mensual":
+            raise ServiceError("GLP-1 trimestral aún no está disponible.", 501)
+        try:
+            fill = fill_glp1_mensual(Presentation(tpl), res.blocks, res.funnel, per, None)
+        except (DataMissing, TemplateMismatch) as e:
+            raise ServiceError(f"Faltan datos para la plantilla de GLP-1: {e}", 409) from None
+        sections = dict(fill.narrative)
+        ctx = [c for c in st["context"] if c.strip()]
+        known = sorted(set().union(*(p.nums for ps in sections.values() for p in ps)))
+        return {"secciones": [{"clave": k, "titulo": SLIDE_TITLES.get(k, k), "parrafos": _paras(ps)} for k, ps in sections.items()],
+                "cifras_validas": known, "problemas": fill.narrative_problems, "ediciones": st["edits"]}
     att = attainment(res, _targets(st))
     prs = Presentation(tpl)
     fill = (fill_aetops_mensual if per.periodicity == "mensual" else fill_aetops_trimestral)(prs, res, per, None, True, att=att)
@@ -277,16 +294,23 @@ OUT_FILES = {"pptx", "pdf"}
 
 def generate(run_id: str) -> dict:
     st = _load(run_id)
-    if st["unit"] != "aetops":
-        raise ServiceError("El generador de GLP-1 aún no está construido.", 501)
+    if st["unit"] == "glp1" and st["periodicity"] != "mensual":
+        raise ServiceError("GLP-1 trimestral aún no está disponible.", 501)
     res = _run_engine(run_id, st)
     out = _dir(run_id) / "out"
     shutil.rmtree(out, ignore_errors=True)
     try:
+        if st["unit"] == "glp1":
+            b = build_glp1(res, period_of(st), template_path(st), out, narrative=st["edits"] or None, sources=[_input(run_id)])
+            st["generated"] = True
+            _save(run_id, st)
+            return result_info(run_id, b.qa.passed)
         b = build_aetops(res, period_of(st), template_path(st), out, narrative=st["edits"] or None,
                          context=st["context"] or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st))
     except ReportBlocked as e:
         raise ServiceError(f"No se genera: hay hallazgos bloqueantes ({e}).", 409) from None
+    except (DataMissing, TemplateMismatch) as e:
+        raise ServiceError(f"Faltan datos para la plantilla: {e}", 409) from None
     st["generated"] = True
     _save(run_id, st)
     return result_info(run_id, b.qa.passed)

@@ -12,13 +12,14 @@ from pptx import Presentation
 from .deck.aetops_mensual import FillReport, fill_aetops_mensual
 from .deck.aetops_trimestral import fill_aetops_trimestral
 from .deck.extras import add_executive_slides
+from .deck.glp1_mensual import fill_glp1_mensual
 from .history import store as hist
 from .narrative import trends
 from .narrative.executive import build_executive
 from .narrative.targets import attainment
 from .narrative.writer import Para, fit, to_paragraphs, verify_all, verify_edited
 from .models import Period
-from .pipeline import Result
+from .pipeline import GlpResult, Result
 from .qa import checks
 from .render import convert_to_pdf, pdf_to_pngs
 
@@ -150,6 +151,54 @@ def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sou
         for t in ts], ensure_ascii=False, indent=1), encoding="utf-8")
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     con.close()
+
+
+def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path, narrative: dict | None = None,
+               allow_blockers: bool = False, sources: list[Path] | None = None) -> BuildResult:
+    """GLP-1 mensual: rellena la plantilla, convierte a PDF y aplica el QA (sin resumen ejecutivo ni metas por ahora)."""
+    template, out_dir = Path(template), Path(out_dir)
+    blockers = [f for f in result.findings if f.severity == "block"]
+    if blockers and not allow_blockers:
+        raise ReportBlocked(blockers)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    prs = Presentation(template)
+    fill = fill_glp1_mensual(prs, result.blocks, result.funnel, period, dict(narrative or {}))
+    pptx = out_dir / f"Resultados_GLP1_{period.month_name.capitalize()}_{period.year}.pptx"
+    prs.save(pptx)
+    pdf = convert_to_pdf(pptx, out_dir)
+    pngs = pdf_to_pngs(pdf, out_dir / "png")
+    tpl_dir = out_dir / "_plantilla"
+    tpl_pdf = convert_to_pdf(template, tpl_dir)
+    tpl_pngs = pdf_to_pngs(tpl_pdf, tpl_dir / "png")
+    qa = checks.QAReport()
+    checks.check_render(pptx, pdf, qa)
+    checks.check_editable_and_static(pptx, template, qa, None)
+    checks.check_static_regions(pngs, tpl_pngs, qa, template, None)
+    checks.check_stale(fill, qa)
+    for prob in fill.narrative_problems:
+        qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")
+    for prob in fill.edited_unverified:
+        qa.add("EDITED_TEXT_UNVERIFIED", "warn", None, f"Texto editado a mano: {prob}")
+    (out_dir / "narrative.json").write_text(json.dumps({
+        key: [{"texto": p.plain, "tipo": p.kind, "regla": p.basis, "cifras": sorted(p.nums), "evidencia": p.evidence,
+               "prioridad": p.priority, "visible_en_diapositiva": p.visible, "editado": p.edited} for p in paras]
+        for key, paras in fill.narrative.items()}, ensure_ascii=False, indent=1), encoding="utf-8")
+    for t in fill.titles_fixed:
+        qa.add("LABEL_CROSSED_FIXED", "info", None, f"Título corregido: {t}")
+    for n in fill.notes:
+        qa.add("FILL_NOTE", "info", None, n)
+    for f in result.findings:
+        if f.severity == "warn":
+            qa.add(f"DATA_{f.id}", "warn", None, f.message)
+    if blockers:
+        qa.add("GENERATED_WITH_BLOCKERS", "error", None, "Generado ignorando hallazgos bloqueantes (solo desarrollo): NO apto para descarga.")
+    manifest = {"periodo": f"{period.month_name} {period.year}", "plantilla": template.name, "plantilla_sha256": _sha(template),
+                "pptx_sha256": _sha(pptx), "pdf_sha256": _sha(pdf), "qa_passed": qa.passed,
+                "hallazgos_bloqueantes": [f.id for f in blockers], "fuente_render": "Carlito (sustituye Aptos Narrow solo en PDF/QA)"}
+    (out_dir / "qa_report.json").write_text(json.dumps(qa.to_dict(), ensure_ascii=False, indent=1), encoding="utf-8")
+    (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
+    shutil.rmtree(tpl_dir, ignore_errors=True)
+    return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest)
 
 
 build_aetops_mensual = build_aetops          # nombre de la 5a (compatibilidad)

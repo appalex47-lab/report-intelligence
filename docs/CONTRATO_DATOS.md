@@ -1,7 +1,7 @@
 # Contrato de datos (extracción cruda)
 
 > **Estado:** AETOPS (`ventas` + `catalogo` + `negados`) ya está implementado (`backend/app/raw/aetops.py`, probado con datos sintéticos
-> `tools/make_raw_synthetic.py`; falta validar con una muestra real). GLP-1 (`ventas` + `catalogo` + `trafico` + `negados`) también (`backend/app/raw/glp1.py`, sintéticos `tools/make_raw_glp1_synthetic.py`); falta validar con muestras reales. AETOPS aún no usa `trafico`. Propuesta para validar con quien hace la extracción. Reemplazará a los machotes por bloques cuando se construya la
+> `tools/make_raw_synthetic.py`; falta validar con una muestra real). GLP-1 (`ventas` + `catalogo` + `trafico` + `negados`) también (`backend/app/raw/glp1.py`, sintéticos `tools/make_raw_glp1_synthetic.py`); falta validar con muestras reales. AETOPS aún no usa `trafico`. El generador de la presentación GLP-1 **mensual** existe (`deck/glp1_mensual.py`, `narrative/glp1.py`); el trimestral no. Propuesta para validar con quien hace la extracción. Reemplazará a los machotes por bloques cuando se construya la
 > capa de agregación (hoy el motor lee los machotes; ver `tools/make_machotes.py`). Un archivo por unidad (AETOPS y GLP-1),
 > con una tabla por hoja (o un CSV por tabla). El **SKU** (en AETOPS, el Sivec) es la llave común.
 
