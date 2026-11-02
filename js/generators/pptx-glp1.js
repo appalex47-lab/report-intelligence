@@ -110,11 +110,11 @@ export function generateGlp1Pptx(data, config) {
     s.addTable(rows, tableOpts(0.35, 1.3, 12.6, [2.8, 1.8, 2.5, 1.8, 1.8, 1.9]));
 
     if (items.length) {
-      s.addChart(pptx.charts.BAR, {
+      s.addChart(pptx.charts.BAR, [
+        { name: 'Monto', labels: items.map(r => r.region), values: items.map(r => r.montoActual || 0) },
+      ], {
         x: 0.35, y: 4.3, w: 12.6, h: 2.5,
-        showLegend: false, chartColors: [COLORS.primary],
-        categories: items.map(r => r.region),
-        series: [{ name: 'Monto', values: items.map(r => r.montoActual || 0) }],
+        barDir: 'col', showLegend: false, chartColors: [COLORS.primary],
       });
     }
     addFooter(s, pptx, slideNum);
