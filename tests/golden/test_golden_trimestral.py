@@ -61,13 +61,11 @@ def built(tmp_path_factory, q3_fixed):
     return res, build_aetops(res, Q3, Path(TPL[0]), tmp_path_factory.mktemp("q3"))
 
 
-def test_real_q3_excel_is_blocked_because_negados_totals_contradict():
+def test_real_q3_excel_negados_alta_is_derived_from_product_list():
     res = run_aetops(XL[0], "trimestral", Q3)
-    blocks = [f for f in res.findings if f.severity == "block"]
-    assert [f.id for f in blocks] == ["TOTALS_MISMATCH"] and "Negados" in blocks[0].message
-    with pytest.raises(Exception) as e:
-        build_aetops(res, Q3, Path(TPL[0]), Path("/tmp/no_se_genera"))
-    assert "TOTALS_MISMATCH" in str(e.value)
+    assert not [f for f in res.findings if f.severity == "block"]
+    assert "NEGADOS_ALTA_DIFFERS" in [f.id for f in res.findings]
+    assert round(res.negados["aetops.negados.alta"].total.v) == round(res.negados["aetops.negados.producto"].total.v)
 
 
 def all_text(prs):

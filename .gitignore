@@ -8,3 +8,5 @@ salida/
 build_out/
 salida_revision/
 historial/
+runs/
+data_runtime/

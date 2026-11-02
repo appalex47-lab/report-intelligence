@@ -85,7 +85,7 @@ def test_productos_match_published_deck(full):
 
 def test_negados_match_published_deck(full):
     alta = {r.name: r for r in full.negados["aetops.negados.alta"].rows}
-    assert alta["AE-A"].pedidos.v == 61 and alta["AE-A"].monto.v == 1146774
+    assert alta["AE-A"].pedidos.v == 61 and round(alta["AE-A"].monto.v) == 1146774
     assert fmt.fmt_pct(alta["AE-A"].share, sign=False) == "47%"
     total = full.negados["aetops.negados.producto"].total
     assert fmt.fmt_money(total, 0) == "$2,434,797" and fmt.fmt_num(total, 0)[:4] == "2,43"
@@ -101,6 +101,9 @@ def test_quarterly_q3_real_file_loads_with_yoy_only():
     assert not any(k.endswith(".mom") for k in res.tables)
     assert res.tables["aetops.panorama.yoy"].groups[0].current.values["monto"].v == 33925038
     assert len(res.tables["aetops.categoria.yoy"].groups) == 13
-    # el Excel Q3 trae dos totales de negados que se contradicen (productos 6.14 M vs líneas 1.66 M): no se publica
-    blocks = [f for f in res.findings if f.severity == "block"]
-    assert [f.id for f in blocks] == ["TOTALS_MISMATCH"] and "Negados" in blocks[0].message and not res.can_generate
+    # el Excel Q3 trae dos totales de negados que se contradicen (productos 6.14 M vs líneas 1.66 M):
+    # la tabla por línea se deriva de la lista de productos y la pegada solo se avisa (no bloquea)
+    assert not [f for f in res.findings if f.severity == "block"] and res.can_generate
+    assert "NEGADOS_ALTA_DIFFERS" in [f.id for f in res.findings]
+    alta = res.negados["aetops.negados.alta"]
+    assert round(alta.total.v) == round(res.negados["aetops.negados.producto"].total.v)

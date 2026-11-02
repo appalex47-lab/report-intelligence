@@ -47,3 +47,23 @@ python tools/make_glp1_synthetic.py data/GLP1_sintetico_limpio.xlsx            #
 - Productos: se leen los bloques de `Tablas` tal como los arma el Excel; no se recalcula el Top desde el universo completo (hojas `Venta <mes>`).
 - `Negados`: el segundo bloque de productos (duplicado en el mensual, distinto en el Q3) se ignora y no se valida todavía. Sin `config/rules.yaml`: tolerancias fijas en `validator/rules.py`.
 - Ticket por canal: se usa el valor pegado (ver hallazgo en `docs/DIAGNOSTICO_FASE1.md` §4.3).
+
+## Pantalla de revisión (API + frontend)
+
+```bash
+pip install -r requirements.txt
+uvicorn backend.app.web.app:app --port 8000      # http://localhost:8000
+```
+
+Variables: `REPORT_RUNS_DIR` (corridas, def. `runs/`), `REPORT_HISTORY_DB` (def. `historial/historial.sqlite`),
+`REPORT_TEMPLATES_DIR` (def. `templates/`; plantilla = `<unidad>-<periodicidad>/1/template.pptx`).
+
+Flujo: Cargar → Validar → Metas y contexto → Revisar narrativa (edición con verificación de cifras) → Generar (QA; la descarga
+se bloquea si el QA no aprueba) + pestaña Historial y tendencias. Metas: obligatorias en AETOPS, opcionales en GLP-1.
+GLP-1: carga y validación; el generador de la presentación aún no existe (el API responde 501).
+
+Machotes de captura: `python tools/make_machotes.py --todos --periodo 2026-9 --salida machotes/` (o desde la pantalla de carga).
+
+CLI con metas: `--metas metas.json` o `--meta total=33000000 --meta AE-A=21000000 …` (obligatorias al generar AETOPS).
+
+Docker (`Dockerfile`, `docker-compose.yml`): **sin verificar** en este entorno.
