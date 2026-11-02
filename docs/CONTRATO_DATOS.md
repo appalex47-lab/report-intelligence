@@ -38,7 +38,8 @@ Se calculan: pacientes y pedidos distintos, productos vendidos (SKU distintos), 
 ## Tabla 2 · `catalogo` (una fila por SKU)
 sku · producto · linea (AETOPS) · categoria · laboratorio (opcional). Un SKU = una línea y una categoría; si no, error.
 
-## Tabla 3 · `trafico` (embudo por producto; una fila por mes × SKU × dispositivo × fuente de tráfico)
+## Tabla 3 · `trafico` — **archivo aparte** (confirmado: ventas y analítica web salen de sistemas distintos)
+(embudo por producto; una fila por mes × SKU × dispositivo × fuente de tráfico)
 mes (AAAA-MM) · sku · dispositivo · fuente_trafico · estado (opcional) · sesiones · vistas_producto · add_to_cart · begin_checkout · purchase.
 Viene de analítica web: **no** se espera que `purchase` cuadre con las ventas; solo se avisa si la diferencia es grande.
 GLP-1: de aquí salen el embudo y el tráfico por fuente y estado.
@@ -61,6 +62,6 @@ dejan de sumarse entre grupos, así que desaparecen los avisos de totales que no
 reporte publicado de septiembre antes de usarla.
 
 ## Pendiente de confirmar
-1. ¿Ventas/pedidos y analítica web salen del mismo sistema? (define si `trafico` es un segundo archivo).
+1. ~~¿Ventas y analítica web del mismo sistema?~~ **No**: `trafico` se carga como segundo archivo por unidad (ventas+catálogo+negados en uno; tráfico en otro). Inventario: no existe, se omite.
 2. Definición de `paciente_nuevo` (primer pedido histórico, o primero dentro de la unidad).
 3. Si el origen puede dar `estado` y edad/sexo por pedido en AETOPS (hoy son opcionales).
