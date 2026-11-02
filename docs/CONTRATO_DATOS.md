@@ -1,6 +1,7 @@
 # Contrato de datos (extracción cruda)
 
-> **Estado:** propuesta para validar con quien hace la extracción. Reemplazará a los machotes por bloques cuando se construya la
+> **Estado:** AETOPS (`ventas` + `catalogo` + `negados`) ya está implementado (`backend/app/raw/aetops.py`, probado con datos sintéticos
+> `tools/make_raw_synthetic.py`; falta validar con una muestra real). `trafico` y GLP-1 aún no. Propuesta para validar con quien hace la extracción. Reemplazará a los machotes por bloques cuando se construya la
 > capa de agregación (hoy el motor lee los machotes; ver `tools/make_machotes.py`). Un archivo por unidad (AETOPS y GLP-1),
 > con una tabla por hoja (o un CSV por tabla). El **SKU** (en AETOPS, el Sivec) es la llave común.
 
@@ -64,5 +65,6 @@ reporte publicado de septiembre antes de usarla.
 1. ~~¿Ventas y analítica web del mismo sistema?~~ **No**: `trafico` se carga como segundo archivo por unidad (ventas+catálogo+negados en uno; tráfico en otro). Inventario: no existe, se omite.
 2. ~~`paciente_nuevo`~~: primer pedido **histórico**.
 3. ~~Estado/edad/sexo por pedido en AETOPS~~: el pedido real solo trae **sucursal y estado**; edad y sexo vienen de analítica (`trafico`).
-4. **GLP-1:** hoy sus tablas por edad y sexo llevan *monto de venta*. Si edad/sexo solo existen en analítica, esas tablas pasarían a medir
-   sesiones/compras de analítica (no pesos). ¿Edad y sexo existen por pedido en GLP-1, o solo en analítica?
+4. ~~GLP-1 edad/sexo~~: las hojas 1–3 del libro actual ya son de **analítica** (visitas, usuarios, add to cart, nuevos/recurrentes, rebote,
+   tiempo de interacción), no de venta. Por tanto edad, sexo y dispositivo salen de `trafico` y **no** van en `ventas`. `trafico` debe
+   admitir esas métricas (usuarios, usuarios_nuevos, usuarios_recurrentes, tasa_rebote, tiempo_interaccion).

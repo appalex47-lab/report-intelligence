@@ -109,3 +109,22 @@ def test_generate_with_machote_example(client, tmp_path):
     info = g.json()
     assert info["pptx"] and info["slides"]
     assert (client.get(f"/api/runs/{rid}/files/{info['pptx']}").status_code == 200) == info["downloadable"]
+
+
+@pytest.mark.skipif(not HAS_TPL, reason="plantilla real no disponible (no se versiona)")
+def test_generate_from_raw_data(client, tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("mrs", ROOT / "tools/make_raw_synthetic.py")
+    mrs = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mrs)
+    f = mrs.build(tmp_path / "crudo.xlsx")
+    rid = _run(client)
+    assert _upload(client, rid, f).status_code == 200
+    client.put(f"/api/runs/{rid}/targets", json={"total": 9000000})
+    a = client.get(f"/api/runs/{rid}/analysis").json()
+    assert a["can_generate"], [x for x in a["findings"] if x["severity"] == "block"]
+    g = client.post(f"/api/runs/{rid}/generate")
+    assert g.status_code == 200, g.text
+    info = g.json()
+    assert info["pptx"] and info["slides"]
+    print([i for i in info["qa"]["issues"] if i["severity"] != "info"])

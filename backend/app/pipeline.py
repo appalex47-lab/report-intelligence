@@ -53,6 +53,20 @@ def run_aetops(path: str | Path, profile_name: str = "mensual", period: Period |
     return res
 
 
+def run_aetops_raw(path: str | Path, period: Period, targets=None, require_targets: bool = False) -> Result:
+    """AETOPS desde datos crudos (ventas + catálogo + negados): ver docs/CONTRATO_DATOS.md."""
+    from .raw import aetops as raw_aetops
+    raw = raw_aetops.load(path)
+    tables, prod, neg, findings = raw_aetops.aggregate(raw, period)
+    if tables:
+        findings += extra.products(prod) + extra.negados(neg) + extra.expected_period(tables, neg, period)
+    res = Result(tables, findings, prod, neg)
+    if require_targets or targets is not None:
+        if tables:
+            res.findings += validate_targets(res, targets, require_targets)
+    return res
+
+
 def run_aetops_base(path: str | Path, profile_name: str = "mensual") -> Result:
     """Compatibilidad 4a: solo la hoja Base (sin productos/negados)."""
     profile = load_profile("aetops", profile_name)

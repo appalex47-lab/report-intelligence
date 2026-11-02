@@ -23,7 +23,8 @@ from ..narrative import trends
 from ..narrative.executive import build_executive
 from ..narrative.targets import attainment
 from ..narrative.writer import Para, verify_all, verify_edited
-from ..pipeline import run_aetops, run_glp1
+from ..pipeline import run_aetops, run_aetops_raw, run_glp1
+from ..raw.aetops import is_raw_workbook
 from ..targets import Targets
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -161,6 +162,8 @@ def _run_engine(run_id: str, st: dict):
     p, per = _input(run_id), period_of(st)
     if st["unit"] == "glp1":
         return run_glp1(p, st["periodicity"], per)
+    if is_raw_workbook(p):                          # datos crudos (docs/CONTRATO_DATOS.md): ventas + catálogo + negados
+        return run_aetops_raw(p, per, targets=_targets(st), require_targets=True)
     return run_aetops(p, st["periodicity"], per, targets=_targets(st), require_targets=True)
 
 
