@@ -1,7 +1,7 @@
 # Contrato de datos (extracción cruda)
 
 > **Estado:** AETOPS (`ventas` + `catalogo` + `negados`) ya está implementado (`backend/app/raw/aetops.py`, probado con datos sintéticos
-> `tools/make_raw_synthetic.py`; falta validar con una muestra real). `trafico` y GLP-1 aún no. Propuesta para validar con quien hace la extracción. Reemplazará a los machotes por bloques cuando se construya la
+> `tools/make_raw_synthetic.py`; falta validar con una muestra real). GLP-1 (`ventas` + `catalogo` + `trafico` + `negados`) también (`backend/app/raw/glp1.py`, sintéticos `tools/make_raw_glp1_synthetic.py`); falta validar con muestras reales. AETOPS aún no usa `trafico`. Propuesta para validar con quien hace la extracción. Reemplazará a los machotes por bloques cuando se construya la
 > capa de agregación (hoy el motor lee los machotes; ver `tools/make_machotes.py`). Un archivo por unidad (AETOPS y GLP-1),
 > con una tabla por hoja (o un CSV por tabla). El **SKU** (en AETOPS, el Sivec) es la llave común.
 
@@ -39,10 +39,24 @@ Se calculan: pacientes y pedidos distintos, productos vendidos (SKU distintos), 
 sku · producto · linea (AETOPS) · categoria · laboratorio (opcional). Un SKU = una línea y una categoría; si no, error.
 
 ## Tabla 3 · `trafico` — **archivo aparte** (confirmado: ventas y analítica web salen de sistemas distintos)
-(embudo por producto; una fila por mes × SKU × dispositivo × fuente de tráfico)
-mes (AAAA-MM) · sku · dispositivo · fuente_trafico · estado (opcional) · edad_rango (opcional) · sexo (opcional) · sesiones · vistas_producto · add_to_cart · begin_checkout · purchase.
-Viene de analítica web: **no** se espera que `purchase` cuadre con las ventas; solo se avisa si la diferencia es grande.
-GLP-1: de aquí salen el embudo y el tráfico por fuente y estado.
+Una fila por **mes × vista × valor × (SKU opcional)**. `vista` ∈ `general | edad | sexo | dispositivo | fuente | estado`; `valor` es el
+elemento de esa vista (ej. vista=edad, valor=25-34). **SKU vacío = nivel sitio** (bloques generales y embudo); **SKU lleno = por producto**
+(edad por producto y producto×sexo; solo vistas edad y sexo). `general` no lleva valor (embudo del sitio).
+
+| Columna | Obligatoria | Notas |
+|---|---|---|
+| mes | sí | fecha del 1.º del mes o AAAA-MM |
+| vista, valor, sku | sí (sku puede ir vacío) | ver arriba |
+| visitas | sí | sesiones |
+| usuarios, usuarios_nuevos, usuarios_recurrentes | opcional | se suman entre filas: **aproximado** al cruzar SKU (aviso informativo) |
+| vistas_producto, add_to_cart, begin_checkout, compras, carritos_abandonados | opcional (embudo en `general`) | abandonados vacío → add_to_cart − compras (derivado, marcado) |
+| sesiones_rebote | opcional | tasa de rebote = sesiones_rebote ÷ visitas |
+| segundos_interaccion_total | opcional | tiempo de interacción = total ÷ visitas |
+
+Viene de analítica web: **no** se espera que `compras` cuadre con los pedidos; solo se avisa si difieren más de 20 %.
+GLP-1 (implementado, sintéticos): de aquí salen edad, sexo, dispositivo, fuentes, tráfico por estado, edad por producto, producto×sexo y embudo.
+`ventas` de GLP-1 lleva además `forma_pago`, `modo_entrega`, `programa_lealtad` (opcional) y `region` (opcional; si falta se usa `estado`).
+%Δ de GLP-1: contra el periodo anterior (mes o trimestre) **y** contra el mismo periodo del año anterior; ticket = monto ÷ pedidos.
 
 ## Tabla 4 · `negados` (como hoy)
 producto · sku (opcional) · alta (línea) · pedidos · cantidad_negada · monto_negado. Un producto sin stock que se negó a la venta.

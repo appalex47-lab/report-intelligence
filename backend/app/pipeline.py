@@ -86,6 +86,13 @@ class GlpResult:
         return not has_blockers(self.findings)
 
 
+def run_glp1_raw(path: str | Path, period: Period) -> "GlpResult":
+    """GLP-1 desde datos crudos (ventas + catálogo + tráfico + negados): ver docs/CONTRATO_DATOS.md."""
+    from .raw import glp1 as raw_glp1
+    blocks, funnel, findings = raw_glp1.build(path, period)
+    return GlpResult(blocks, funnel, findings)
+
+
 def run_glp1(path: str | Path, profile_name: str = "mensual", period: Period | None = None) -> GlpResult:
     from .calc.glp1 import build_glp1
     from .importer.glp1_blocks import import_glp1

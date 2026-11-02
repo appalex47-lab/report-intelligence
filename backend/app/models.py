@@ -138,6 +138,7 @@ class GRow:
     engine_delta: Value | None = None     # recálculo contra el bloque anterior (contraste)
     ticket_calc: Value | None = None      # Monto ÷ Pedidos
     pasted_ticket: Value | None = None    # el ticket que trae el Excel (solo contraste)
+    delta_yoy: Value | None = None        # %Δ contra el mismo periodo del año anterior (solo datos crudos)
 
 
 @dataclass
