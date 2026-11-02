@@ -180,3 +180,37 @@ def test_recommendations_are_typed_justified_and_verified(built):
 def test_added_slides_keep_static_elements_and_pass_qa(built):
     _, b = built
     assert b.downloadable and not [i for i in b.qa.issues if i.id in ("STATIC_REGION_CHANGED", "PICTURES_CHANGED")]
+
+
+# ----------------------------------------------------------------------------- contexto e historial
+def test_context_goes_to_the_summary_marked_and_unverified(tmp_path, q3_fixed):
+    res = run_aetops(q3_fixed, "trimestral", Q3)
+    ctx = "Incidencia de abasto en Pamorelin del 12 al 20 de septiembre (por falta de stock en el proveedor)."
+    b = build_aetops(res, Q3, Path(TPL[0]), tmp_path / "o", context=[ctx], sources=[q3_fixed])
+    first = " ".join(sh.text_frame.text for sh in Presentation(b.pptx).slides[0].shapes if sh.has_text_frame)
+    assert "Contexto aportado por el equipo" in first and "Pamorelin" in first
+    assert b.downloadable and any(i.id == "CONTEXT_UNVERIFIED" for i in b.qa.issues)
+    assert not b.fill.narrative_problems                                   # el contexto no pasa por el verificador de cifras/causas
+    kinds = {p.kind for p in b.fill.narrative["resumen_ejecutivo"]}
+    assert "contexto" in kinds
+
+
+def test_history_records_every_generation_as_a_new_version_and_writes_trends(tmp_path, q3_fixed):
+    import sqlite3
+    db = tmp_path / "hist" / "historial.sqlite"
+    res = run_aetops(q3_fixed, "trimestral", Q3)
+    b1 = build_aetops(res, Q3, Path(TPL[0]), tmp_path / "a", history_db=db, sources=[q3_fixed], context=["nota"])
+    b2 = build_aetops(res, Q3, Path(TPL[0]), tmp_path / "b", history_db=db, sources=[q3_fixed])
+    assert b1.manifest["historial"]["version"] == 1 and b2.manifest["historial"]["version"] == 2
+    con = sqlite3.connect(db)
+    assert con.execute("SELECT COUNT(*) FROM runs").fetchone()[0] == 2         # la v1 sigue ahí
+    assert con.execute("SELECT context FROM runs WHERE version=1").fetchone()[0] == '["nota"]'
+    assert con.execute("SELECT pptx_sha FROM runs WHERE version=1").fetchone()[0] == b1.manifest["pptx_sha256"]
+    with pytest.raises(sqlite3.DatabaseError):
+        con.execute("DELETE FROM runs")
+    import json
+    t = json.loads((tmp_path / "b" / "trends.json").read_text(encoding="utf-8"))
+    by = {x["metrica"]: x for x in t}
+    # con un solo reporte el historial trae 2 puntos (Q3 2025 y Q3 2026, ambos ya en el archivo)
+    assert by["monto"]["tendencia"] == "insuficiente" and len(by["monto"]["puntos"]) == 2
+    assert {p["periodo"] for p in by["monto"]["puntos"]} == {"Q3 2025", "Q3 2026"}

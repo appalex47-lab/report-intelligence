@@ -88,6 +88,7 @@ sus hipótesis, si se piden, salen marcadas. Todo pasa por el mismo verificador.
 | 2 | **Recomendaciones y acciones** | ✅ Sí: el reporte las incluye (resumen ejecutivo + diapositiva final). |
 | 3 | **Alcance de la narrativa** | ✅ "Que explique dónde estamos, los descubrimientos del periodo y las recomendaciones", no solo tablas. |
 | 4 | **Umbrales de relevancia** | ➡️ Se adopta la recomendación de la sección 9.1 (materialidad + banda de estabilidad). Ajustable. |
+| 4b | **Diseño de la revisión** (maqueta) | ✅ Resumen ejecutivo **al inicio**; recomendaciones **sin responsable ni fecha**; tendencias **solo en la pantalla de revisión** (no es diapositiva); orden validar → narrativa → generar, sin cambios. |
 | 5 | **Pedidos por canal** (suman 2.1× el total) | ⏳ Abierto. Mientras tanto no se usan en la narrativa. |
 | 6 | **%Δ y Ticket de GLP-1**; si el mes del libro viene parcial | ⏳ Abierto. |
 | 7 | **Criterio de categorías del trimestral** (las 3 que más suman y las 3 que más restan en pesos) | ⏳ Abierto: se mantiene hasta que se confirme. |
@@ -127,13 +128,12 @@ pesa más que lo que solo pide investigar. Máximo 5 recomendaciones por reporte
 | Explicar cambios importantes | ✅ (descomposición, aportes, patrones) | — |
 | Comparar periodos y generar conclusiones | ✅ | — |
 | Proponer observaciones ejecutivas | ✅ (resumen y recomendaciones) | — |
-| **Detectar tendencias** | ❌ | **Historial**: guardar cada reporte generado (KPIs) para ver 3-6-12 meses. Hoy solo hay dos puntos en cada archivo. |
+| **Detectar tendencias** | ✅ (con historial) | `history/store.py` guarda la foto de KPIs de cada reporte (inmutable, versionado); `narrative/trends.py` detecta 2+ variaciones consecutivas fuera de la banda de ±5 %. Con menos de 3 periodos dice *información insuficiente*. Solo en pantalla de revisión (`trends.json`). |
 | **Detectar desviaciones** | ❌ | Una referencia: **meta/presupuesto** por mes/línea, o la variabilidad histórica. |
 | Distinguir hecho / interpretación / hipótesis / información insuficiente | ✅ (+ recomendación) | — |
 | Respetar el estilo de los originales | ✅ | — |
 | Permitir edición manual | ✅ (`narrative.json`, con verificación) | UI de revisión |
-| **Explicar causas** | ⚠️ solo con datos | **«Contexto del periodo»**: campo de texto donde el equipo aporta campañas, cambios de precio, incidencias de abasto (como el aviso manual del deck de GLP-1). Se publica marcado como contexto aportado, no verificado. |
+| **Explicar causas** | ✅ (aportadas por el equipo) | **«Contexto del periodo»** (`--contexto` / parámetro `context`): sale en el resumen ejecutivo como *contexto aportado*, sin verificar, y queda en el historial. Tiene prioridad sobre los hallazgos de menor importancia. |
 | IA para redactar mejor (Cohere) | ⏳ Fase 6 | Opcional; solo reformula insights ya verificados |
 
-**Siguiente mejora recomendada:** el **historial** (tendencias) y el **contexto del periodo**: son los dos que más acercan el reporte a
-"dónde estamos parados y por qué".
+**Pendiente de la lista:** desviaciones (necesita meta o presupuesto) y la UI de revisión (la maqueta ya está aprobada).

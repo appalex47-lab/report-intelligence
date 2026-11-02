@@ -54,6 +54,8 @@ def para(kind: str, build, priority: int = 5, basis: str = "", evidence: list[st
 
 def verify(p: Para) -> list[str]:
     """Problemas del párrafo: cifras sin registrar, vocabulario causal, tipo inválido, interpretación sin regla."""
+    if p.kind == "contexto":                      # lo escribe el equipo: se publica marcado, no se verifica
+        return []
     problems = []
     if p.kind not in KINDS:
         problems.append(f"tipo inválido '{p.kind}'")

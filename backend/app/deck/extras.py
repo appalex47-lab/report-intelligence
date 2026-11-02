@@ -51,7 +51,7 @@ def add_executive_slides(prs, resumen_paras, recs_paras, to_paragraphs, fit_fn, 
         t, b = ops.shape_by_name(sl, TITLE), ops.shape_by_name(sl, BODY)
         ops.set_simple_text(t, title)
         cpl, lines = ops.narrative_box(b)
-        kept = fit_fn(paras, cpl, lines)
+        kept = fit_fn(paras, cpl, max(int(lines * 0.85), 4))      # margen: el contexto del equipo no se descarta, lo demás cede
         ops.set_paragraphs(b, to_paragraphs(kept), align="l")
         kept_all.append(kept)
     return [src] + list(range(n0)) + [src], kept_all[0], kept_all[1]

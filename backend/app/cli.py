@@ -1,5 +1,6 @@
 """python -m backend.app.cli <libro.xlsx> [--unidad aetops|glp1] [--perfil mensual|trimestral] [--periodo AAAA-N]
-                           [--plantilla plantilla.pptx --salida carpeta/]   (genera PPTX+PDF+QA; AETOPS mensual)
+                           [--plantilla plantilla.pptx --salida carpeta/]   (genera PPTX+PDF+QA)
+                           [--historial historial.sqlite] [--contexto "texto" ...]  (historial inmutable; contexto del periodo)
 
 --periodo: año y mes (mensual) o trimestre (trimestral); ej. 2026-9 o 2026-3.
 Sin --periodo no se valida contra el periodo esperado.
@@ -85,8 +86,10 @@ def _build(res, prof, per, args):
         print("Para generar: --perfil mensual|trimestral --periodo AAAA-N --plantilla X.pptx --salida carpeta/")
         return 2
     try:
-        b = build_aetops(res, per, Path(args[args.index("--plantilla") + 1]),
-                                 Path(args[args.index("--salida") + 1]))
+        ctx = [args[i + 1] for i, a in enumerate(args) if a == "--contexto" and i + 1 < len(args)]
+        db = Path(args[args.index("--historial") + 1]) if "--historial" in args else None
+        b = build_aetops(res, per, Path(args[args.index("--plantilla") + 1]), Path(args[args.index("--salida") + 1]),
+                         context=ctx or None, history_db=db, sources=[Path(args[0])])
     except ReportBlocked as e:
         print(f"\nNO SE GENERA: hallazgos bloqueantes sin resolver ({e}).")
         return 1
