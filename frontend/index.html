@@ -240,9 +240,9 @@ function vTargets(box){
   const T = r.targets || {}, lines = a.targets_lines, req = a.targets_required;
   const fld = (k, label) => `<label class="f">${label}<input type="text" inputmode="decimal" data-t="${k}" value="${esc(T[k]?Number(T[k]).toLocaleString("es-MX"):"")}" placeholder="${req?"obligatoria":"opcional"}"></label>`;
   const att = a.cumplimiento.length ? `<table><tr><th>Concepto</th><th>Real</th><th>Meta</th><th>Cumplimiento</th><th>Brecha</th></tr>${a.cumplimiento.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${fmtM(c.real)}</td><td>${fmtM(c.meta)}</td><td class="st ${c.estado}">${(c.cumplimiento*100).toFixed(1)} % · ${c.estado}</td><td>${fmtM(c.brecha)}</td></tr>`).join("")}</table>` : "";
-  box.innerHTML = `<div class="card grid"><strong>Metas del periodo ${req?"(obligatorias)":"(opcionales)"}</strong>
+  box.innerHTML = `<div class="card grid"><strong>Meta general del periodo ${req?"(obligatoria)":"(opcional)"}</strong>
     <div class="sub">Monto de venta en pesos. Se guardan con el reporte para medir el cumplimiento en el tiempo.</div>
-    <div class="grid g2">${fld("total","Meta total")}${lines.map(l=>fld(l,"Meta "+l)).join("")}</div>
+    <div class="grid g2">${fld("total","Meta de venta del periodo")}${lines.map(l=>fld(l,"Meta "+l)).join("")}</div>
     <div class="row"><span class="sub" id="tmsg"></span><button class="btn" id="saveT">Guardar metas</button></div>${att}</div>
     <div class="card grid"><strong>Contexto del periodo (opcional)</strong>
     <div class="sub">Causas o hechos que conoce el equipo (campañas, abasto, eventos). Sale en el resumen ejecutivo como <em>contexto aportado, no verificado</em>. Una idea por línea (máx. 6).</div>

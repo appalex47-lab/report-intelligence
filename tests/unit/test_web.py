@@ -37,7 +37,7 @@ def test_flow_validation_and_targets_required(client, tmp_path):
     assert _upload(client, rid, build_base(tmp_path / "b.xlsx")).status_code == 200
     a = client.get(f"/api/runs/{rid}/analysis").json()
     assert "TARGETS_MISSING" in [f["id"] for f in a["findings"]] and not a["can_generate"]
-    assert a["targets_required"] and a["targets_lines"] == ["AE-A", "AE-B", "AE-C", "HYR"]
+    assert a["targets_required"] and a["targets_lines"] == []
     client.put(f"/api/runs/{rid}/targets", json={"total": "$2,000", "AE-A": 1000})
     a = client.get(f"/api/runs/{rid}/analysis").json()
     assert "TARGETS_MISSING" not in [f["id"] for f in a["findings"]] or a["cumplimiento"]
@@ -99,7 +99,7 @@ def test_generate_with_machote_example(client, tmp_path):
     f = mm.make("aetops", Period("AETOPS", "mensual", 2026, 9), tmp_path, example=True)
     rid = _run(client)
     assert _upload(client, rid, f).status_code == 200
-    client.put(f"/api/runs/{rid}/targets", json={"total": 1600000, "AE-A": 950000, "AE-B": 420000, "AE-C": 150000, "HYR": 60000})
+    client.put(f"/api/runs/{rid}/targets", json={"total": 1600000})
     n = client.get(f"/api/runs/{rid}/narrative")
     assert n.status_code == 200 and n.json()["secciones"][0]["clave"] == "resumen_ejecutivo"
     v = client.post(f"/api/runs/{rid}/verify", json={"texts": ["Vendimos $999 M por una promoción"]}).json()

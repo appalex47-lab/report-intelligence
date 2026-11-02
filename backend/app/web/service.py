@@ -190,7 +190,7 @@ def analyze(run_id: str) -> dict:
                 "brecha": float(a.gap), "estado": a.status} for a in attainment(res, _targets(st))]
     return {"run": public(st), "can_generate": res.can_generate and st["unit"] == "aetops", "findings": findings,
             "kpis": _kpis(res, st), "cumplimiento": att,
-            "targets_required": st["unit"] == "aetops", "targets_lines": LINES if st["unit"] == "aetops" else [],
+            "targets_required": st["unit"] == "aetops", "targets_lines": [],
             "generator_available": st["unit"] == "aetops",
             "message": None if st["unit"] == "aetops" else
             "GLP-1: la validación está disponible; el generador de la presentación aún no está construido."}

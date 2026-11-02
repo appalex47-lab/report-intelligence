@@ -29,11 +29,11 @@ def test_targets_parse_from_text_with_symbols():
         Targets.parse({"total": "abc"})
 
 
-def test_aetops_requires_total_and_every_line(tmp_path):
+def test_aetops_requires_only_the_general_target(tmp_path):
     assert "TARGETS_MISSING" in ids(run(tmp_path, None), "block")
-    r = run(tmp_path, Targets(Decimal(1600), {"AE-A": Decimal(900)}))
-    assert [f.message for f in r.findings if f.id == "TARGET_LINE_MISSING"] == ["Falta la meta de la línea AE-B."]
-    assert not r.can_generate
+    only_total = run(tmp_path, Targets(Decimal(1600), {}))
+    assert not [f for f in only_total.findings if f.id.startswith("TARGET")] and only_total.can_generate
+    assert "TARGETS_MISSING" in ids(run(tmp_path, Targets(None, {"AE-A": Decimal(900)})), "block")
     ok = run(tmp_path, Targets(Decimal(1600), {"AE-A": Decimal(900), "AE-B": Decimal(700)}))
     assert not [f for f in ok.findings if f.id.startswith("TARGET")] and ok.can_generate
 
