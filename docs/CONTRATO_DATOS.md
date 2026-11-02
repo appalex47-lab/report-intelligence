@@ -19,15 +19,14 @@
 | fecha_pedido | fecha | obligatoria | obligatoria | periodo, MoM, YoY |
 | id_pedido | texto | obligatoria | obligatoria | pedidos (distintos) |
 | id_paciente | texto anónimo | obligatoria | obligatoria | pacientes (distintos) |
-| paciente_nuevo | SI/NO (primer pedido histórico del paciente) | obligatoria | obligatoria | captación vs recompra |
+| paciente_nuevo | SI/NO (**primer pedido histórico** del paciente; confirmado) | obligatoria | obligatoria | captación vs recompra |
 | sku | texto | obligatoria | obligatoria | llave al catálogo |
 | canal | texto | obligatoria | obligatoria | tabla de canales |
 | estado | texto | obligatoria | obligatoria | región |
+| sucursal | texto | opcional | opcional | el origen la tiene; hoy no está en el reporte |
 | piezas | entero | obligatoria | obligatoria | |
 | monto_venta | número | obligatoria | obligatoria | |
-| dispositivo | texto | opcional | obligatoria | comportamiento |
-| edad | entero o rango | opcional | obligatoria | |
-| sexo | texto | opcional | obligatoria | |
+| dispositivo / edad / sexo | — | **no existen por pedido** (confirmado) | pendiente (ver abajo) | en AETOPS vienen solo de `trafico` |
 | forma_pago | texto | — | obligatoria | |
 | modo_entrega | texto | — | obligatoria | |
 | programa_lealtad | texto | — | opcional | |
@@ -40,7 +39,7 @@ sku · producto · linea (AETOPS) · categoria · laboratorio (opcional). Un SKU
 
 ## Tabla 3 · `trafico` — **archivo aparte** (confirmado: ventas y analítica web salen de sistemas distintos)
 (embudo por producto; una fila por mes × SKU × dispositivo × fuente de tráfico)
-mes (AAAA-MM) · sku · dispositivo · fuente_trafico · estado (opcional) · sesiones · vistas_producto · add_to_cart · begin_checkout · purchase.
+mes (AAAA-MM) · sku · dispositivo · fuente_trafico · estado (opcional) · edad_rango (opcional) · sexo (opcional) · sesiones · vistas_producto · add_to_cart · begin_checkout · purchase.
 Viene de analítica web: **no** se espera que `purchase` cuadre con las ventas; solo se avisa si la diferencia es grande.
 GLP-1: de aquí salen el embudo y el tráfico por fuente y estado.
 
@@ -63,5 +62,7 @@ reporte publicado de septiembre antes de usarla.
 
 ## Pendiente de confirmar
 1. ~~¿Ventas y analítica web del mismo sistema?~~ **No**: `trafico` se carga como segundo archivo por unidad (ventas+catálogo+negados en uno; tráfico en otro). Inventario: no existe, se omite.
-2. Definición de `paciente_nuevo` (primer pedido histórico, o primero dentro de la unidad).
-3. Si el origen puede dar `estado` y edad/sexo por pedido en AETOPS (hoy son opcionales).
+2. ~~`paciente_nuevo`~~: primer pedido **histórico**.
+3. ~~Estado/edad/sexo por pedido en AETOPS~~: el pedido real solo trae **sucursal y estado**; edad y sexo vienen de analítica (`trafico`).
+4. **GLP-1:** hoy sus tablas por edad y sexo llevan *monto de venta*. Si edad/sexo solo existen en analítica, esas tablas pasarían a medir
+   sesiones/compras de analítica (no pesos). ¿Edad y sexo existen por pedido en GLP-1, o solo en analítica?
