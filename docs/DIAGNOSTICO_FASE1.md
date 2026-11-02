@@ -147,6 +147,17 @@ Con datos sintéticos coherentes, el motor web antiguo (`js/import-engine.js`) r
 
 Se corrigen al reemplazarlo por el importador por bloques (Fase 4c); no se parchea el motor antiguo.
 
+### 4.5 Hallazgos de GLP-1 (Fase 4c, sobre los libros reales)
+
+- **El libro no declara su periodo** (a diferencia de lo que sí hace el machote sintético): no hay forma de validar que todas las hojas sean del mismo mes. En el de Septiembre, la hoja 7 coincide con el PPTX de Agosto.
+- **%Δ pegado ≠ cambio de monto contra el bloque anterior:** CENTRO −3.5 % pegado vs −6.8 % recalculado; en pagos −2.0 % vs −28.6 %. Sospecha: el bloque anterior es el mes completo y el actual es parcial (o el %Δ usa otra métrica). **[P]** definir la base comparable. Se publica el pegado y se marca (`DELTA_METRIC_UNVERIFIED`).
+- **Ticket pegado ≠ Monto ÷ Pedidos** (CENTRO 5,467.53 vs 5,246.30), igual que en canales de AETOPS.
+- **Share en 0** en todas las tablas; `0.125441` suelto en una fila de negados y de productos (arrastre).
+- **Hueco real:** el bloque anterior de fuentes de tráfico (hoja 9, col. J) tiene filas en blanco en medio; leído tal cual, se pierden categorías.
+- **Errata:** "Carritos abadonados" (embudo) y `& de rebote`, en ambos libros.
+- Embudo: Compra = 3,912 vs Σ pedidos de región = 2,489 (eventos ≠ pedidos).
+- Σ pedidos de forma de pago (2,395) y de región (2,489) difieren ~4 %.
+
 ---
 
 ## 5. Brecha: app actual vs originales

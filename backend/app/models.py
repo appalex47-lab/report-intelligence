@@ -115,3 +115,27 @@ class NegadosTable:
     label: str                           # rótulo de periodo de la hoja ("Julio")
     rows: list[NegadoRow]
     total: Value
+
+
+@dataclass
+class GRow:
+    key: str                              # "CENTRO", "Mounjaro", "18-24"…
+    dim2: str = ""                        # p. ej. sexo en producto×sexo
+    values: dict[str, Value] = field(default_factory=dict)
+    share: Value | None = None            # calculado: base ÷ Σ del bloque
+    delta: Value | None = None            # %Δ: motor (si hay bloque anterior) o pegado
+    delta_src: Literal["engine", "pasted", "none"] = "none"
+    pasted_delta: Value | None = None
+    engine_delta: Value | None = None     # recálculo contra el bloque anterior (contraste)
+    ticket_calc: Value | None = None      # Monto ÷ Pedidos (solo para contraste)
+
+
+@dataclass
+class GBlock:
+    name: str                             # "region", "edad_producto:mounjaro"…
+    sheet: str
+    origin: str                           # coordenada del encabezado
+    rows: list[GRow]
+    declared_total: dict[str, Value] = field(default_factory=dict)   # fila "Total" del Excel
+    basis: str = ""
+    role: str = "main"                    # main | prior

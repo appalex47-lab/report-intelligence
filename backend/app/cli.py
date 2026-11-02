@@ -1,4 +1,4 @@
-"""python -m backend.app.cli <libro.xlsx> [--perfil mensual|trimestral] [--periodo AAAA-N]
+"""python -m backend.app.cli <libro.xlsx> [--unidad aetops|glp1] [--perfil mensual|trimestral] [--periodo AAAA-N]
 
 --periodo: año y mes (mensual) o trimestre (trimestral); ej. 2026-9 o 2026-3.
 Sin --periodo no se valida contra el periodo esperado.
@@ -8,13 +8,35 @@ from __future__ import annotations
 import sys
 
 from .models import Period
-from .pipeline import run_aetops
+from .pipeline import run_aetops, run_glp1
 
 
 def _f(v, pct=False):
     if v.v is None:
         return "—"
     return f"{float(v.v) * 100:+.1f}%" if pct else f"{float(v.v):,.2f}"
+
+
+def _glp1(path, prof, per):
+    if per is not None:
+        per = Period("GLP1", per.periodicity, per.year, per.index)
+    res = run_glp1(path, prof, per)
+    for name, b in res.blocks.items():
+        if b.role == "prior":
+            continue
+        first = b.rows[0] if b.rows else None
+        key = {"traffic": "visitas", "money": "monto", "negados": "monto_negado"}.get(b.basis, "")
+        extra = ""
+        if first and key in first.values:
+            extra = f"  1.ª fila: {first.key} {key}={_f(first.values[key])} share={_f(first.share, True) if first.share else '—'}"
+        print(f"{name:<28} {len(b.rows):>3} filas ({b.origin}){extra}")
+    if res.funnel:
+        print("embudo: " + " · ".join(f"{r.key}={_f(r.values['conteo'])}" for r in res.funnel.rows))
+    print("\n-- Hallazgos")
+    for f in res.findings:
+        print(f"  [{f.severity.upper():5}] {f.id}: {f.message} ({f.evidence})")
+    print(f"\nPuede generar: {res.can_generate}")
+    return 0 if res.can_generate else 1
 
 
 def main(argv: list[str]) -> int:
@@ -28,6 +50,8 @@ def main(argv: list[str]) -> int:
     if "--periodo" in args:
         y, i = args[args.index("--periodo") + 1].split("-")
         per = Period("AETOPS", prof, int(y), int(i))
+    if "--unidad" in args and args[args.index("--unidad") + 1].lower() == "glp1":
+        return _glp1(path, prof, per)
     res = run_aetops(path, prof, per)
     for key, t in res.tables.items():
         print(f"\n== {key} ({t.comparison})")

@@ -69,3 +69,38 @@ def load_profile(unit: str = "aetops", name: str = "mensual") -> Profile:
         products=_norm_cols(data.get("products", {})),
         negados=_norm_cols(data.get("negados", {})),
     )
+
+
+@dataclass(frozen=True)
+class GProfile:
+    name: str
+    version: int
+    period_sheets: tuple[str, ...]
+    metric_alias: dict[str, str]          # alias normalizado -> clave canónica
+    typo_alias: dict[str, str]
+    ticket_source: str
+    blocks: dict[str, dict]
+    funnel: dict
+    delta_source: str
+
+
+def load_glp1_profile(name: str = "mensual") -> GProfile:
+    data = yaml.safe_load((PROFILES_DIR / "glp1" / f"{name}.yaml").read_text(encoding="utf-8"))
+    alias = {norm(a): k for k, al in data["metrics"].items() for a in al}
+    typos = {norm(a): k for k, al in data.get("typo_aliases", {}).items() for a in al}
+    blocks = {}
+    for bname, spec in data["blocks"].items():
+        sp = dict(spec)
+        if "header" in sp:
+            sp["header"] = [[norm(x) for x in grp] for grp in sp["header"]]
+        blocks[bname] = sp
+    fn = dict(data.get("funnel", {}))
+    if fn:
+        fn["stages"] = [norm(x) for x in fn["stages"]]
+        fn["typo_stages"] = {norm(k): norm(v) for k, v in fn.get("typo_stages", {}).items()}
+    return GProfile(
+        name=data["profile"], version=int(data["version"]),
+        period_sheets=tuple(data.get("period_sheets", [])),
+        metric_alias=alias, typo_alias=typos,
+        ticket_source=data.get("ticket_source", "pasted"),
+        blocks=blocks, funnel=fn, delta_source=data.get("delta_source", "pasted"))
