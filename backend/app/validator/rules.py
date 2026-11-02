@@ -35,7 +35,7 @@ def validate(raw: RawBase, tables: dict[str, Table]) -> list[Finding]:
 
     # MISSING_COMPARISON: grupo incompleto (falta periodo anterior/actual)
     for sec in raw.sections:
-        if sec.kind in ("canal", "linea", "panorama"):
+        if sec.kind in ("canal", "linea", "panorama", "categoria"):
             for g in sec.groups:
                 if len(g.periods) != 2:
                     out.append(Finding(
@@ -58,7 +58,7 @@ def validate(raw: RawBase, tables: dict[str, Table]) -> list[Finding]:
         pano = tables.get(f"aetops.panorama.{marker}")
         if not pano or not pano.groups:
             continue
-        for kind in ("canal", "linea"):
+        for kind in ("canal", "linea", "categoria"):
             t = tables.get(f"aetops.{kind}.{marker}")
             if not t:
                 continue
@@ -105,7 +105,7 @@ def validate(raw: RawBase, tables: dict[str, Table]) -> list[Finding]:
                 theirs = to_dec(raw_v)
                 if mine is None or mine.v is None or theirs is None:
                     continue
-                if abs(mine.v - theirs) > PASTED_TOLERANCE:
+                if abs(mine.v - theirs) > max(PASTED_TOLERANCE, abs(theirs) * Decimal('0.001')):
                     out.append(Finding(
                         "PASTED_DIFFERS", "warn",
                         f"{rg.name}/{metric}: Excel {theirs:.4f} vs motor {mine.v:.4f}.", coord))

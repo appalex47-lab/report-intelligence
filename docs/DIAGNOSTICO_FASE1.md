@@ -138,6 +138,15 @@ Problemas [V]:
 - **Redondeo:** el PPTX usa mitad hacia arriba (0.625 → +63 %); `round()` de Python daría 62 %. El formato de presentación lo implementa explícitamente.
 - Share de canal y línea = Monto ÷ **total del panorama del mismo periodo** (verificado: APP FESA 2025 = 16.47 %). Resuelve la duda de denominador para AETOPS.
 
+### 4.4 Hallazgos del motor JS actual (detectados con el machote sintético)
+
+Con datos sintéticos coherentes, el motor web antiguo (`js/import-engine.js`) reproduce errores vistos en los archivos reales:
+- **"Conversiones (compra) = 0"** aunque el embudo trae Compra = 2,600 (lee la columna equivocada).
+- **16 "regiones"** en lugar de 8: mezcla la tabla de tráfico por estado (hoja 4) con la de ventas por región, y la **venta total** no coincide con la suma real.
+- Una fila "Total" mezclada con productos se cuenta como producto (el "Top producto" pasa a ser el total).
+
+Se corrigen al reemplazarlo por el importador por bloques (Fase 4c); no se parchea el motor antiguo.
+
 ---
 
 ## 5. Brecha: app actual vs originales

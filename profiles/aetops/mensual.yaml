@@ -5,6 +5,8 @@ version: 1
 sheet: Base
 label_col: B                 # columna de rótulos (periodos, anclas de grupo)
 section_markers: [yoy, mom]  # texto (normalizado) que abre una sección
+# Comparativos que exige este formato. Falta alguno -> MISSING_COMPARISON (bloquea).
+comparisons: [yoy, mom]
 
 # Cómo se reconoce el tipo de sección por su fila de encabezados
 kinds:
@@ -18,6 +20,7 @@ kinds:
   categoria:
     header_b: [año]
     header_c: [categoria]
+    name_col: C              # el nombre del grupo está en esta columna (no hay fila ancla)
 
 # Clave canónica -> alias de encabezado aceptados (normalizados: sin acentos, minúsculas)
 metrics:
@@ -40,6 +43,33 @@ ticket_source:
   panorama: ratio
   linea: ratio
   canal: pasted
+  categoria: ratio
 
 # Secciones sin parser todavía (se reportan como info, no se ignoran en silencio)
-unsupported_kinds: [categoria]
+unsupported_kinds: []
+
+# --- Productos: hoja con bloques lado a lado (se detectan por el encabezado 'Sivec') ---
+products:
+  sheet: Tablas
+  key_header: sivec
+  # rol de cada bloque, ordenados por (columna, fila): izq = Top por venta; der arriba = crecimiento; der abajo = decrecimiento
+  roles: [top, growth, decline]
+  columns:
+    sivec: [sivec]
+    producto: [producto]
+    aetop: [aetop]
+    canales: [canales de venta]
+    actual: [venta mes actual]
+    anterior: [venta mes anterior]
+    delta: [delta]
+
+# --- Negados: bloques por producto y por 'Alta' (línea) ---
+negados:
+  sheet: Negados
+  columns:
+    producto: [nombre del producto]
+    alta: [alta]
+    pedidos: [pedidos]
+    cantidad: [cantidad negada]
+    monto: [monto negado]
+    share: [share]

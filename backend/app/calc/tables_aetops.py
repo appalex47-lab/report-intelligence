@@ -11,6 +11,7 @@ from ..models import Group, Lineage, PeriodRow, Table, Value
 from . import indicators as ind
 
 BASE_METRICS = ("monto", "piezas", "pacientes", "pedidos", "productos")
+KINDS = ("panorama", "canal", "linea", "categoria")
 PCT_METRICS = BASE_METRICS + ("ticket", "size_b", "v_paciente", "share")
 
 
@@ -45,7 +46,7 @@ def build_tables(raw: RawBase, ticket_source: dict[str, str] | None = None) -> d
     ticket_source = ticket_source or {}
     tables: dict[str, Table] = {}
     for sec in raw.sections:
-        if sec.kind not in ("panorama", "canal", "linea"):
+        if sec.kind not in KINDS:
             continue
         pasted = ticket_source.get(sec.kind) == "pasted"
         groups = [g for g in (_group(raw.file, x, pasted) for x in sec.groups) if g]
@@ -58,7 +59,7 @@ def build_tables(raw: RawBase, ticket_source: dict[str, str] | None = None) -> d
     for sec_marker in ("yoy", "mom"):
         pano = tables.get(f"aetops.panorama.{sec_marker}")
         total = pano.groups[0] if pano and pano.groups else None
-        for kind in ("panorama", "canal", "linea"):
+        for kind in KINDS:
             t = tables.get(f"aetops.{kind}.{sec_marker}")
             if not t:
                 continue

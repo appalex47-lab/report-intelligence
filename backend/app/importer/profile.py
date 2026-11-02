@@ -31,6 +31,18 @@ class Profile:
     metric_alias: dict[str, str]          # alias normalizado -> clave canónica
     unsupported_kinds: tuple[str, ...]
     ticket_source: dict[str, str]
+    comparisons: tuple[str, ...]
+    products: dict
+    negados: dict
+
+
+def _norm_cols(block: dict) -> dict:
+    out = dict(block)
+    if "columns" in out:
+        out["columns"] = {k: tuple(norm(a) for a in v) for k, v in out["columns"].items()}
+    if "key_header" in out:
+        out["key_header"] = norm(out["key_header"])
+    return out
 
 
 def load_profile(unit: str = "aetops", name: str = "mensual") -> Profile:
@@ -40,7 +52,7 @@ def load_profile(unit: str = "aetops", name: str = "mensual") -> Profile:
         for a in aliases:
             alias[norm(a)] = key
     kinds = {
-        k: {f: tuple(norm(x) for x in v) for f, v in spec.items()}
+        k: {f: (v if isinstance(v, str) else tuple(norm(x) for x in v)) for f, v in spec.items()}
         for k, spec in data["kinds"].items()
     }
     return Profile(
@@ -53,4 +65,7 @@ def load_profile(unit: str = "aetops", name: str = "mensual") -> Profile:
         metric_alias=alias,
         unsupported_kinds=tuple(norm(x) for x in data.get("unsupported_kinds", [])),
         ticket_source=dict(data.get("ticket_source", {})),
+        comparisons=tuple(norm(x) for x in data.get("comparisons", ["yoy", "mom"])),
+        products=_norm_cols(data.get("products", {})),
+        negados=_norm_cols(data.get("negados", {})),
     )

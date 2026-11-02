@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import openpyxl
-from openpyxl.utils import get_column_letter
+from openpyxl.utils import column_index_from_string, get_column_letter
 
 from ..models import Finding
 from .profile import Profile, norm
@@ -105,10 +105,15 @@ def import_base(path: str | Path, profile: Profile) -> RawBase:
     for i, (start, marker) in enumerate(markers):
         end = markers[i + 1][0] - 1 if i + 1 < len(markers) else ws.max_row
         hdr_row = start + 1
-        header = {
-            get_column_letter(c.column): norm(c.value)
-            for c in ws[hdr_row] if c.value is not None
-        }
+        header: dict[str, str] = {}
+        for c in ws[hdr_row]:                  # solo la corrida contigua: a la derecha puede haber
+            if c.column < column_index_from_string(lc):   # otros bloques que comparten la fila
+                continue
+            if c.value is None:
+                if header:
+                    break
+                continue
+            header[get_column_letter(c.column)] = norm(c.value)
         kind = _classify(header, profile)
         sec = RawSection(marker=marker, kind=kind, start_row=start)
         sections.append(sec)
@@ -127,9 +132,10 @@ def import_base(path: str | Path, profile: Profile) -> RawBase:
             continue
 
         # 2) mapeo de columnas (nunca se asigna a ciegas)
+        name_col = profile.kinds.get(kind, {}).get("name_col")
         col_metric: dict[str, str] = {}
         for col, text in header.items():
-            if col == lc:
+            if col == lc or col == name_col:
                 continue
             key = profile.metric_alias.get(text)
             if key is None:
@@ -152,9 +158,15 @@ def import_base(path: str | Path, profile: Profile) -> RawBase:
                 for col, key in col_metric.items()
                 if ws[f"{col}{r}"].value is not None
             }
-            if not label and not cells:
+            gname = _label(ws[f"{name_col}{r}"].value) if name_col else ""
+            if not label and not cells and not gname:
                 continue
-            if label and not cells and grouped:
+            if name_col and gname:                       # el nombre viaja en la 1.ª fila del grupo
+                current = RawGroup(gname)
+                sec.groups.append(current)
+                current.periods.append(RawRow(label, cells))
+                continue
+            if label and not cells and grouped and not name_col:
                 current = RawGroup(label)
                 sec.groups.append(current)
                 continue

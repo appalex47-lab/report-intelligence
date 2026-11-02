@@ -56,3 +56,62 @@ class Table:
     key: str                           # "aetops.canal.yoy"
     comparison: Literal["YoY", "MoM"]
     groups: list[Group]
+
+
+MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+          "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
+
+@dataclass(frozen=True)
+class Period:
+    """Periodo del reporte (elegido por el usuario)."""
+    unit: Literal["AETOPS", "GLP1"]
+    periodicity: Literal["mensual", "trimestral"]
+    year: int
+    index: int          # mes 1-12 o trimestre 1-4
+
+    @property
+    def month_name(self) -> str:
+        return MONTHS[self.index - 1]
+
+    @property
+    def previous_month_name(self) -> str:
+        return MONTHS[(self.index - 2) % 12]
+
+
+@dataclass
+class ProductRow:
+    sivec: str
+    producto: str
+    aetop: str
+    canales: Value
+    actual: Value
+    anterior: Value
+    delta: Value                         # calculado por el motor
+    pasted_delta: Value                  # lo que trae el Excel (solo contraste)
+
+
+@dataclass
+class ProductTable:
+    key: str                             # "aetops.productos.top" | ".growth" | ".decline"
+    role: str
+    rows: list[ProductRow]
+
+
+@dataclass
+class NegadoRow:
+    name: str                            # producto o línea ("Alta")
+    alta: str
+    pedidos: Value
+    cantidad: Value
+    monto: Value
+    share: Value                         # calculado: monto ÷ total negado
+    pasted_share: Value
+
+
+@dataclass
+class NegadosTable:
+    key: str                             # "aetops.negados.producto" | ".alta"
+    label: str                           # rótulo de periodo de la hoja ("Julio")
+    rows: list[NegadoRow]
+    total: Value
