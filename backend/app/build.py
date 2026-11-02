@@ -15,7 +15,8 @@ from .deck.extras import add_executive_slides
 from .history import store as hist
 from .narrative import trends
 from .narrative.executive import build_executive
-from .narrative.writer import Para, fit, to_paragraphs, verify_all
+from .narrative.targets import attainment
+from .narrative.writer import Para, fit, to_paragraphs, verify_all, verify_edited
 from .models import Period
 from .pipeline import Result
 from .qa import checks
@@ -47,7 +48,7 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
                          narrative: dict | None = None, allow_blockers: bool = False,
                          fix_titles: bool = True, executive: bool = True,
                  context: list[str] | None = None, history_db: Path | None = None,
-                 sources: list[Path] | None = None) -> BuildResult:
+                 sources: list[Path] | None = None, targets=None) -> BuildResult:
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
     if blockers and not allow_blockers:
@@ -56,15 +57,24 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
 
     prs = Presentation(template)
     fill_fn = fill_aetops_mensual if period.periodicity == "mensual" else fill_aetops_trimestral
-    fill = fill_fn(prs, result, period, narrative, fix_titles)
+    att = attainment(result, targets)
+    narrative = dict(narrative or {})
+    ed_res, ed_rec = narrative.pop("resumen_ejecutivo", None), narrative.pop("recomendaciones", None)
+    fill = fill_fn(prs, result, period, narrative, fix_titles, att=att)
     slide_map = None
     if executive:                                   # resumen ejecutivo (inicio) + recomendaciones (final)
-        ex = build_executive(result, period)
+        ex = build_executive(result, period, att=att)
         ctx = [c.strip() for c in (context or []) if c and c.strip()]
         if ctx:                                     # contexto aportado por el equipo: marcado, sin verificar, nunca se descarta
             ex.resumen.append(Para("**Contexto aportado por el equipo**", "contexto", 0, basis="texto del equipo; no verificado"))
             ex.resumen += [Para(c, "contexto", 0, basis="texto del equipo; no verificado") for c in ctx]
         fill.narrative_problems += verify_all(ex.resumen + ex.recomendaciones)
+        known = set().union(*(p.nums for ps in fill.narrative.values() for p in ps), *(p.nums for p in ex.resumen + ex.recomendaciones))
+        for edits, attr in ((ed_res, "resumen"), (ed_rec, "recomendaciones")):
+            if edits is not None:                 # edición manual: se publica, pero una cifra sin respaldo se avisa
+                paras = [Para(t, "hecho", 0, edited=True) for t in edits if t.strip() != ""]
+                fill.edited_unverified += [f"{attr}: {x}" for p in paras for x in verify_edited(p.plain, known)]
+                setattr(ex, attr, paras)
         slide_map, kept_res, kept_rec = add_executive_slides(prs, ex.resumen, ex.recomendaciones, to_paragraphs, fit)
         fill.narrative["resumen_ejecutivo"], fill.narrative["recomendaciones"] = kept_res, kept_rec
         fill.narrative["descubrimientos"] = [p for _, p in ex.descubrimientos]
@@ -115,16 +125,16 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     shutil.rmtree(tpl_dir, ignore_errors=True)
     if history_db:
-        _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest)
+        _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest, targets)
     return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest)
 
 
-def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest):
+def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest, targets=None):
     """Guarda la foto de KPIs del reporte (nueva versión, nunca sobrescribe) y escribe trends.json."""
     con = hist.connect(history_db)
     narrative = {k: [{"texto": p.plain, "tipo": p.kind, "regla": p.basis} for p in ps] for k, ps in fill.narrative.items()}
     rid = hist.record_run(
-        con, period, hist.snapshot_from_result(result, period), profile=period.periodicity, template=template,
+        con, period, hist.snapshot_from_result(result, period, targets), profile=period.periodicity, template=template,
         sources=sources, pptx=pptx, pdf=pdf, qa_passed=qa.passed, downloadable=qa.passed,
         findings=[{"id": f.id, "severity": f.severity, "message": f.message} for f in result.findings],
         narrative=narrative, context=context)

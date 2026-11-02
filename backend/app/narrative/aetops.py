@@ -93,7 +93,7 @@ def labels_for_products(rows) -> dict[str, str]:
 
 
 # ----------------------------------------------------------------------------- 1 · panorama
-def s_panorama(yoy: Group, mom: Group | None, period: Period, rules: NarrativeRules) -> list[Para]:
+def s_panorama(yoy: Group, mom: Group | None, period: Period, rules: NarrativeRules, att=None) -> list[Para]:
     c = yoy.current.values
     prev_y = period.prev_year_label
     ps: list[Para] = []
@@ -108,6 +108,7 @@ def s_panorama(yoy: Group, mom: Group | None, period: Period, rules: NarrativeRu
             f"En {w.t(period.label)}, la venta total AETOP llega a {w.n(money(val(yoy.current, 'monto')))} y "
             f"{verb(pct_of(yoy, 'monto'), rules)} {w.n(pct_d(pct_of(yoy, 'monto')))} vs {w.t(prev_y)}."), 0,
             evidence=[_src(c["monto"])]))
+    ps += s_meta(att)
     ps.append(para("hecho", lambda w: (
         f"En el comparativo anual, pacientes {w.n(pct_d(pct_of(yoy, 'pacientes')))}, piezas "
         f"{w.n(pct_d(pct_of(yoy, 'piezas')))} y pedidos {w.n(pct_d(pct_of(yoy, 'pedidos')))}; el ticket promedio "
@@ -156,6 +157,26 @@ def _share(w, c) -> str:
     if c.pp is not None and abs(c.pp) < Decimal("0.01"):
         return f"{w.n(pct_d(c.share_cur, False))} de share (sin cambio relevante)"
     return f"share de {w.n(pct_d(c.share_prev, False))} a {w.n(pct_d(c.share_cur, False))}"
+
+
+def s_meta(att) -> list[Para]:
+    """Cumplimiento de meta (si el equipo capturó metas)."""
+    if not att:
+        return []
+    ps: list[Para] = []
+    tot = next((a for a in att if a.name == "TOTAL"), None)
+    if tot:
+        ps.append(para("hecho", lambda w: (
+            f"La venta alcanza {w.n(pct_d(tot.pct, False))} de la meta ({w.n(money(tot.target))}; "
+            f"{w.n(money(tot.gap, True))})."), 1, evidence=["metas"]))
+    lines = [a for a in att if a.name != "TOTAL"]
+    below = sorted((a for a in lines if a.status != "cumple"), key=lambda a: a.gap)
+    if below:
+        ps.append(para("hecho", lambda w: "Por línea, quedan por debajo de su meta: " + ", ".join(
+            f"{w.b(a.name)} ({w.n(pct_d(a.pct, False))}, {w.n(money(a.gap, True))})" for a in below) + ".", 2))
+    elif lines:
+        ps.append(para("hecho", lambda w: "Todas las líneas cumplen su meta.", 2))
+    return ps
 
 
 def _cmp(a: Decimal | None, b: Decimal | None) -> str:
@@ -415,7 +436,7 @@ def s_conclusiones(yoy, mom, canal, linea, prod, neg_total, pano_yoy, period, ru
 # ----------------------------------------------------------------------------- orquestación
 def compose_aetops_mensual(result: Result, period: Period, boxes: dict[str, Box],
                            cat_yoy_shown: list[Group], cat_mom_shown: list[Group],
-                           rules: NarrativeRules = RULES) -> dict[str, list[Para]]:
+                           rules: NarrativeRules = RULES, att=None) -> dict[str, list[Para]]:
     T = result.tables
     py, pm = T["aetops.panorama.yoy"].groups[0], T["aetops.panorama.mom"].groups[0]
     pedidos_ok = not any(f.id == "TOTALS_MISMATCH" and "canal" in f.message and "pedidos" in f.message
@@ -424,7 +445,7 @@ def compose_aetops_mensual(result: Result, period: Period, boxes: dict[str, Box]
     names = labels_for_products(prod["top"] + prod["growth"] + prod["decline"])
     neg_alta, neg_prod = result.negados.get("aetops.negados.alta"), result.negados.get("aetops.negados.producto")
     out = {
-        "panorama": s_panorama(py, pm, period, rules),
+        "panorama": s_panorama(py, pm, period, rules, att),
         "canal_yoy": s_groups("canal", T["aetops.canal.yoy"].groups, py, period, rules, pedidos_ok),
         "canal_mom": s_groups("canal", T["aetops.canal.mom"].groups, pm, period, rules, pedidos_ok, mom=True),
         "linea_yoy": s_groups("línea", T["aetops.linea.yoy"].groups, py, period, rules),
@@ -451,7 +472,7 @@ def check(narr: dict[str, list[Para]]) -> list[str]:
 
 
 def compose_aetops_trimestral(result: Result, period: Period, boxes: dict[str, Box], cat_shown: list[Group],
-                              rules: NarrativeRules = RULES) -> dict[str, list[Para]]:
+                              rules: NarrativeRules = RULES, att=None) -> dict[str, list[Para]]:
     """Trimestral: solo comparativo YoY (mismo trimestre del año anterior)."""
     T = result.tables
     py = T["aetops.panorama.yoy"].groups[0]
@@ -465,7 +486,7 @@ def compose_aetops_trimestral(result: Result, period: Period, boxes: dict[str, B
     for p in movers[2:]:
         p.priority += 1
     out = {
-        "panorama": s_panorama(py, None, period, rules),
+        "panorama": s_panorama(py, None, period, rules, att),
         "linea_yoy": s_groups("línea", T["aetops.linea.yoy"].groups, py, period, rules),
         "canal_yoy": s_groups("canal", T["aetops.canal.yoy"].groups, py, period, rules, pedidos_ok),
         "productos": s_productos(prod["top"], prod["growth"], prod["decline"], py, rules, vs=period.prev_year_label),

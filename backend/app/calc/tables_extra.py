@@ -55,3 +55,31 @@ def build_negados(blocks: list[RawBlock], file: str, sheet: str) -> dict[str, Ne
             x.share = ind.share(x.monto, total, "monto/total negado")
         out[f"aetops.negados.{b.role}"] = NegadosTable(f"aetops.negados.{b.role}", b.label, rows, total)
     return out
+
+
+def derive_alta(producto: NegadosTable, pasted: NegadosTable | None) -> NegadosTable:
+    """La tabla por línea ('Alta') sale de sumar la lista de productos (el detalle manda); lo pegado en el Excel
+    solo se contrasta. Así el total de negados es único y trazable."""
+    acc: dict[str, list[Decimal]] = {}
+    order: list[str] = []
+    for r in producto.rows:
+        if not r.alta:
+            continue
+        a = acc.setdefault(r.alta, [Decimal(0), Decimal(0), Decimal(0)])
+        if r.alta not in order:
+            order.append(r.alta)
+        for i, v in enumerate((r.pedidos.v, r.cantidad.v, r.monto.v)):
+            if v is not None:
+                a[i] += v
+    total = sum((v[2] for v in acc.values()), Decimal(0))
+    tot = ind.derived(total, "sum(monto por Alta)")
+    old = {r.name: r for r in (pasted.rows if pasted else [])}
+    rows = []
+    for name in sorted(order, key=lambda k: -acc[k][2]):
+        ped, cant, monto = acc[name]
+        row = NegadoRow(name=name, alta=name, pedidos=ind.derived(ped, "sum(pedidos)"),
+                        cantidad=ind.derived(cant, "sum(cantidad)"), monto=ind.derived(monto, "sum(monto)"),
+                        share=ind.make(None), pasted_share=old[name].pasted_share if name in old else ind.make(None))
+        row.share = ind.share(row.monto, tot, "monto/total negado")
+        rows.append(row)
+    return NegadosTable("aetops.negados.alta", pasted.label if pasted else producto.label, rows, tot)

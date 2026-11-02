@@ -65,13 +65,19 @@ def test_negados_total_share_and_duplicate_block(tmp_path):
     prod, alta = res.negados["aetops.negados.producto"], res.negados["aetops.negados.alta"]
     assert prod.total.v == 1000 and alta.total.v == 1000
     assert [r.share.v for r in prod.rows] == [Decimal("0.6"), Decimal("0.3"), Decimal("0.1")]
-    assert len(res.negados) == 2                       # el bloque duplicado no genera una tabla extra
+    assert set(res.negados) == {"aetops.negados.producto", "aetops.negados.alta", "aetops.negados.alta_excel"}
     assert "TOTALS_MISMATCH" not in ids(res)
 
 
-def test_negados_alta_total_mismatch_and_stale_label(tmp_path):
+def test_negados_by_line_is_derived_from_the_product_list_and_excel_is_only_a_contrast(tmp_path):
     res = run_aetops(build_base(tmp_path / "x", alta_off=True), "mensual", SEP)
-    assert any(f.id == "TOTALS_MISMATCH" and "Negados" in f.message for f in res.findings)
+    alta = res.negados["aetops.negados.alta"]
+    assert alta.total.v == 1000                                     # Σ de la lista de productos, no lo pegado (800)
+    assert [r.name for r in alta.rows] == ["AE-A", "AE-B"] and alta.rows[0].monto.v == 700   # NEG 1 + NEG 3
+    assert res.negados["aetops.negados.alta_excel"].total.v == 800
+    f = [x for x in res.findings if x.id == "NEGADOS_ALTA_DIFFERS"]
+    assert f and f[0].severity == "warn" and "800" in f[0].message and "1,000" in f[0].message
+    assert res.can_generate                                         # advertencia visible, no bloquea
     res = run_aetops(build_base(tmp_path / "y", negados_label="Julio"), "mensual", SEP)
     assert any(f.id == "PERIOD_MISMATCH" and "Negados" in f.message for f in res.findings)
 

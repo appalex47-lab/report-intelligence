@@ -136,7 +136,8 @@ class GRow:
     delta_src: Literal["engine", "pasted", "none"] = "none"
     pasted_delta: Value | None = None
     engine_delta: Value | None = None     # recálculo contra el bloque anterior (contraste)
-    ticket_calc: Value | None = None      # Monto ÷ Pedidos (solo para contraste)
+    ticket_calc: Value | None = None      # Monto ÷ Pedidos
+    pasted_ticket: Value | None = None    # el ticket que trae el Excel (solo contraste)
 
 
 @dataclass

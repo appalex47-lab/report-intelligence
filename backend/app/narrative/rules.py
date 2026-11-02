@@ -22,9 +22,10 @@ class NarrativeRules:
     prio_high: Decimal = Decimal("0.07")          # puntaje (impacto × accionabilidad) ≥ 7 % de la venta -> ALTA
     prio_mid: Decimal = Decimal("0.03")           # ≥ 3 % -> MEDIA; menos -> BAJA
     max_recommendations: int = 5
+    target_tolerance: Decimal = Decimal("0.05")     # ≥ 95 % de la meta = 'cerca'; menos = 'debajo'
     # accionabilidad: lo que se puede corregir directamente pesa más que lo que solo pide investigar
     actionability: tuple = (("abasto", Decimal("1.5")), ("disponibilidad", Decimal("1.5")), ("proteger", Decimal("1.0")),
-                            ("investigar", Decimal("0.7")), ("validar", Decimal("0.7")), ("mezcla", Decimal("0.7")),
+                            ("meta", Decimal("1.2")), ("investigar", Decimal("0.7")), ("validar", Decimal("0.7")), ("mezcla", Decimal("0.7")),
                             ("vigilar", Decimal("0.5")))
 
     def weight(self, kind: str) -> Decimal:

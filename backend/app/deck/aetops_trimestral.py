@@ -93,7 +93,7 @@ def fill_negados_q(fl: Filler, n: int, alta, producto, rep: FillReport):
 
 
 def fill_aetops_trimestral(prs, result: Result, period: Period, narrative: dict[str, list[str]] | None = None,
-                           fix_titles: bool = True) -> FillReport:
+                           fix_titles: bool = True, att=None) -> FillReport:
     if period.periodicity != "trimestral":
         raise ValueError("La plantilla trimestral requiere un periodo trimestral.")
     rep = FillReport()
@@ -116,7 +116,7 @@ def fill_aetops_trimestral(prs, result: Result, period: Period, narrative: dict[
     # --- narrativa
     boxes = {k: Box(*ops.narrative_box(fl.shape(n, name))) for k, (n, name) in NARR.items()}
     up, down, omitted = pick_categories(cat.groups)
-    narr = compose_aetops_trimestral(result, period, boxes, up + down)
+    narr = compose_aetops_trimestral(result, period, boxes, up + down, att=att)
     rep.narrative_problems = check_narrative(narr)
     rep.narrative = narr
     for key, texts in (narrative or {}).items():

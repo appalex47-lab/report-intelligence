@@ -28,14 +28,13 @@ metrics:
 typo_aliases:
   rebote: ["& de rebote"]
 
-# Ticket Promedio: el valor pegado NO siempre equivale a Monto ÷ Pedidos en los libros reales.
-# pasted = se usa el del Excel y se marca; ratio = Monto ÷ Pedidos.
-ticket_source: pasted
-
-# %Δ: en los libros reales el %Δ pegado NO equivale al cambio de monto contra el bloque anterior
-# (p. ej. CENTRO: pegado −3.5 % vs −6.8 % recalculado), así que la métrica/base comparable es
-# desconocida. pasted = se publica el pegado y se marca; engine = se publica el recalculado.
-delta_source: pasted
+# Definiciones del negocio (confirmadas):
+#   Ticket Promedio = Monto Venta ÷ Pedidos  (se calcula; el valor pegado en el Excel solo se contrasta)
+#   %Δ = variación contra el periodo anterior (MoM) recalculada con el bloque "anterior" del libro; si una tabla no
+#        trae bloque anterior, se usa el %Δ del Excel y se avisa. El comparativo YoY necesita datos del año anterior
+#        (otro libro o el historial de reportes) y no está en este libro.
+ticket_source: ratio
+delta_source: engine
 
 # Base del Share (denominador = total del periodo = Σ del bloque)
 share_basis: {traffic: visitas, money: monto, negados: monto_negado}

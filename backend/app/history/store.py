@@ -57,7 +57,7 @@ class KpiRow:
     value: Decimal
 
 
-def snapshot_from_result(result, period: Period) -> list[KpiRow]:
+def snapshot_from_result(result, period: Period, targets=None) -> list[KpiRow]:
     """Foto de los KPIs del reporte: valores del periodo y de su(s) comparativo(s)."""
     rows: list[KpiRow] = []
     for key, table in result.tables.items():
@@ -73,6 +73,11 @@ def snapshot_from_result(result, period: Period) -> list[KpiRow]:
     alta = result.negados.get("aetops.negados.alta")
     if alta and alta.total.v is not None:
         rows.append(KpiRow("negados", "TOTAL", "current", period.label, "monto", alta.total.v))
+    if targets is not None:                         # las metas capturadas viajan con el reporte
+        if targets.total is not None:
+            rows.append(KpiRow("meta", "TOTAL", "current", period.label, "monto", targets.total))
+        for k, v in targets.by_group.items():
+            rows.append(KpiRow("meta", k, "current", period.label, "monto", v))
     return rows
 
 

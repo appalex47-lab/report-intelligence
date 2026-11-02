@@ -106,18 +106,19 @@ def products(prod: dict[str, ProductTable]) -> list[Finding]:
 
 def negados(neg: dict[str, NegadosTable]) -> list[Finding]:
     out: list[Finding] = []
-    prod, alta = neg.get("aetops.negados.producto"), neg.get("aetops.negados.alta")
-    if prod and alta and prod.total.v and alta.total.v:
-        diff = abs(prod.total.v - alta.total.v) / alta.total.v
+    alta, pasted = neg.get("aetops.negados.alta"), neg.get("aetops.negados.alta_excel")
+    prod = neg.get("aetops.negados.producto")
+    if pasted and alta and alta.total.v and pasted.total.v:
+        diff = abs(pasted.total.v - alta.total.v) / alta.total.v
         if diff > Decimal("0.005"):
-            # el monto negado total es una cifra de titular: si las dos fuentes se contradicen mucho, no se publica
-            sev = "block" if diff > Decimal("0.10") else "warn"
             out.append(Finding(
-                "TOTALS_MISMATCH", sev,
-                f"Negados: la suma de productos ({prod.total.v:,.0f}) y la de líneas/Alta ({alta.total.v:,.0f}) "
-                f"difieren {diff:.0%}; no hay un total único para publicar. Corregir el Excel (¿la tabla por línea "
-                "cubre otro periodo?).", "aetops.negados"))
+                "NEGADOS_ALTA_DIFFERS", "warn",
+                f"Negados: la tabla por línea del Excel suma {pasted.total.v:,.0f} y la suma de la lista de "
+                f"productos es {alta.total.v:,.0f} (dif. {diff:.0%}). Se usa la lista de productos (el detalle); "
+                "confirmar con quien arma el Excel cuál es el periodo/filtro de la tabla por línea.", "aetops.negados"))
     for key, t in neg.items():
+        if key.endswith("_excel"):
+            continue
         bad = [r for r in t.rows if r.share.v is not None and r.pasted_share.v is not None
                and abs(r.share.v - r.pasted_share.v) > _rounding_tol(r.pasted_share.v)]
         if bad:

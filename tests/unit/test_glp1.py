@@ -68,11 +68,29 @@ def test_time_of_interaction_is_converted_to_seconds(clean):
     assert clean.blocks["producto_sexo"].rows[0].dim2 == "Femenino"
 
 
-def test_consistent_delta_is_published_without_metric_warning(clean):
+def test_delta_is_the_mom_change_recomputed_from_the_prior_block(clean):
     r = clean.blocks["region"].rows[0]
-    assert r.delta_src == "pasted"
-    assert abs(r.delta.v - r.engine_delta.v) < Decimal("0.001")
-    assert "DELTA_METRIC_UNVERIFIED" not in ids(clean)
+    assert r.delta_src == "engine" and r.delta.v == r.engine_delta.v
+    assert abs(r.delta.v - r.pasted_delta.v) < Decimal("0.001")                 # el sintético es coherente
+    assert "DELTA_PASTED_DIFFERS" not in ids(clean)
+
+
+def test_ticket_is_monto_over_pedidos_per_business_definition(clean, tmp_path):
+    r = clean.blocks["region"].rows[0]
+    assert r.values["ticket"].v == r.values["monto"].v / r.values["pedidos"].v
+    # si el Excel trae otro ticket, se usa monto/pedidos y se avisa
+    p = mutate(tmp_path, fn=lambda wb: setattr(wb["4"]["F2"], "value", 9999))
+    res = run_glp1(p, "mensual", SEP)
+    row = res.blocks["region"].rows[0]
+    assert row.values["ticket"].v == row.values["monto"].v / row.values["pedidos"].v and row.pasted_ticket.v == 9999
+    assert "TICKET_PASTED_DIFFERS" in ids(res, "warn")
+
+
+def test_excel_delta_that_disagrees_with_mom_is_flagged_and_the_recomputed_one_is_used(tmp_path):
+    p = mutate(tmp_path, fn=lambda wb: setattr(wb["4"]["H2"], "value", 0.5))
+    res = run_glp1(p, "mensual", SEP)
+    r = res.blocks["region"].rows[0]
+    assert "DELTA_PASTED_DIFFERS" in ids(res, "warn") and r.delta_src == "engine" and r.delta.v != Decimal("0.5")
 
 
 def test_funnel_rate_is_recomputed(clean):

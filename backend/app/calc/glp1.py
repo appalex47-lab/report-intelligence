@@ -58,6 +58,7 @@ def build_glp1(raw: RawGlp1, profile: GProfile) -> tuple[dict[str, GBlock], GBlo
             if "pedidos" in vals and money in vals:
                 row.ticket_calc = ind.ratio(vals[money], vals["pedidos"], f"{money}/pedidos")
                 pasted = vals.get("ticket")
+                row.pasted_ticket = pasted
                 if profile.ticket_source == "ratio" or pasted is None or pasted.is_missing:
                     vals["ticket"] = row.ticket_calc
                 # con 'pasted' se conserva el valor del Excel (el validador lo contrasta)

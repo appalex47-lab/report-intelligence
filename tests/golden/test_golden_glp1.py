@@ -31,7 +31,9 @@ def test_real_blocks_are_found_without_unmapped_columns(res):
 def test_product_row_matches_published_deck(res):
     p = res.blocks["productos"].rows[0]
     assert (p.values["pedidos"].v, p.values["piezas"].v, p.values["monto"].v) == (533, 581, 2694543)
-    assert fmt.fmt_pct(p.delta, 2) == "-10.57%" and p.delta_src == "pasted"
+    assert fmt.fmt_pct(p.delta, 2) == "-10.57%" and p.delta_src == "pasted"     # sin bloque anterior: el del Excel
+    r = res.blocks["region"].rows[0]
+    assert r.delta_src == "engine" and r.values["ticket"].v == r.values["monto"].v / r.values["pedidos"].v
 
 
 def test_funnel_has_five_stages_with_real_typo_accepted(res):
@@ -42,7 +44,7 @@ def test_funnel_has_five_stages_with_real_typo_accepted(res):
 
 def test_real_workbook_defects_are_reported(res):
     got = {f.id for f in res.findings}
-    assert {"SHARE_ZERO", "TICKET_FORMULA_UNVERIFIED", "DELTA_METRIC_UNVERIFIED", "PERIOD_UNDECLARED",
+    assert {"SHARE_ZERO", "TICKET_PASTED_DIFFERS", "DELTA_PASTED_DIFFERS", "PERIOD_UNDECLARED",
             "BLANK_ROW_INSIDE"} <= got
     assert not res.can_generate                    # hueco real en el bloque anterior de fuentes de tráfico
 

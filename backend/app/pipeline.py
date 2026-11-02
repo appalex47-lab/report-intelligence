@@ -5,12 +5,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .calc.tables_aetops import build_tables
-from .calc.tables_extra import build_negados, build_products
+from .calc.tables_extra import build_negados, build_products, derive_alta
 from .importer.base_sheet import import_base
 from .importer.profile import load_glp1_profile, load_profile
 from .importer.sheets import import_negados, import_products
 from .models import Finding, GBlock, NegadosTable, Period, ProductTable, Table
 from .validator import extra
+from .validator.targets import validate_targets
 from .validator.rules import has_blockers, validate
 
 
@@ -26,8 +27,9 @@ class Result:
         return not has_blockers(self.findings)
 
 
-def run_aetops(path: str | Path, profile_name: str = "mensual",
-               period: Period | None = None) -> Result:
+def run_aetops(path: str | Path, profile_name: str = "mensual", period: Period | None = None,
+               targets=None, require_targets: bool = False) -> Result:
+    """`require_targets`: la herramienta (CLI/API) lo activa para AETOPS; el motor puro lo deja opcional."""
     profile = load_profile("aetops", profile_name)
     raw = import_base(path, profile)
     tables = build_tables(raw, profile.ticket_source)
@@ -37,10 +39,18 @@ def run_aetops(path: str | Path, profile_name: str = "mensual",
     nblocks, nf = import_negados(path, profile)
     prod = build_products(pblocks, Path(path).name, profile.products.get("sheet", ""))
     neg = build_negados(nblocks, Path(path).name, profile.negados.get("sheet", ""))
+    if "aetops.negados.producto" in neg:           # la tabla por línea se deriva del detalle; la pegada queda de contraste
+        pasted = neg.get("aetops.negados.alta")
+        if pasted is not None:
+            neg["aetops.negados.alta_excel"] = pasted
+        neg["aetops.negados.alta"] = derive_alta(neg["aetops.negados.producto"], pasted)
     findings += pf + nf + extra.products(prod) + extra.negados(neg)
     if period is not None:
         findings += extra.expected_period(tables, neg, period)
-    return Result(tables, findings, prod, neg)
+    res = Result(tables, findings, prod, neg)
+    if require_targets or targets is not None:
+        res.findings += validate_targets(res, targets, require_targets)
+    return res
 
 
 def run_aetops_base(path: str | Path, profile_name: str = "mensual") -> Result:

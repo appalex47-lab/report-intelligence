@@ -341,7 +341,7 @@ NARR = {                      # clave de narrativa -> (diapositiva, shape de la 
 
 
 def fill_aetops_mensual(prs, result: Result, period: Period, narrative: dict[str, list[str]] | None = None,
-                        fix_titles: bool = True) -> FillReport:
+                        fix_titles: bool = True, att=None) -> FillReport:
     """`narrative`: ediciones manuales {clave: [párrafos]} que sustituyen al texto generado (se verifican)."""
     rep = FillReport()
     fl = Filler(prs, rep)
@@ -366,7 +366,7 @@ def fill_aetops_mensual(prs, result: Result, period: Period, narrative: dict[str
     boxes = {k: Box(*ops.narrative_box(fl.shape(n, name))) for k, (n, name) in NARR.items()}
     a, b, om_y = pick_categories_yoy(cat_yoy.groups)
     up, down, om_m = pick_categories_mom(cat_mom.groups)
-    narr = compose_aetops_mensual(result, period, boxes, a + b, up + down)
+    narr = compose_aetops_mensual(result, period, boxes, a + b, up + down, att=att)
     rep.narrative_problems = check_narrative(narr)
     rep.narrative = narr
     for key, texts in (narrative or {}).items():

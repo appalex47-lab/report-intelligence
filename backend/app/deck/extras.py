@@ -39,6 +39,13 @@ def clone_slide(prs, src_idx: int, insert_at: int):
     return new
 
 
+def exec_capacity(prs, conclusions_idx: int | None = None) -> tuple[int, int]:
+    """(caracteres por línea, líneas con margen) del cuerpo de 'Conclusiones', de donde se clonan las diapositivas nuevas."""
+    src = len(prs.slides) - 1 if conclusions_idx is None else conclusions_idx
+    cpl, lines = ops.narrative_box(ops.shape_by_name(prs.slides[src], BODY))
+    return cpl, max(int(lines * 0.85), 4)
+
+
 def add_executive_slides(prs, resumen_paras, recs_paras, to_paragraphs, fit_fn, conclusions_idx: int | None = None):
     """Clona 'Conclusiones' dos veces: resumen al inicio y recomendaciones al final.
     Devuelve (mapa a índices de la plantilla para el QA, párrafos del resumen, párrafos de recomendaciones)."""

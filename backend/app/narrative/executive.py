@@ -48,7 +48,7 @@ def prio_of(score: Decimal, rules: NarrativeRules) -> str:
     return "alta" if score >= rules.prio_high else "media" if score >= rules.prio_mid else "baja"
 
 
-def build_executive(result: Result, period: Period, rules: NarrativeRules = RULES) -> Executive:
+def build_executive(result: Result, period: Period, rules: NarrativeRules = RULES, att=None) -> Executive:
     T = result.tables
     py = T["aetops.panorama.yoy"].groups[0]
     pm = T["aetops.panorama.mom"].groups[0] if "aetops.panorama.mom" in T else None
@@ -78,6 +78,21 @@ def build_executive(result: Result, period: Period, rules: NarrativeRules = RULE
             f"({w.n(pct_d(vol, False))} del cambio)."), 0,
             basis="Venta = Pacientes × (Piezas/Paciente) × (Venta/Pieza); aporte = ln(factor₁/factor₀) ÷ ln(venta₁/venta₀)")
         D.append((Decimal(10), health))
+    tot_att = next((a for a in (att or []) if a.name == "TOTAL"), None)
+    if tot_att:
+        D.append((Decimal(9), para("hecho", lambda w: (
+            f"La venta alcanza {w.n(pct_d(tot_att.pct, False))} de la meta ({w.n(money(tot_att.target))}; "
+            f"{w.n(money(tot_att.gap, True))})."), 0, evidence=["metas"])))
+    for a in (att or []):
+        if a.name != "TOTAL" and a.status != "cumple":
+            sc = abs(a.gap) / sales
+            D.append((sc, para("hecho", lambda w: (
+                f"{w.b(a.name)} queda en {w.n(pct_d(a.pct, False))} de su meta ({w.n(money(a.gap, True))})."), 2)))
+            wsc = sc * rules.weight("meta")
+            R.append(Rec(prio_of(wsc, rules), wsc, f"Revisar el avance de {a.name} contra su meta", para("recomendacion", lambda w: (
+                f"{w.b('Revisar el avance de ' + a.name + ' contra su meta')}: queda en {w.n(pct_d(a.pct, False))} de la meta "
+                f"({w.n(money(a.gap, True))}). Seguimiento: venta de {w.t(a.name)} vs meta cada mes."), 3,
+                basis="venta < 100 % de la meta de la línea")))
     press = I.pressures(py, rules)
     if press:
         D.append((abs(press[0][1]) * Decimal("0.3"), para("hecho", lambda w: (
@@ -217,8 +232,11 @@ def build_executive(result: Result, period: Period, rules: NarrativeRules = RULE
     resumen = [head("Dónde estamos")]
     health = next((p for s, p in D if s == 10), None)
     resumen.append(health or para("info_insuficiente", lambda w: "Sin información suficiente para describir el periodo.", 0))
+    meta_p = next((p for s, p in D if s == 9), None)
+    if meta_p:
+        resumen.append(meta_p)
     resumen.append(head("Descubrimientos del periodo"))
-    rest = [p for s, p in D if s != 10][:4]
+    rest = [p for s, p in D if s not in (9, 10)][:4]
     for k, p in enumerate(rest):
         q = Para("• " + p.text, p.kind, 1 + k, p.basis, p.evidence, set(p.nums))
         resumen.append(q)

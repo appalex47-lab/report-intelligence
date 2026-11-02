@@ -62,29 +62,30 @@ def validate_glp1(raw: RawGlp1, blocks: dict[str, GBlock], funnel: GBlock | None
                 out.append(Finding("PASTED_DIFFERS", "warn",
                                    f"{name}: {len(bad)} share(s) pegados no coinciden con base ÷ total "
                                    f"(p. ej. {bad[0].key}).", b.origin))
-        # ticket pegado vs Monto ÷ Pedidos
-        tk = [r for r in b.rows if r.ticket_calc and r.ticket_calc.v and r.values.get("ticket")
-              and r.values["ticket"].v and r.values["ticket"] is not r.ticket_calc
-              and abs(r.ticket_calc.v - r.values["ticket"].v) / r.values["ticket"].v > TOL]
+        # ticket: definición del negocio = Monto ÷ Pedidos; el pegado solo se contrasta
+        tk = [r for r in b.rows if r.ticket_calc and r.ticket_calc.v and r.pasted_ticket is not None and r.pasted_ticket.v
+              and abs(r.ticket_calc.v - r.pasted_ticket.v) / r.pasted_ticket.v > TOL]
         if tk:
             r = tk[0]
-            out.append(Finding("TICKET_FORMULA_UNVERIFIED", "warn",
-                               f"{name}: {len(tk)} fila(s) con Ticket pegado ≠ Monto÷Pedidos (p. ej. {r.key}: "
-                               f"{float(r.values['ticket'].v):,.2f} vs {float(r.ticket_calc.v):,.2f}). "
-                               "Se usa el valor del Excel; fórmula pendiente de validación.",
-                               r.values["ticket"].src.cells if r.values["ticket"].src else b.origin))
-        # %Δ pegado vs cambio de monto contra el bloque anterior (contraste)
+            out.append(Finding("TICKET_PASTED_DIFFERS", "warn",
+                               f"{name}: {len(tk)} fila(s) con Ticket del Excel ≠ Monto÷Pedidos (p. ej. {r.key}: "
+                               f"Excel {float(r.pasted_ticket.v):,.2f} vs {float(r.ticket_calc.v):,.2f}). "
+                               "Se usa Monto ÷ Pedidos (definición del negocio).",
+                               r.pasted_ticket.src.cells if r.pasted_ticket.src else b.origin))
+        # %Δ: MoM recalculado vs el pegado
         diff = [r for r in b.rows if r.engine_delta is not None and r.engine_delta.v is not None
                 and r.pasted_delta and r.pasted_delta.v is not None
                 and abs(r.engine_delta.v - r.pasted_delta.v) > max(Decimal("0.0005"), abs(r.pasted_delta.v) * Decimal("0.002"))]
         if diff:
             r = diff[0]
-            out.append(Finding("DELTA_METRIC_UNVERIFIED", "warn",
-                               f"{name}: {len(diff)} %Δ pegado(s) no equivalen al cambio de {raw.blocks[name].prior['metric']} "
-                               f"contra el periodo anterior (p. ej. {r.key}: pegado {float(r.pasted_delta.v):+.4f} vs "
-                               f"recalculado {float(r.engine_delta.v):+.4f}). Se publica el pegado; su base comparable "
-                               "está pendiente de validar.",
-                               r.pasted_delta.src.cells if r.pasted_delta.src else b.origin))
+            out.append(Finding("DELTA_PASTED_DIFFERS", "warn",
+                               f"{name}: {len(diff)} %Δ del Excel difieren del cambio contra el periodo anterior "
+                               f"(p. ej. {r.key}: Excel {float(r.pasted_delta.v):+.4f} vs recalculado "
+                               f"{float(r.engine_delta.v):+.4f}). Se usa el recalculado; revisar si el mes del libro "
+                               "está completo.", r.pasted_delta.src.cells if r.pasted_delta.src else b.origin))
+        elif b.role == "main" and not raw.blocks[name].prior and any(r.delta_src == "pasted" for r in b.rows):
+            out.append(Finding("DELTA_FROM_EXCEL", "info",
+                               f"{name}: el libro no trae el bloque del periodo anterior; se usa el %Δ del Excel.", b.origin))
         # nombres sin pareja en el periodo anterior / escritura distinta
         if b.role == "main" and raw.blocks[name].prior:
             prior = blocks.get(raw.blocks[name].prior["block"])
