@@ -189,10 +189,16 @@ El prompt pide **usar los PPTX originales como plantilla, con texto y tablas edi
 
 **Recomendación:** **C** para PPTX/PDF (es la única que cumple "PDF = PPTX" y validación visual con render real), conservando el motor de importación/cálculo en JavaScript para la validación previa si se desea. Si se exige 100 % local/estático, **B** es el mejor compromiso, sin PDF fiel. **Decisión del usuario requerida.**
 
+## 8.1 Decisiones del usuario (2026-11-02)
+
+- **Arquitectura: aprobada la opción C** (backend Python con `python-pptx` sobre las plantillas originales + LibreOffice para el PDF).
+- **Los archivos recibidos son ejemplos.** Los desajustes de periodo (§1, puntos 4–5) y los PPTX/Excel faltantes (§2) no bloquean la construcción: la herramienta debe entender la *estructura* y validar el periodo en tiempo de ejecución, no depender de estos archivos concretos.
+- Las preguntas abiertas del §7 se resuelven como **reglas configurables** (redondeo, Top N, umbral de color, denominador de Share) con valores por defecto tomados de los originales, no como bloqueos.
+
 ## 9. Siguiente paso propuesto
 
-1. Confirmar §7 (especialmente 1, 2 y 8) y la opción de §8.
-2. Entregar los Excel con periodo correcto y los PPTX faltantes (§2).
-3. Con eso: (a) reescribir el importador con **mapeo de bloques** por hoja, (b) pruebas de cálculo contra los PPTX (tolerancia 0), (c) plantillas por formato.
+1. Definir los valores por defecto de las reglas del §7 a partir de los originales (configurables).
+2. Diseño técnico (Fase 3) de la opción C.
+3. Después: (a) reescribir el importador con **mapeo de bloques** por hoja, (b) pruebas de cálculo contra los PPTX (tolerancia 0), (c) plantillas por formato.
 
 Matriz de trazabilidad: ver [`MATRIZ_TRAZABILIDAD.md`](MATRIZ_TRAZABILIDAD.md).
