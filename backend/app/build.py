@@ -62,6 +62,14 @@ def build_aetops_mensual(result: Result, period: Period, template: Path, out_dir
     checks.check_editable_and_static(pptx, template, qa)
     checks.check_static_regions(pngs, tpl_pngs, qa)
     checks.check_stale(fill, qa)
+    for prob in fill.narrative_problems:
+        qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")
+    for prob in fill.edited_unverified:
+        qa.add("EDITED_TEXT_UNVERIFIED", "warn", None, f"Texto editado a mano: {prob}")
+    (out_dir / "narrative.json").write_text(json.dumps({
+        key: [{"texto": p.plain, "tipo": p.kind, "regla": p.basis, "cifras": sorted(p.nums), "evidencia": p.evidence,
+               "prioridad": p.priority, "visible_en_diapositiva": p.visible, "editado": p.edited}
+              for p in paras] for key, paras in fill.narrative.items()}, ensure_ascii=False, indent=1), encoding="utf-8")
     for t in fill.titles_fixed:
         qa.add("LABEL_CROSSED_FIXED", "info", None, f"Título cruzado en la plantilla, corregido: {t}")
     for n in fill.notes:

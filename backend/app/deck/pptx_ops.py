@@ -190,3 +190,26 @@ def shape_by_name(slide, name: str):
         if sh.name == name:
             return sh
     raise KeyError(f"No existe el shape '{name}' en la diapositiva (¿cambió la plantilla?)")
+
+
+def box_capacity(shape, default_pt: float = 14.0) -> tuple[int, int]:
+    """(caracteres por línea, líneas) estimados: ancho/alto menos márgenes y tamaño del 1.er run.
+    0.44 em por carácter (fuente narrow) e interlineado 1.15."""
+    from pptx.util import Emu
+    sz = default_pt
+    for r in shape._element.iter(qn("a:rPr")):
+        if r.get("sz"):
+            sz = int(r.get("sz")) / 100
+            break
+    w_pt = Emu(shape.width).pt - 14.4
+    h_pt = Emu(shape.height).pt - 7.2
+    return max(int(w_pt / (0.44 * sz)), 10), max(int(h_pt / (1.15 * sz)), 2)
+
+
+def narrative_box(shape) -> tuple[int, int]:
+    """Capacidad del cuadro = max(geométrica, lo que ocupa el texto ORIGINAL de la plantilla): el original ya
+    fue validado visualmente por quien diseñó el reporte, así que su volumen siempre es admisible."""
+    cpl, lines = box_capacity(shape)
+    original = shape.text_frame.text.split("\n")
+    used = sum(max(1, -(-len(p) // cpl)) for p in original)
+    return cpl, max(lines, used)

@@ -111,3 +111,24 @@ def test_forced_overflow_on_the_real_template_is_caught(tmp_path):
     rep = checks.QAReport()
     checks.check_render(p, convert_to_pdf(p, tmp_path), rep)
     assert {"OVERFLOW_INTO_FOOTER", "TEXT_OUT_OF_PAGE"} & {i.id for i in rep.issues if i.severity == "error"}
+
+
+def _text(rep, key):
+    return " ".join(p.plain for p in rep.narrative[key] if p.visible)
+
+
+def test_narrative_reaches_the_analysts_conclusions_with_real_data(filled):
+    """Mismos datos que el reporte publicado de Agosto: el texto automático debe llegar a las mismas lecturas."""
+    _, _, rep = filled
+    assert rep.narrative_problems == []                                   # toda cifra con evidencia, sin causas
+    canal, linea = _text(rep, "canal_yoy"), _text(rep, "linea_yoy")
+    assert "LLAMADAS GOOGLE es el canal que más aporta al crecimiento" in canal and "+175%" in canal
+    assert "ECOMMERCE crece +12%" in canal and "pierde participación (35% → 24%)" in canal      # como el original
+    assert "WHATSAPP" in canal and "valor por paciente" in canal                              # +26% venta con pacientes -10%
+    assert "pedidos" not in canal                                                              # pedidos por canal: no confiables
+    assert "AE-A es la línea que más aporta" in linea and "base pequeña" in linea             # HYR
+    assert "AE-B" in linea and "pierde participación" in linea
+    pano = _text(rep, "panorama")
+    assert "+67% vs 2025" in pano and "volumen" in pano
+    assert "21% de la venta del mes" in _text(rep, "negados")
+    assert any(not p.visible and p.kind == "info_insuficiente" for p in rep.narrative["canal_yoy"])

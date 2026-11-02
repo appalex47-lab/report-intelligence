@@ -12,7 +12,8 @@ from decimal import Decimal
 from .. import format as F
 from ..calc import indicators as ind
 from ..models import Group, Period
-from ..narrative import deterministic as N
+from ..narrative.aetops import Box, check as check_narrative, compose_aetops_mensual
+from ..narrative.writer import Para, to_paragraphs, verify_edited
 from ..pipeline import Result
 from . import pptx_ops as ops
 
@@ -35,6 +36,9 @@ class FillReport:
     omitted_categories: list[str] = field(default_factory=list)
     titles_fixed: list[str] = field(default_factory=list)
     bound: list[tuple[int, str]] = field(default_factory=list)      # (n.º de diapositiva, shape)
+    narrative: dict = field(default_factory=dict)                   # clave -> [Para] (con tipo, regla y cifras)
+    narrative_problems: list[str] = field(default_factory=list)     # cifras sin evidencia, vocabulario causal…
+    edited_unverified: list[str] = field(default_factory=list)      # ediciones manuales con cifras nuevas
 
 
 def fit_label(label: str) -> str:
@@ -284,11 +288,19 @@ CROSSED_TITLES = {
 }
 
 
-def fill_aetops_mensual(prs, result: Result, period: Period, narrative: dict | None = None,
+NARR = {                      # clave de narrativa -> (diapositiva, shape de la plantilla)
+    "panorama": (1, "CuadroTexto 6"), "canal_yoy": (2, "CuadroTexto 6"), "canal_mom": (3, "CuadroTexto 17"),
+    "linea_yoy": (4, "CuadroTexto 6"), "linea_mom": (5, "CuadroTexto 6"), "productos": (6, "CuadroTexto 7"),
+    "crecimiento": (7, "CuadroTexto 21"), "decrecimiento": (7, "CuadroTexto 27"), "cat_yoy": (8, "CuadroTexto 24"),
+    "cat_mom": (9, "CuadroTexto 8"), "negados": (10, "CuadroTexto 6"), "conclusiones": (11, "CuadroTexto 12"),
+}
+
+
+def fill_aetops_mensual(prs, result: Result, period: Period, narrative: dict[str, list[str]] | None = None,
                         fix_titles: bool = True) -> FillReport:
+    """`narrative`: ediciones manuales {clave: [párrafos]} que sustituyen al texto generado (se verifican)."""
     rep = FillReport()
     fl = Filler(prs, rep)
-    narrative = narrative or {}
     T = result.tables
 
     def tab(key):
@@ -306,62 +318,46 @@ def fill_aetops_mensual(prs, result: Result, period: Period, narrative: dict | N
             raise DataMissing(f"Falta el bloque de productos '{k}'.")
     neg_alta, neg_prod = result.negados.get("aetops.negados.alta"), result.negados.get("aetops.negados.producto")
 
-    def say(key, default):
-        return narrative.get(key, default)
+    # --- narrativa: capacidad de cada cuadro -> compositor -> verificación
+    boxes = {k: Box(*ops.narrative_box(fl.shape(n, name))) for k, (n, name) in NARR.items()}
+    a, b, om_y = pick_categories_yoy(cat_yoy.groups)
+    up, down, om_m = pick_categories_mom(cat_mom.groups)
+    narr = compose_aetops_mensual(result, period, boxes, a + b, up + down)
+    rep.narrative_problems = check_narrative(narr)
+    rep.narrative = narr
+    for key, texts in (narrative or {}).items():
+        allowed = set().union(*(p.nums for ps in narr.values() for p in ps))
+        edited = [Para(t, "hecho", 0, edited=True, nums=set()) for t in texts if t != ""]
+        rep.edited_unverified += [f"{key}: {x}" for p in edited for x in verify_edited(p.plain, allowed)]
+        narr[key] = edited + [p for p in narr.get(key, []) if not p.visible]
 
     # 1 · Panorama
     fill_panorama(fl, 1, pano_yoy, pano_mom)
-    ops.set_paragraphs(fl.shape(1, "CuadroTexto 6"), say("panorama", N.panorama(pano_yoy, pano_mom, period)))
-
     # 2-5 · canales y líneas (los títulos del original están cruzados: se corrigen y se informa)
-    for n, name, tbl, box, key, what in (
-            (2, "Tabla 2", canal_yoy, "CuadroTexto 6", "canal_yoy", "canales"),
-            (3, "Tabla 2", canal_mom, "CuadroTexto 17", "canal_mom", "canales"),
-            (4, "Tabla 8", linea_yoy, "CuadroTexto 6", "linea_yoy", "líneas"),
-            (5, "Tabla 2", linea_mom, "CuadroTexto 6", "linea_mom", "líneas")):
+    for n, name, tbl in ((2, "Tabla 2", canal_yoy), (3, "Tabla 2", canal_mom), (4, "Tabla 8", linea_yoy),
+                         (5, "Tabla 2", linea_mom)):
         fill_grouped(fl, n, name, tbl)
-        ops.set_paragraphs(fl.shape(n, box), say(key, N.groups(tbl.groups, what)))
         if fix_titles:
             tname, text = CROSSED_TITLES[n]
             sh = fl.shape(n, tname)
             if ops_text(sh) != text:
                 rep.titles_fixed.append(f"diap. {n}: '{ops_text(sh)}' → '{text}'")
                 ops.set_simple_text(sh, text)
-
-    # 6 · productos
-    top = prod["aetops.productos.top"].rows
-    fill_productos(fl, 6, "Tabla 3", top, 20, rep)
-    ops.set_paragraphs(fl.shape(6, "CuadroTexto 7"), say("productos", N.top_products(top)))
-
-    # 7 · crecimiento / decrecimiento
-    grow, dec = prod["aetops.productos.growth"].rows, prod["aetops.productos.decline"].rows
-    fill_productos(fl, 7, "Tabla 2", grow, 10, rep)
-    fill_productos(fl, 7, "Tabla 7", dec, 10, rep)
-    ops.set_paragraphs(fl.shape(7, "CuadroTexto 21"), say("crecimiento", N.movers(grow, "growth")))
-    ops.set_paragraphs(fl.shape(7, "CuadroTexto 27"), say("decrecimiento", N.movers(dec, "decline")))
-
-    # 8 · categorías YoY (dos tablas apiladas en un mismo objeto: 4 + 3 bloques)
-    a, b, omitted = pick_categories_yoy(cat_yoy.groups)
+    # 6 · productos · 7 · crecimiento / decrecimiento
+    fill_productos(fl, 6, "Tabla 3", prod["aetops.productos.top"].rows, 20, rep)
+    fill_productos(fl, 7, "Tabla 2", prod["aetops.productos.growth"].rows, 10, rep)
+    fill_productos(fl, 7, "Tabla 7", prod["aetops.productos.decline"].rows, 10, rep)
+    # 8 · categorías YoY (dos tablas apiladas en un mismo objeto: 4 + 3 bloques) · 9 · MoM (suben | bajan)
     pad = lambda lst, k: lst + [None] * (k - len(lst))                   # noqa: E731
     fill_cat_blocks(fl, 8, "Tabla 2", [(2, pad(a, 4), 0), (18, pad(b, 3), 2)], rows=27)
-    rep.omitted_categories += [g.name for g in omitted]
-    ops.set_paragraphs(fl.shape(8, "CuadroTexto 24"), say("cat_yoy", N.groups_compact(a + b)))
-
-    # 9 · categorías MoM (suben | bajan)
-    up, down, omitted_m = pick_categories_mom(cat_mom.groups)
     fill_cat_blocks(fl, 9, "Tabla 3", [(2, pad(up, 4), 0)], rows=14)
     fill_cat_blocks(fl, 9, "Tabla 12", [(2, pad(down, 4), 0)], rows=14)
-    rep.omitted_categories += [f"{g.name} (MoM)" for g in omitted_m]
-    ops.set_paragraphs(fl.shape(9, "CuadroTexto 8"), say("cat_mom", N.groups_compact(up + down)))
-
+    rep.omitted_categories += [g.name for g in om_y] + [f"{g.name} (MoM)" for g in om_m]
     # 10 · negados
     fill_negados(fl, 10, neg_alta, neg_prod, rep)
-    ops.set_paragraphs(fl.shape(10, "CuadroTexto 6"), say("negados", N.negados(neg_alta, neg_prod)))
-
-    # 11 · conclusiones
-    ops.set_paragraphs(fl.shape(11, "CuadroTexto 12"), say(
-        "conclusiones", N.conclusions(pano_yoy, pano_mom, canal_yoy.groups, linea_yoy.groups, period,
-                                      neg_alta.total.v if neg_alta else None)))
+    # textos
+    for key, (n, name) in NARR.items():
+        ops.set_paragraphs(fl.shape(n, name), to_paragraphs(narr[key]))
     if rep.omitted_categories:
         rep.notes.append("Categorías no mostradas por capacidad de la plantilla (selección editorial pendiente): "
                          + ", ".join(rep.omitted_categories))

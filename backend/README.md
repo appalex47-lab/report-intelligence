@@ -28,6 +28,7 @@ python tools/make_glp1_synthetic.py data/GLP1_sintetico_limpio.xlsx            #
 - QA (error = descarga bloqueada): páginas PDF = diapositivas; texto fuera de página; contenido invadiendo el pie; palabras superpuestas; texto del PPTX ausente en el PDF; tablas/imágenes/cuadros distintos a la plantilla; barras/logos/pie distintos al render de la plantilla; datos viejos de la plantilla sin sustituir; marcadores sin rellenar. Las reglas se calibraron con el PPTX original (debe pasar sin errores).
 - Tablas, textos e imágenes siguen siendo objetos de PowerPoint (nada se rasteriza).
 - Plantilla: `templates/README.md` (no se versiona).
+- **Narrativa** (`narrative/`): `insights.py` calcula hallazgos (descomposición volumen/valor, aporte al crecimiento, cambio de participación, base pequeña, lectura mixta, negados vs venta); `aetops.py` los redacta al estilo del analista y ajusta el texto al cuadro; `writer.py` registra cada cifra y **verifica** que toda cifra tenga evidencia y que no haya vocabulario causal. Cada párrafo es hecho, interpretación (con su regla) o información insuficiente. Se exporta `narrative.json` para edición. Propósito y reglas: `docs/OBJETIVO_Y_NARRATIVA.md`.
 
 ## GLP-1 (4c)
 - `importer/glp1_blocks.py` + `profiles/glp1/*.yaml`: localiza 17 tablas de las hojas 1–9 por el texto de su encabezado (no por posición), incluye bloques apilados, lado a lado, el bloque del periodo anterior y el embudo (sin encabezado).
