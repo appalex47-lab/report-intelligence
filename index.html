@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report Intelligence — AETOPS & GLP-1</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <!-- SheetJS (xlsx) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <!-- PptxGenJS -->
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+</head>
+<body x-data="reportApp()" x-cloak>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-mark">RI</span>
+        <div>
+          <h1>Report Intelligence</h1>
+          <p class="tagline">Automatización de reportes ejecutivos AETOPS & GLP-1</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn" :class="{ active: view === 'dashboard' }" @click="view = 'dashboard'">Dashboard</button>
+        <button class="nav-btn" :class="{ active: view === 'generate' }" @click="view = 'generate'">Generar reporte</button>
+        <button class="nav-btn" :class="{ active: view === 'history' }" @click="view = 'history'">Historial</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- ========== DASHBOARD ========== -->
+    <section x-show="view === 'dashboard'" x-transition class="view">
+      <div class="page-title">
+        <h2>Dashboard</h2>
+        <p>Resumen de actividad y acceso rápido</p>
+      </div>
+
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-label">Unidades de negocio</div>
+          <div class="card-value">2</div>
+          <div class="card-sub">AETOPS · GLP-1</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Formatos soportados</div>
+          <div class="card-value">4</div>
+          <div class="card-sub">Mensual y Trimestral</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Reportes en historial</div>
+          <div class="card-value" x-text="history.length"></div>
+          <div class="card-sub">Guardados localmente</div>
+        </div>
+        <div class="card card-action" @click="view = 'generate'">
+          <div class="card-label">Acción principal</div>
+          <div class="card-value-sm">Generar nuevo reporte</div>
+          <div class="card-sub">Cargar Excel → Calcular → Exportar</div>
+        </div>
+      </div>
+
+      <div class="section-block" x-show="history.length > 0">
+        <h3>Reportes recientes</h3>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Unidad</th>
+                <th>Periodicidad</th>
+                <th>Periodo</th>
+                <th>Fecha generación</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="(item, idx) in history.slice(0, 5)" :key="idx">
+                <tr>
+                  <td x-text="item.businessUnit"></td>
+                  <td x-text="item.periodicity"></td>
+                  <td x-text="item.periodLabel"></td>
+                  <td x-text="item.generatedAt"></td>
+                  <td><span class="badge" :class="item.status" x-text="item.status"></span></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== GENERATE ========== -->
+    <section x-show="view === 'generate'" x-transition class="view">
+      <div class="page-title">
+        <h2>Generar nuevo reporte</h2>
+        <p>Selecciona unidad, periodo y carga los archivos Excel (machotes)</p>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="steps">
+        <div class="step" :class="{ active: step >= 1, done: step > 1 }">1. Configuración</div>
+        <div class="step" :class="{ active: step >= 2, done: step > 2 }">2. Carga de archivos</div>
+        <div class="step" :class="{ active: step >= 3, done: step > 3 }">3. Validación</div>
+        <div class="step" :class="{ active: step >= 4, done: step > 4 }">4. Resultados</div>
+      </div>
+
+      <!-- STEP 1: Config -->
+      <div class="panel" x-show="step === 1">
+        <h3>Configuración del reporte</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Unidad de negocio</label>
+            <select x-model="config.businessUnit">
+              <option value="">— Seleccionar —</option>
+              <option value="AETOPS">AETOPS</option>
+              <option value="GLP-1">GLP-1</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Periodicidad</label>
+            <select x-model="config.periodicity">
+              <option value="">— Seleccionar —</option>
+              <option value="Mensual">Mensual</option>
+              <option value="Trimestral">Trimestral</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ejercicio</label>
+            <input type="number" x-model.number="config.year" min="2020" max="2030" />
+          </div>
+          <div class="form-group">
+            <label x-text="config.periodicity === 'Trimestral' ? 'Trimestre' : 'Mes'"></label>
+            <input type="text" x-model="config.periodLabel" placeholder="Ej. Septiembre o Q3" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" :disabled="!canGoToStep2" @click="step = 2">Continuar →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Upload -->
+      <div class="panel" x-show="step === 2">
+        <h3>Carga de archivos Excel</h3>
+        <p class="hint">Usa los machotes oficiales. Puedes cargar uno o varios archivos.</p>
+
+        <div class="dropzone"
+             @dragover.prevent="dragOver = true"
+             @dragleave.prevent="dragOver = false"
+             @drop.prevent="handleDrop($event)"
+             :class="{ 'drag-over': dragOver }"
+             @click="$refs.fileInput.click()">
+          <input type="file" x-ref="fileInput" multiple accept=".xlsx,.xls" class="hidden" @change="handleFiles($event)" />
+          <div class="dropzone-content">
+            <div class="dropzone-icon">📄</div>
+            <p>Arrastra archivos aquí o haz clic para seleccionar</p>
+            <p class="dropzone-sub">Formato aceptado: .xlsx (machotes AETOPS / GLP-1)</p>
+          </div>
+        </div>
+
+        <div class="file-list" x-show="files.length > 0">
+          <h4>Archivos cargados</h4>
+          <template x-for="(f, idx) in files" :key="idx">
+            <div class="file-item">
+              <span class="file-name" x-text="f.name"></span>
+              <span class="file-size" x-text="formatSize(f.size)"></span>
+              <button class="btn-icon" @click="removeFile(idx)" title="Quitar">✕</button>
+            </div>
+          </template>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-secondary" @click="step = 1">← Atrás</button>
+          <button class="btn btn-primary" :disabled="files.length === 0 || processing" @click="processFiles()">
+            <span x-show="!processing">Procesar y validar →</span>
+            <span x-show="processing">Procesando…</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Validation -->
+      <div class="panel" x-show="step === 3">
+        <h3>Resumen de validación</h3>
+
+        <div class="validation-summary" x-show="validation">
+          <div class="val-grid">
+            <div class="val-item">
+              <span class="val-label">Archivos procesados</span>
+              <span class="val-value" x-text="validation.filesProcessed"></span>
+            </div>
+            <div class="val-item">
+              <span class="val-label">Hojas reconocidas</span>
+              <span class="val-value" x-text="validation.sheetsRecognized"></span>
+            </div>
+            <div class="val-item">
+              <span class="val-label">Indicadores calculados</span>
+              <span class="val-value ok" x-text="validation.indicatorsOk"></span>
+            </div>
+            <div class="val-item">
+              <span class="val-label">Pendientes / advertencias</span>
+              <span class="val-value" :class="validation.warnings > 0 ? 'warn' : 'ok'" x-text="validation.warnings"></span>
+            </div>
+          </div>
+
+          <div class="alerts" x-show="validation.messages && validation.messages.length">
+            <template x-for="(msg, i) in validation.messages" :key="i">
+              <div class="alert" :class="msg.type" x-text="msg.text"></div>
+            </template>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-secondary" @click="step = 2">← Atrás</button>
+          <button class="btn btn-primary" :disabled="!validation || validation.hasBlockingErrors" @click="step = 4">
+            Ver resultados →
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 4: Results -->
+      <div class="panel" x-show="step === 4">
+        <h3>Resultados calculados</h3>
+        <p class="hint">Revisa los KPIs principales. La generación de PPTX/PDF se implementará en la siguiente fase.</p>
+
+        <div x-show="results">
+          <!-- AETOPS results -->
+          <template x-if="config.businessUnit === 'AETOPS' && results.aetops">
+            <div>
+              <h4>Panorama General (AETOPS)</h4>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Indicador</th>
+                      <th>Actual</th>
+                      <th>Anterior</th>
+                      <th>% Δ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="kpi in results.aetops.kpis" :key="kpi.name">
+                      <tr>
+                        <td x-text="kpi.name"></td>
+                        <td x-text="formatNumber(kpi.actual)"></td>
+                        <td x-text="formatNumber(kpi.previous)"></td>
+                        <td :class="kpi.delta >= 0 ? 'positive' : 'negative'" x-text="formatPct(kpi.delta)"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div x-show="results.aetops.sizeB !== null" class="kpi-extra">
+                <span>Size B: <strong x-text="formatNumber(results.aetops.sizeB, 2)"></strong></span>
+                <span>V. Paciente: <strong x-text="formatNumber(results.aetops.valorPaciente, 0)"></strong></span>
+                <span>Ticket Promedio: <strong x-text="formatNumber(results.aetops.ticket, 0)"></strong></span>
+              </div>
+            </div>
+          </template>
+
+          <!-- GLP-1 results -->
+          <template x-if="config.businessUnit === 'GLP-1' && results.glp1">
+            <div>
+              <h4>Resumen GLP-1</h4>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Métrica</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="row in results.glp1.summary" :key="row.label">
+                      <tr>
+                        <td x-text="row.label"></td>
+                        <td x-text="formatNumber(row.value)"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-secondary" @click="step = 3">← Atrás</button>
+          <button class="btn btn-primary" :disabled="!results || generating" @click="generatePptx()"><span x-show="!generating">Generar PPTX</span><span x-show="generating">Generando…</span></button>
+          <button class="btn btn-secondary" @click="saveToHistory()">Guardar en historial</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== HISTORY ========== -->
+    <section x-show="view === 'history'" x-transition class="view">
+      <div class="page-title">
+        <h2>Historial de reportes</h2>
+        <p>Reportes generados y guardados en este navegador</p>
+      </div>
+
+      <div x-show="history.length === 0" class="empty-state">
+        <p>Aún no hay reportes en el historial.</p>
+      </div>
+
+      <div class="table-wrap" x-show="history.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Unidad</th>
+              <th>Periodicidad</th>
+              <th>Periodo</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(item, idx) in history" :key="idx">
+              <tr>
+                <td x-text="item.businessUnit"></td>
+                <td x-text="item.periodicity"></td>
+                <td x-text="item.periodLabel"></td>
+                <td x-text="item.generatedAt"></td>
+                <td><span class="badge" :class="item.status" x-text="item.status"></span></td>
+                <td>
+                  <button class="btn-icon" @click="removeFromHistory(idx)" title="Eliminar">🗑</button>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Report Intelligence · Fase 4 — Motor de datos y cálculos</span>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
