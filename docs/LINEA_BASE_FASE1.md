@@ -1,7 +1,7 @@
 # Línea base de la Fase 1 — antes y después
 
 Auditoría de la arquitectura existente: `docs/fase1/implementacion/F1_AUDITORIA_Y_LINEA_BASE.md` (no se duplica aquí).
-Fecha de las ejecuciones: 2026-11-03 (UTC). Entorno: Linux 6.18.44, Python 3.13.18, LibreOffice y `pdftoppm` presentes, plantillas locales no versionadas presentes, `REPORT_FIXTURES_DIR` sin definir. CI y `Dockerfile` usan Python 3.12 (no ejecutado en esta fase).
+Fecha de las ejecuciones: 2026-11-03 (UTC). Entorno: Linux 6.18.44, Python 3.13.18, LibreOffice y `pdftoppm` presentes, plantillas locales no versionadas presentes, `REPORT_FIXTURES_DIR` sin definir. CI y `Dockerfile` usan Python 3.12: la suite también se ejecutó en 3.12 (ver §2b).
 
 ## 1. Referencias
 | Dato | Valor |
@@ -21,6 +21,16 @@ Fecha de las ejecuciones: 2026-11-03 (UTC). Entorno: Linux 6.18.44, Python 3.13.
 | `python tools/make_fixtures_fase1.py --check` | no existía | **idéntico** | — |
 
 Las 47 pruebas nuevas: `test_hallazgo_compat.py` (compatibilidad de `Finding`), `test_config_fase1.py` (catálogo y configuración) y `test_fixtures_fase1.py` (fixtures). Se agregaron en archivos nuevos de `tests/unit/`; no se tocó ninguna prueba existente.
+
+## 2b. Verificación en Python 3.12 (el de CI y el `Dockerfile`)
+Entorno: venv con Python 3.12.3 e instalación de `requirements.txt` (pytest 9.2.0, python-pptx 1.0.2, openpyxl 3.1.5, fastapi 0.162.0); mismo árbol de código (`e93f8fa`).
+| Comprobación | Resultado en Python 3.12 |
+|---|---|
+| `python -m pytest tests/unit -q` | **228 passed**, 0 failed, 0 skipped, 1 warning, 564,8 s (la advertencia es de `fastapi/starlette` por `httpx`, ajena al código del proyecto) |
+| `tools/capture_baseline.py --check` | 4 escenarios idénticos en motor y deck (los snapshots se capturaron en 3.13: el resultado no depende de la versión) |
+Lo que sigue **sin ejecutarse**: Pyodide (el motor en el navegador).
+
+Seguimiento posterior: se añadió 1 prueba (`test_el_directorio_de_fixtures_no_oculta_el_modulo_tests_fixtures`; aprobada sola en 3.13 y 3.12) y un paso en `tests.yml` que ejecuta `tests/regression` en CI. La suite completa **no se repitió** con esa prueba adicional (serían 229); la confirmará el CI del PR.
 
 ## 3. Regresiones
 **Ninguna.** Las 181 pruebas originales siguen aprobadas, la foto del motor y del deck es idéntica, y los hallazgos conservan `id` y `severity`. Los tiempos son comparables (la diferencia de 20 s está dentro de la variación del entorno; no se interpreta como mejora).

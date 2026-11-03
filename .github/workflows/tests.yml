@@ -17,3 +17,5 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Pruebas unitarias (las que necesitan plantillas reales se omiten)
         run: python -m pytest tests/unit -q
+      - name: Regresión contra la línea base (motor y hallazgos; la capa del PPTX se omite sin plantillas)
+        run: python -m pytest tests/regression -q

@@ -29,8 +29,8 @@ Documentos relacionados: `docs/LINEA_BASE_FASE1.md` (antes/después), `docs/MODE
 - `APP_VERSION` / `ENGINE_VERSION`: requieren estampar la versión al compilar el sitio (`tools/build_site.py`); esta fase no altera la compilación. `version.versiones()` devuelve `None` para ambos.
 - `validator/catalogo.py` (mapa de `id` histórico a `tipo/gravedad/estado/efecto`): es de la fase de reglas.
 - Cablear los campos nuevos a la API/interfaz: `web.service._finding` se dejó intacto a propósito.
-- Ampliar `tests.yml` para que CI ejecute `tests/regression`: no se modificó ningún workflow (decisión pendiente, ver F).
-- Ejecución en Python 3.12 (CI) y en Pyodide: no se hizo; solo Python 3.13.
+- ~~Ampliar `tests.yml`~~: hecho en el seguimiento posterior a la revisión (un paso nuevo que ejecuta `tests/regression`; ningún workflow de publicación se tocó).
+- Ejecución en Pyodide: no se hizo. Python 3.12 sí se verificó en el seguimiento (228 passed).
 
 ## D. Pruebas
 | Prueba | Resultado | Evidencia |
@@ -51,12 +51,12 @@ Las pruebas de la especificación T-01 a T-22 siguen **Pendientes**; lo anterior
 ## F. Riesgos y decisiones que requieren autorización
 | # | Riesgo / decisión | Nivel |
 |---|---|---|
-| 1 | `models.py` lo importan 28 módulos. El cambio es aditivo y la suite lo cubre, pero no se ejecutó en Pyodide ni en Python 3.12 | Medio |
+| 1 | `models.py` lo importan 28 módulos. El cambio es aditivo y la suite lo cubre; **verificado también en Python 3.12** (228 passed). Pendiente: Pyodide (navegador), cubierto por T-16 en fases posteriores | Medio → bajo |
 | 2 | `Finding` ahora lanza `ValueError` si se aportan campos nuevos inválidos o incoherentes (los constructores históricos no se ven afectados). Las fases de reglas deben construir hallazgos con cuidado | Bajo |
-| 3 | `tests/fixtures/` (directorio) convive con `tests/fixtures.py` (módulo); hoy el módulo tiene prioridad y la suite lo confirma, pero es una fragilidad de nombres que fija la especificación | Bajo |
+| 3 | `tests/fixtures/` (directorio) convive con `tests/fixtures.py` (módulo); el módulo tiene prioridad y ahora hay una prueba que lo vigila (`test_el_directorio_de_fixtures_no_oculta_el_modulo_tests_fixtures`) | Bajo |
 | 4 | Los valores heredados (25 %, 10 %, 20 %) quedan registrados en `reglas.json` y en el código: hay una prueba anti-deriva, pero dos fuentes hasta que una fase posterior haga leer el JSON al código | Bajo |
-| 5 | **Decisión:** ¿ampliar `tests.yml` para ejecutar `tests/regression` en CI? (no se tocó ningún workflow) | Requiere autorización |
-| 6 | **Decisión:** ¿confirmar la ubicación `backend/app/config/` (en lugar de un `config/` en la raíz)? Se eligió por compatibilidad con el empaquetado del sitio | Requiere confirmación |
+| 5 | `tests.yml` ahora también ejecuta `tests/regression` (decisión delegada por el usuario; ver F1 seguimiento) | Resuelto |
+| 6 | Ubicación `backend/app/config/` (en lugar de un `config/` en la raíz): se mantiene por compatibilidad con el empaquetado del sitio (decisión delegada por el usuario) | Resuelto |
 | 7 | **Decisión:** autorizar el inicio de la Fase 2 (reglas). Sigue pendiente; no se avanzó | Requiere autorización |
 
 ## G. Entregables
@@ -92,6 +92,7 @@ Lista para **revisión humana**. No se declara aprobada ninguna prueba de la esp
 | `docs/LINEA_BASE_FASE1.md` | Creado | Antes/después | Bajo |
 | `docs/ARQUITECTURA.md` | **Modificado** (+16, apartado §17 al final) | Registrar lo implementado | Bajo |
 | `docs/CONTRATO_DATOS.md` | **Modificado** (+8, nota al final) | Declarar que el contrato no cambió | Bajo |
+| `.github/workflows/tests.yml` | **Modificado** (+2 líneas, seguimiento) | Que CI ejecute `tests/regression` | Bajo |
 | `docs/fase1/implementacion/F1_INFORME_DE_FASE.md` | Creado | Este informe | Bajo |
 
 No se eliminó ningún archivo. No se modificaron: plantillas, importadores, `raw/`, `rules.py`, `glp1_exec.py`, narrativa, IA, workflows, perfiles, datos de ejemplo, láminas, fórmulas ni porcentajes.

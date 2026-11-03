@@ -60,3 +60,11 @@ def test_el_generador_solo_escribe_dentro_de_su_directorio(tmp_path):
 def test_el_generador_no_depende_de_archivos_de_datos():
     fuente = Path(mk.__file__).read_text(encoding="utf-8")
     assert "read_excel" not in fuente and "openpyxl" not in fuente and "data/ejemplos" not in fuente
+
+
+def test_el_directorio_de_fixtures_no_oculta_el_modulo_tests_fixtures():
+    """`tests/fixtures/` (directorio, sin __init__.py) convive con `tests/fixtures.py` (módulo): el módulo debe seguir ganando."""
+    import importlib
+    mod = importlib.import_module("tests.fixtures")
+    assert getattr(mod, "__file__", "").endswith("fixtures.py") and callable(mod.build_base)
+    assert not (DIR.parent / "__init__.py").exists()
