@@ -30,7 +30,7 @@ Entorno: venv con Python 3.12.3 e instalación de `requirements.txt` (pytest 9.2
 | `tools/capture_baseline.py --check` | 4 escenarios idénticos en motor y deck (los snapshots se capturaron en 3.13: el resultado no depende de la versión) |
 Lo que sigue **sin ejecutarse**: Pyodide (el motor en el navegador).
 
-Seguimiento posterior: se añadió 1 prueba (`test_el_directorio_de_fixtures_no_oculta_el_modulo_tests_fixtures`; aprobada sola en 3.13 y 3.12) y un paso en `tests.yml` que ejecuta `tests/regression` en CI. La suite completa **no se repitió** con esa prueba adicional (serían 229); la confirmará el CI del PR.
+Seguimiento posterior: se añadió 1 prueba (`test_el_directorio_de_fixtures_no_oculta_el_modulo_tests_fixtures`; aprobada sola en 3.13 y 3.12) y un paso en `tests.yml` que ejecuta `tests/regression` en CI. La suite completa **no se repitió** localmente con esa prueba adicional (serían 229). **Evidencia de CI** (GitHub Actions, Python 3.12.15, PR #11, commit `d3381ed`): el job `unit` terminó en `success`; el paso de regresión registró `9 passed, 4 skipped` (las 4 omitidas son las comparaciones del PPTX, que se saltan por no haber plantillas en CI, como está diseñado). Ejecución: https://github.com/appalex47-lab/report-intelligence/actions/runs/41593236581
 
 ## 3. Regresiones
 **Ninguna.** Las 181 pruebas originales siguen aprobadas, la foto del motor y del deck es idéntica, y los hallazgos conservan `id` y `severity`. Los tiempos son comparables (la diferencia de 20 s está dentro de la variación del entorno; no se interpreta como mejora).
