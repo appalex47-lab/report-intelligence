@@ -21,8 +21,9 @@ NUCLEO = ["backend/app/pipeline.py", "backend/app/build.py", "backend/app/cli.py
 
 
 def test_el_manifiesto_cubre_el_nucleo_de_la_aplicacion():
-    datos = json.loads(ap.MANIFIESTO.read_text(encoding="utf-8"))["archivos"]
-    assert not [f for f in NUCLEO if f not in datos]
+    m = json.loads(ap.MANIFIESTO.read_text(encoding="utf-8"))
+    cubiertos = set(m["archivos"]) | set(m.get("autorizados", {}))              # intactos + modificados con autorización (hash vigente)
+    assert not [f for f in NUCLEO if f not in cubiertos]
 
 
 def test_los_archivos_protegidos_no_han_cambiado():

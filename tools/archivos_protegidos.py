@@ -4,8 +4,11 @@ Registra el SHA-256 de cada archivo versionado del backend, los perfiles, el fro
 de publicación que no han cambiado desde la base (`main` antes de la Fase 1 de implementación). Si una fase posterior
 autorizada necesita cambiar uno, se actualiza el manifiesto de forma explícita y queda justificado.
 
-    python tools/archivos_protegidos.py --write [--base 6e1104d]
+    python tools/archivos_protegidos.py --write [--base 6e1104d] [--autorizar ruta="motivo" ...]
     python tools/archivos_protegidos.py --check
+
+`--autorizar` registra un archivo existente que se modificó por una decisión expresa (con su motivo): sigue protegido
+con su hash nuevo, de modo que cualquier cambio posterior también se detecta.
 """
 from __future__ import annotations
 
@@ -36,9 +39,13 @@ def candidatos(base: str) -> list[str]:
     return sorted(f for f in en_base if f.startswith(DIRS) and not f.startswith(EXCLUIR) and f not in cambiados and (ROOT / f).exists())
 
 
-def escribir(base: str) -> dict:
+def escribir(base: str, autorizar: dict[str, str] | None = None) -> dict:
+    previos = {}
+    if MANIFIESTO.exists():
+        previos = json.loads(MANIFIESTO.read_text(encoding="utf-8")).get("autorizados", {})
+    autorizados = {f: {"motivo": m, "sha256": sha(ROOT / f)} for f, m in {**{k: v["motivo"] for k, v in previos.items()}, **(autorizar or {})}.items()}
     datos = {"base": base, "descripcion": "Archivos sin cambios desde la base; cambiarlos exige autorización y actualizar este manifiesto",
-             "archivos": {f: sha(ROOT / f) for f in candidatos(base)}}
+             "archivos": {f: sha(ROOT / f) for f in candidatos(base) if f not in autorizados}, "autorizados": autorizados}
     MANIFIESTO.write_text(json.dumps(datos, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     return datos
 
@@ -52,6 +59,12 @@ def verificar() -> list[str]:
             dif.append(f"eliminado: {f}")
         elif sha(p) != h:
             dif.append(f"modificado: {f}")
+    for f, d in datos.get("autorizados", {}).items():
+        p = ROOT / f
+        if not p.exists():
+            dif.append(f"eliminado (autorizado): {f}")
+        elif sha(p) != d["sha256"]:
+            dif.append(f"modificado después de su autorización: {f}")
     return dif
 
 
@@ -61,9 +74,12 @@ def main(argv=None) -> int:
     g.add_argument("--write", action="store_true")
     g.add_argument("--check", action="store_true")
     ap.add_argument("--base", default="6e1104d")
+    ap.add_argument("--autorizar", action="append", default=[], metavar='RUTA=MOTIVO')
     a = ap.parse_args(argv)
     if a.write:
-        print(f"{len(escribir(a.base)['archivos'])} archivos protegidos (base {a.base})")
+        aut = dict(x.split("=", 1) for x in a.autorizar)
+        d = escribir(a.base, aut)
+        print(f"{len(d['archivos'])} archivos protegidos + {len(d['autorizados'])} modificados con autorización (base {a.base})")
         return 0
     d = verificar()
     print("\n".join(d) if d else "archivos protegidos: sin cambios")

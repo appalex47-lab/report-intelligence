@@ -11,11 +11,9 @@
   "backend/app/calc/tables_extra.py": "b7ae76d3d2a5deda67357654e28a73d5740060b8bb75feacedef4af1dc88cc63",
   "backend/app/cli.py": "4b8f2e613c24da444aea87bfc7079c89acba8330f4eb3a44a05b5d1cc34af579",
   "backend/app/deck/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "backend/app/deck/aetops_mensual.py": "8027bc4fd1c58ba3b4b4dec68b0beab554c60c98d457511c8e416f4e41750648",
   "backend/app/deck/aetops_trimestral.py": "f777ebf97c004ff266d9e07d7bd70d04651dcb221cf613599531a2b49aa97f2f",
   "backend/app/deck/extras.py": "b60ae0ded655167937888d84c96f908db1614d7f86343a116df0c7c1e411f106",
   "backend/app/deck/glp1_mensual.py": "475cbd3a23e2e34850aa84905c6e6df2a4d02ba3515d9dfccbc4fdc8e07df698",
-  "backend/app/deck/pptx_ops.py": "d6a1f02fe0f829b86c659323e5217922ad545d2ab70591ea40357f914bc76acc",
   "backend/app/format.py": "5e7509c3fa4cbb46cece58303e05245d449c833b9d32e0d98c60a7402175f5ff",
   "backend/app/history/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "backend/app/history/store.py": "737961798d89491f08669e744196e79e62d6669f95972c42edd3e84b718fa7de",
@@ -37,7 +35,6 @@
   "backend/app/narrative/writer.py": "c898185c5dddc15116c10edcb1b304ecdeff17c33d28932592560974ca1b846a",
   "backend/app/pipeline.py": "f87bf4e7387da97ee6b6eb05f916d23fe9464932f407d03eada86d73b42f1228",
   "backend/app/qa/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "backend/app/qa/checks.py": "3274f3589fac033bd863360d06854155344b5053543a291590f5b23a0b17ffe7",
   "backend/app/raw/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "backend/app/raw/aetops.py": "4bbd90ebe6bc3f304a9330a565e65389851149f1574503796d80073aca75186f",
   "backend/app/raw/common.py": "ece58ac98eb9e8f06a1c873c0d8e01381418c481ad61f18a71f94e58764ffbd2",
@@ -74,6 +71,20 @@
   "tools/make_raw_glp1_synthetic.py": "9664f46bbe9578335ee6ab9b9916638f22bd42bd502249bb6dd45af8fdc1fb45",
   "tools/make_raw_synthetic.py": "42e1e9432446dd4a4fa4f70ae03565e97837527975716b5ac7d4d3ea260a75d8",
   "tools/make_realistic_samples.py": "537cf0f0802bf22b6bd807e4bc54065345f3059c6808da47fcbd81b886470f89"
+ },
+ "autorizados": {
+  "backend/app/deck/aetops_mensual.py": {
+   "motivo": "Corrección QA OVERFLOW_ESTIMATED: tablas por grupos con más grupos que la plantilla se compactan (solicitado por el usuario tras un error real)",
+   "sha256": "46187dc3ef0a9104aae20bb6ee9fc676daee2b4b1fbc850f8b419b65b3f9eecd"
+  },
+  "backend/app/deck/pptx_ops.py": {
+   "motivo": "Funciones set_filler_font y compact_to_fit (misma corrección)",
+   "sha256": "20ace428c6365a341963c7d229509fe2291d9c761cd728ad05cc920435ad63ce"
+  },
+  "backend/app/qa/checks.py": {
+   "motivo": "Funciones row_min_heights y row_content_floors (misma corrección; estimate_table_height sin cambio de resultado)",
+   "sha256": "4960e01ccb49112c434b50a03c26142879d4461a4438b8aaa0a1e259455e2fa2"
+  }
  },
  "base": "6e1104d",
  "descripcion": "Archivos sin cambios desde la base; cambiarlos exige autorización y actualizar este manifiesto"
