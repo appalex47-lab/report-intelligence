@@ -21,6 +21,7 @@ class Result:
     findings: list[Finding]
     products: dict[str, ProductTable] = field(default_factory=dict)
     negados: dict[str, NegadosTable] = field(default_factory=dict)
+    extras: dict = field(default_factory=dict)          # cruces de datos crudos (solo vía datos crudos)
 
     @property
     def can_generate(self) -> bool:
@@ -60,7 +61,7 @@ def run_aetops_raw(path: str | Path, period: Period, targets=None, require_targe
     tables, prod, neg, findings = raw_aetops.aggregate(raw, period)
     if tables:
         findings += extra.products(prod) + extra.negados(neg) + extra.expected_period(tables, neg, period)
-    res = Result(tables, findings, prod, neg)
+    res = Result(tables, findings, prod, neg, getattr(raw, "extras", {}))
     if require_targets or targets is not None:
         if tables:
             res.findings += validate_targets(res, targets, require_targets)
@@ -80,6 +81,7 @@ class GlpResult:
     blocks: dict[str, GBlock]
     funnel: GBlock | None
     findings: list[Finding]
+    extras: dict = field(default_factory=dict)
 
     @property
     def can_generate(self) -> bool:
@@ -89,8 +91,8 @@ class GlpResult:
 def run_glp1_raw(path: str | Path, period: Period) -> "GlpResult":
     """GLP-1 desde datos crudos (ventas + catálogo + tráfico + negados): ver docs/CONTRATO_DATOS.md."""
     from .raw import glp1 as raw_glp1
-    blocks, funnel, findings = raw_glp1.build(path, period)
-    return GlpResult(blocks, funnel, findings)
+    blocks, funnel, findings, extras = raw_glp1.build(path, period)
+    return GlpResult(blocks, funnel, findings, extras)
 
 
 def run_glp1(path: str | Path, profile_name: str = "mensual", period: Period | None = None) -> GlpResult:
