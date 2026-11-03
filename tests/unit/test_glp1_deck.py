@@ -63,8 +63,13 @@ def test_tables_match_engine(built):
         assert c[1].text.replace(",", "") == str(int(g.values["pedidos"].v))
         assert c[3].text.replace(",", "").replace("$", "") == str(int(round(g.values["monto"].v)))
     f = [sh for sh in prs.slides[7].shapes if sh.name == "Tabla 8"][0].table
-    assert f.cell(0, 4).text.replace(",", "") == str(int(res.funnel.rows[0].values["conteo"].v))
-    assert f.cell(8, 0).text == "Carritos abandonados"
+    assert f.cell(8, 0).text == "Carritos abandonados" and f.cell(0, 4).text == ""          # el conteo vive en las formas del embudo
+    shapes = {sh.name: sh for sh in prs.slides[7].shapes if sh.name.startswith("RI_embudo")}
+    for i, stage in enumerate(("ver producto", "agregar a carrito", "iniciar compra", "compra"), 1):
+        assert shapes[f"RI_embudo_{i}"].text_frame.text.replace(",", "") == str(int(res.funnel.rows[i - 1].values["conteo"].v))
+    w = [shapes[f"RI_embudo_{i}"].width for i in range(1, 5)]
+    assert w == sorted(w, reverse=True) and w[-1] > 0.25 * w[0]                              # embudo que se angosta, sin etapas ilegibles
+    assert "RI_embudo_fuga" in shapes and "avanza" in f.cell(1, 0).text and f.cell(7, 0).text == ""
 
 
 def test_narrative_numbers_are_registered_and_sexes_translated(built):
@@ -128,3 +133,23 @@ def test_context_and_goal_reach_the_deck(tmp_path):
     assert "Campaña de verano" in blob and "de la meta" in blob
     assert any(i.id == "CONTEXT_UNVERIFIED" for i in b.qa.issues) and b.qa.passed
     assert (tmp_path / "o" / "trends.json").exists() and b.manifest["historial"]["version"] == 1
+
+
+def _red_edges(cell):
+    tc = cell._tc.tcPr
+    return {t for t in ("lnL", "lnR", "lnT", "lnB") if tc is not None and tc.xpath(f"a:{t}//a:srgbClr[@val='FF0000']")}
+
+
+def test_red_boxes_mark_the_max_of_each_kpi_and_crowns_follow_the_leaders(built):
+    res, b = built
+    prs = Presentation(b.pptx)
+    t = [sh for sh in prs.slides[1].shapes if sh.name == "Tabla 2"][0].table          # edad (primera tabla), columna Visitas
+    rows = res.blocks["edad"].rows
+    lead = max(range(len(rows)), key=lambda i: rows[i].values["visitas"].v)
+    assert _red_edges(t.cell(1 + lead, 1)) == {"lnL", "lnR", "lnT", "lnB"}
+    others = [i for i in range(len(rows)) if i != lead]
+    assert all(not _red_edges(t.cell(1 + i, 1)) >= {"lnL", "lnR", "lnT", "lnB"} for i in others)
+    # coronas: una por producto en «producto × sexo», junto a la fila con más visitas del producto
+    s3 = prs.slides[3]
+    crowns = [sh for sh in s3.shapes if sh.shape_type == 13 and sh.name.startswith("Gráfico") and sh.name != "Gráfico 16"]
+    assert len(crowns) == len({r.key for r in res.blocks["producto_sexo"].rows})

@@ -12,7 +12,7 @@ from pptx import Presentation
 from .deck.aetops_mensual import FillReport, fill_aetops_mensual
 from .deck.aetops_trimestral import fill_aetops_trimestral
 from .deck.extras import add_executive_slides
-from .deck.glp1_mensual import fill_glp1
+from .deck.glp1_mensual import DECORATIVE, fill_glp1
 from .history import store as hist
 from .narrative import trends
 from .narrative.executive import build_executive
@@ -46,10 +46,10 @@ def _sha(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
-def _render_and_check(pptx: Path, template: Path, out_dir: Path, slide_map, qa, render: bool):
+def _render_and_check(pptx: Path, template: Path, out_dir: Path, slide_map, qa, render: bool, decorative=None):
     """QA del PPTX. Con `render` (LibreOffice disponible): PDF + comprobaciones visuales completas. Sin él (navegador): solo QA
     estructural y estimación geométrica; no hay PDF ni vista previa. Devuelve (pdf|None, pngs, carpeta temporal|None)."""
-    checks.check_editable_and_static(pptx, template, qa, slide_map)
+    checks.check_editable_and_static(pptx, template, qa, slide_map, decorative)
     checks.check_geometry(pptx, qa, template, slide_map)
     if not render:
         qa.add("QA_VISUAL_OMITIDO", "info", None,
@@ -61,7 +61,7 @@ def _render_and_check(pptx: Path, template: Path, out_dir: Path, slide_map, qa, 
     tpl_pdf = convert_to_pdf(template, tpl_dir)
     tpl_pngs = pdf_to_pngs(tpl_pdf, tpl_dir / "png")
     checks.check_render(pptx, pdf, qa)
-    checks.check_static_regions(pngs, tpl_pngs, qa, template, slide_map)
+    checks.check_static_regions(pngs, tpl_pngs, qa, template, slide_map, decorative)
     return pdf, pngs, tpl_dir
 
 
@@ -192,7 +192,7 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
     pptx = out_dir / f"Resultados_GLP1_{stem}_{period.year}.pptx"
     prs.save(pptx)
     qa = checks.QAReport()
-    pdf, pngs, tpl_dir = _render_and_check(pptx, template, out_dir, slide_map, qa, render)
+    pdf, pngs, tpl_dir = _render_and_check(pptx, template, out_dir, slide_map, qa, render, DECORATIVE)
     checks.check_stale(fill, qa)
     for prob in fill.narrative_problems:
         qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")

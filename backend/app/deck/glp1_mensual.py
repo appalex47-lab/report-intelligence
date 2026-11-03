@@ -7,6 +7,7 @@ y se vuelve a marcar con recuadro rojo la fila con más visitas (o la de mayor v
 from __future__ import annotations
 
 import copy
+import math
 from decimal import Decimal
 
 from lxml import etree
@@ -18,6 +19,7 @@ from ..models import GBlock, GRow, Period
 from ..narrative.aetops import Box
 from ..narrative.glp1 import check, compose_glp1, sx
 from ..narrative.writer import Para, verify_edited
+from ..qa.checks import ADDED
 from . import pptx_ops as ops
 from .aetops_mensual import DataMissing, FillReport, Filler
 
@@ -81,7 +83,7 @@ def fill_region(w, start: int, end: int, proto: int, rows: list[GRow], spec: lis
 def _line(tag: str, on: bool):
     ln = etree.Element(qn(f"a:{tag}"))
     if on:
-        ln.set("w", "6350")
+        ln.set("w", "19050")
         ln.set("cap", "flat")
         ln.set("cmpd", "sng")
         ln.set("algn", "ctr")
@@ -99,8 +101,8 @@ def _set_lines(cell, red: dict[str, bool]):
         old = tcPr.find(qn(f"a:{tag}"))
         is_red = old is not None and old.find(f".//{qn('a:srgbClr')}") is not None and old.find(f".//{qn('a:srgbClr')}").get("val") == RED
         want = red.get(tag)
-        if want is None and not is_red:
-            continue                                             # línea ajena al resalte: no se toca
+        if want is None and (red or not is_red):
+            continue                         # sin cambios en este borde; solo `_set_lines(cell, {})` quita los rojos existentes
         new = _line(tag, bool(want))
         if old is not None:
             tcPr.replace(old, new)
@@ -133,7 +135,74 @@ def best_row(rows: list[GRow], key: str) -> int | None:
     return max(ok, key=lambda t: t[1])[0] if ok else None
 
 
+def box_cell(table, r: int, c: int):
+    """Recuadro rojo alrededor de una celda; también el borde que comparten las vecinas, para que no quede una línea a medias."""
+    cell = table.cell(r, c)
+    if cell.is_spanned:
+        return
+    _set_lines(cell, {"lnT": True, "lnB": True, "lnL": True, "lnR": True})
+    nr, nc = len(table.rows), len(table.columns)
+    for dr, dc, tag in ((-1, 0, "lnB"), (1, 0, "lnT"), (0, -1, "lnR"), (0, 1, "lnL")):
+        rr, cc = r + dr, c + dc
+        if 0 <= rr < nr and 0 <= cc < nc and not table.cell(rr, cc).is_spanned:
+            _set_lines(table.cell(rr, cc), {tag: True})
+
+
+def _num(text: str) -> float | None:
+    t = text.replace("$", "").replace(",", "").replace("%", "").strip()
+    try:
+        return float(t)
+    except ValueError:
+        return None
+
+
+def mark_max(w, r0: int, r1: int, cols) -> list[int]:
+    """Recuadra, en cada columna de KPI, la celda con el valor mayor entre las filas [r0, r1). Devuelve la fila con más
+    marcas (para la corona). Con menos de 2 valores comparables no se marca nada (no hay mayor)."""
+    wins: dict[int, int] = {}
+    for c in cols:
+        vals = [(r, _num(ops.cell_text(w.t.cell(r, c)))) for r in range(r0, r1)]
+        vals = [(r, v) for r, v in vals if v is not None]
+        if len(vals) < 2 or len({v for _, v in vals}) < 2:
+            continue
+        r, _ = max(vals, key=lambda t: t[1])
+        box_cell(w.t, r, c)
+        wins[r] = wins.get(r, 0) + 1
+    return sorted(wins, key=lambda r: (-wins[r], r))
+
+
+def leader_row(w, r0: int, r1: int, col: int) -> int | None:
+    vals = [(r, _num(ops.cell_text(w.t.cell(r, col)))) for r in range(r0, r1)]
+    vals = [(r, v) for r, v in vals if v is not None]
+    return max(vals, key=lambda t: t[1])[0] if vals else None
+
+
+# Coronas de la plantilla: imágenes decorativas que marcan al mayor; el generador las mueve a su fila o las quita
+DECORATIVE = {1: {"Gráfico 8", "Gráfico 10", "Gráfico 11"}, 2: {"Gráfico 6", "Gráfico 7", "Gráfico 8", "Gráfico 10", "Gráfico 11", "Gráfico 12"}}
+CROWNS = {2: ["Gráfico 8", "Gráfico 10", "Gráfico 11"], 3: ["Gráfico 6", "Gráfico 7", "Gráfico 8", "Gráfico 10", "Gráfico 11", "Gráfico 12"]}
+
+
+def place_crowns(slide, shape, table, rows: list[int], names: list[str]):
+    """Una corona junto a cada fila líder; las coronas sobrantes se quitan (no quedan huérfanas)."""
+    tops, acc = [], shape.top
+    for r in table.rows:
+        tops.append((acc, acc + r.height))
+        acc += r.height
+    for i, name in enumerate(names):
+        try:
+            pic = ops.shape_by_name(slide, name)
+        except KeyError:
+            continue
+        if i < len(rows) and rows[i] is not None:
+            y0, y1 = tops[rows[i]]
+            pic.top = int((y0 + y1) / 2 - pic.height / 2)
+        else:
+            pic._element.getparent().remove(pic._element)
+
+
 # ----------------------------------------------------------------------------- tablas
+KPI_T = range(1, 6)          # visitas … usuarios nuevos
+KPI_M = range(1, 6)          # pedidos … ticket
 TRAF = ["key", "n:visitas", "n:usuarios", "n:atc", "n:recurrentes", "n:nuevos", "share", "delta"]
 TRAF_NOSHARE = ["key", "n:visitas", "n:usuarios", "n:atc", "n:recurrentes", "n:nuevos", "delta"]
 MONEY = ["key", "n:pedidos", "n:piezas", "m:monto", "n:pacientes", "ticket", "share", "delta"]
@@ -156,10 +225,9 @@ def fill_quien(fl: Filler, B):
             put_row(w, start + i, 0, TRAF, row)
             if rows is sx_:
                 ops.set_cell(w.t.cell(start + i, 0), sx(row.key), fill=None)
-        marks.append((start, best_row(rows, "visitas")))
-    for start, i in marks:
-        if i is not None:
-            box_row(w.t, start + i, 0, 7)
+        marks.append((start, len(rows)))
+    for start, n in marks:
+        mark_max(w, start, start + n, KPI_T)
     w.check_stale()
     ops.sync_frame_height(w.shape)
 
@@ -200,23 +268,21 @@ def fill_edad_producto(fl: Filler, B, rep: FillReport):
             ops.delete_rows(w.t, hr - 1, hr + 7)
         elif sizes[hr] < 6:
             ops.delete_rows(w.t, hr + 1 + sizes[hr], hr + 7)
-    # resaltes: fila con más visitas de cada bloque
-    trs = w.t._tbl.tr_lst
-    hrows = [i for i, r in enumerate(w.t.rows) if (ops.cell_text(r.cells[0]).startswith("Edad /"))]
+    # resaltes: el mayor de cada KPI dentro de cada bloque; la corona va junto a la fila líder (más visitas) del bloque izquierdo
+    nrows = len(w.t.rows)
+    hrows = [i for i in range(nrows) if ops.cell_text(w.t.cell(i, 0)).startswith("Edad /")]
+    crown_rows = []
     for hr in hrows:
-        for c0, k in ((0, 0), (9, 1)):
+        for c0 in (0, 9):
             if w.t.cell(hr, c0).is_spanned or not ops.cell_text(w.t.cell(hr, c0)).startswith("Edad /"):
                 continue
-            vals = []
-            r = hr + 1
-            while r < len(trs) and ops.cell_text(w.t.cell(r, c0)) not in ("",) and not ops.cell_text(w.t.cell(r, c0)).startswith("Edad /"):
-                try:
-                    vals.append((r, int(ops.cell_text(w.t.cell(r, c0 + 1)).replace(",", ""))))
-                except ValueError:
-                    pass
-                r += 1
-            if vals:
-                box_row(w.t, max(vals, key=lambda t: t[1])[0], c0, c0 + 7)
+            end = hr + 1
+            while end < nrows and ops.cell_text(w.t.cell(end, c0)) and not ops.cell_text(w.t.cell(end, c0)).startswith("Edad /"):
+                end += 1
+            mark_max(w, hr + 1, end, range(c0 + 1, c0 + 6))
+            if c0 == 0:
+                crown_rows.append(leader_row(w, hr + 1, end, 1))
+    place_crowns(fl.slide(2), w.shape, w.t, crown_rows, CROWNS[2])
     ops.sync_frame_height(w.shape)
 
 
@@ -241,6 +307,7 @@ def fill_producto_sexo(fl: Filler, B, rep: FillReport):
         ops.delete_rows(w.t, total, len(trs))
     spec = ["key", "dim2", "n:visitas", "n:usuarios", "n:atc", "n:recurrentes", "n:nuevos", "t:tiempo", "p:rebote", "delta"]
     rows_total = len(w.t.rows)
+    crown_rows: list[int | None] = []
     for pi, p in enumerate(prods):
         base = 1 + pi * 3
         rs = sorted(by[p], key=lambda r: (0 if r.dim2.lower().startswith("f") else 1, r.dim2))
@@ -250,10 +317,11 @@ def fill_producto_sexo(fl: Filler, B, rep: FillReport):
                 continue
             row = rs[k] if k < 2 and k < len(rs) else None
             put_row(w, r, 0, spec, row)
-        vis = [(k, x.values["visitas"].v or 0) for k, x in enumerate(rs[:2])]
-        if vis and base < rows_total:
-            box_row(w.t, base + max(vis, key=lambda t: t[1])[0], 0, 9)
-    # el último producto no lleva fila separadora al final de la plantilla original
+        n_rows = min(len(rs), 2)
+        if base < rows_total and n_rows:
+            mark_max(w, base, base + n_rows, range(2, 7))
+            crown_rows.append(leader_row(w, base, base + n_rows, 2))
+    place_crowns(fl.slide(3), w.shape, w.t, crown_rows, CROWNS[3])
     w.check_stale()
     ops.sync_frame_height(w.shape)
 
@@ -266,9 +334,7 @@ def fill_region_slide(fl: Filler, B, rep: FillReport):
     for r in range(1, 1 + len(rows)):
         c = w.t.cell(r, 0)
         ops.set_cell(c, rows[r - 1].key.upper(), fill=None)
-    i = best_row(rows, "monto")
-    if i is not None:
-        box_row(w.t, 1 + i, 0, 7)
+    mark_max(w, 1, 1 + len(rows), KPI_M)
     w.finish()
     w2 = fl.table(5, "Tabla 11", rows=11, cols=7)
     clear_red(w2.t)
@@ -276,6 +342,7 @@ def fill_region_slide(fl: Filler, B, rep: FillReport):
     if len(est) > 10:
         rep.notes.append(f"Diap. 5: {len(est)} estados con tráfico y la plantilla admite 10; se muestran los 10 con más visitas.")
     fill_region(w2, 1, 11, 1, est[:10], TRAF_NOSHARE)
+    mark_max(w2, 1, 1 + len(est[:10]), KPI_T)
     w2.finish()
 
 
@@ -283,11 +350,90 @@ def fill_pago(fl: Filler, B):
     w = fl.table(6, "Tabla 7", rows=6, cols=8)
     clear_red(w.t)
     fill_region(w, 1, 6, 1, B["pago"].rows, MONEY)
+    mark_max(w, 1, 1 + len(B["pago"].rows), KPI_M)
     w.finish()
     w2 = fl.table(6, "Tabla 10", rows=3, cols=8)
     clear_red(w2.t)
     fill_region(w2, 1, 3, 1, B["entrega"].rows, MONEY)
+    mark_max(w2, 1, 1 + len(B["entrega"].rows), KPI_M)
     w2.finish()
+
+
+FUNNEL_NAVY, FUNNEL_LINK, FUNNEL_LEAK = "104861", "9DBFD1", "ED7D31"
+
+
+def _funnel_widths(counts: list[float], full: float) -> list[float]:
+    """Ancho de cada etapa en escala logarítmica (con piso de 30 %): una escala lineal dejaría las últimas etapas ilegibles."""
+    pos = [c for c in counts if c and c > 0]
+    if not pos or max(pos) == min(pos):
+        return [full] * len(counts)
+    lo, hi = math.log(min(pos)), math.log(max(pos))
+    return [full * (0.30 + 0.70 * ((math.log(c) - lo) / (hi - lo))) if c and c > 0 else full * 0.30 for c in counts]
+
+
+def draw_funnel(slide, w, rows: dict[str, GRow]):
+    """Embudo real con formas nativas (editables): barras centradas con ancho por etapa unidas por trapecios, y la fuga
+    (carritos abandonados) aparte en naranja. La tabla conserva etapa, % contra «Ver producto» y la pérdida entre etapas."""
+    from pptx.dml.color import RGBColor
+    from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+    from pptx.enum.shapes import MSO_SHAPE
+    from pptx.util import Emu, Pt
+    tbl, shp = w.t, w.shape
+    x0 = shp.left + sum(c.width for c in list(tbl.columns)[:2])
+    full = shp.left + sum(c.width for c in tbl.columns) - x0
+    cx = x0 + full / 2
+    ys, acc = [], shp.top
+    for r in tbl.rows:
+        ys.append((acc, acc + r.height))
+        acc += r.height
+    stages = ["ver producto", "agregar a carrito", "iniciar compra", "compra"]
+    counts = [float(rows[k].values["conteo"].v or 0) for k in stages]
+    widths = _funnel_widths(counts, full * 0.96)
+    tree = slide.shapes
+
+    def label(sh, text, size=9, color="FFFFFF", bold=True):
+        tf = sh.text_frame
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf.word_wrap = False
+        p = tf.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        r = p.add_run()
+        r.text = text
+        r.font.size, r.font.bold, r.font.name = Pt(size), bold, "Aptos Narrow"
+        r.font.color.rgb = RGBColor.from_string(color)
+
+    def bar(i, row_idx, width, color, text, name):
+        y0, y1 = ys[row_idx]
+        pad = 12000
+        sh = tree.add_shape(MSO_SHAPE.RECTANGLE, Emu(int(cx - width / 2)), Emu(y0 + pad), Emu(int(width)), Emu(y1 - y0 - 2 * pad))
+        sh.name = name
+        sh.fill.solid()
+        sh.fill.fore_color.rgb = RGBColor.from_string(color)
+        sh.line.fill.background()
+        sh.shadow.inherit = False
+        label(sh, text)
+        return sh
+
+    for i, st in enumerate(stages):                                   # etapas: filas 0, 2, 4, 6
+        bar(i, 2 * i, widths[i], FUNNEL_NAVY, F.fmt_num(rows[st].values["conteo"], 0), f"{ADDED}embudo_{i + 1}")
+    for i in range(len(stages) - 1):                                  # unión entre etapas: filas 1, 3, 5
+        top, bot = ys[2 * i][1] - 12000, ys[2 * i + 2][0] + 12000
+        a_, b_ = widths[i] / 2, widths[i + 1] / 2
+        fb = tree.build_freeform(int(cx - a_), top, scale=1.0)
+        fb.add_line_segments([(int(cx + a_), top), (int(cx + b_), bot), (int(cx - b_), bot)], close=True)
+        link = fb.convert_to_shape()
+        link.name = f"{ADDED}embudo_union_{i + 1}"
+        link.fill.solid()
+        link.fill.fore_color.rgb = RGBColor.from_string(FUNNEL_LINK)
+        link.line.fill.background()
+        link.shadow.inherit = False
+    leak = float(rows["carritos abandonados"].values["conteo"].v or 0)
+    lw = _funnel_widths(counts + [leak], full * 0.96)[-1]
+    bar(4, 8, lw, FUNNEL_LEAK, F.fmt_num(rows["carritos abandonados"].values["conteo"], 0), f"{ADDED}embudo_fuga")
+    note = tree.add_textbox(Emu(int(x0)), Emu(int(ys[-1][1] + 25000)), Emu(int(full)), Emu(170000))
+    note.name = f"{ADDED}embudo_nota"
+    label(note, "Ancho de las barras en escala logarítmica (referencia visual); los números son los conteos reales.", size=7, color="7F7F7F", bold=False)
 
 
 def fill_funnel(fl: Filler, B, funnel: GBlock | None, rep: FillReport):
@@ -295,15 +441,26 @@ def fill_funnel(fl: Filler, B, funnel: GBlock | None, rep: FillReport):
         raise DataMissing("Falta el embudo (tabla de tráfico, vista general).")
     w = fl.table(7, "Tabla 8", rows=9, cols=7)
     rows = {r.key: r for r in funnel.rows}
-    for i, stage in enumerate(("ver producto", "agregar a carrito", "iniciar compra", "compra", "carritos abandonados")):
+    stages = ("ver producto", "agregar a carrito", "iniciar compra", "compra", "carritos abandonados")
+    for i, stage in enumerate(stages):
         r = 2 * i
         row = rows[stage]
         w.put(r, 0, {"carritos abandonados": "Carritos abandonados"}.get(stage, stage.capitalize()))
         w.put(r, 1, F.fmt_pct(row.values["tasa_calc"], 2, sign=False))
-        w.put(r, 4, F.fmt_num(row.values["conteo"], 0))
-    for r in range(1, 9, 2):                                      # filas separadoras sin datos
-        pass
+        for c in range(2, 7):                                         # las barras de la plantilla (celdas rellenas) se sustituyen por formas nativas
+            w.put(r, c, "", fill=None)
+    for i in range(3):                                                # filas separadoras: cuánto avanza a la siguiente etapa del embudo
+        a_, b_ = rows[stages[i]].values["conteo"].v, rows[stages[i + 1]].values["conteo"].v
+        txt = f"↓ avanza {F.fmt_pct(ind.derived(b_ / a_, 'avance'), 2, sign=False)}" if a_ and b_ is not None else ""
+        r = 2 * i + 1
+        w.put(r, 0, txt, font="595959", proto=w.t.cell(0, 0))
+        for c in range(1, 7):
+            w.put(r, c, "", fill=None)
+    w.put(7, 0, "", proto=w.t.cell(0, 0))                             # entre «Compra» y «Carritos abandonados» no hay avance: la fuga se muestra aparte
+    for c in range(1, 7):
+        w.put(7, c, "", fill=None)
     w.check_stale()
+    draw_funnel(fl.slide(7), w, rows)
     ops.sync_frame_height(w.shape)
     w2 = fl.table(7, "Tabla 3", rows=5, cols=8)
     clear_red(w2.t)
@@ -312,8 +469,7 @@ def fill_funnel(fl: Filler, B, funnel: GBlock | None, rep: FillReport):
         rep.notes.append(f"Diap. 7: {len(B['negados'].rows)} productos negados y la plantilla muestra los 4 de mayor monto.")
     spec = ["key", "n:pedidos", "n:piezas", "m:monto_negado", "n:pacientes", "ticket", "share", "delta"]
     fill_region(w2, 1, 5, 1, neg, spec)
-    if neg:
-        box_row(w2.t, 1, 0, 7)
+    mark_max(w2, 1, 1 + len(neg), range(1, 6))
     w2.finish()
 
 
@@ -322,6 +478,7 @@ def fill_productos(fl: Filler, B):
     clear_red(w.t)
     rows = sorted(B["productos"].rows, key=lambda r: -(r.values["pedidos"].v or 0))[:10]
     fill_region(w, 1, 11, 1, rows, MONEY)
+    mark_max(w, 1, 1 + len(rows), KPI_M)
     w.finish()
 
 
@@ -329,6 +486,7 @@ def fill_programas(fl: Filler, B):
     w = fl.table(9, "Tabla 2", rows=7, cols=8)
     clear_red(w.t)
     fill_region(w, 1, 7, 1, B["programas"].rows[:6], MONEY)
+    mark_max(w, 1, 1 + len(B["programas"].rows[:6]), KPI_M)
     w.finish()
 
 
@@ -340,6 +498,7 @@ def fill_fuentes(fl: Filler, B, rep: FillReport):
     if canal:
         ops.resize_rows(w.t, 16, 18, 16, len(canal))               # sub-tabla Pago/Orgánico (de abajo hacia arriba)
     n = fill_region(w, 1, 13, 1, rows, TRAF_NOSHARE)
+    mark_max(w, 1, n, KPI_T)
     w.put(0, 0, "Fuente de tráfico")
     rep.titles_fixed.append("Diap. 10: encabezado 'Categoría de dispositivo' (son fuentes de tráfico) → 'Fuente de tráfico'")
     if canal:
@@ -347,6 +506,7 @@ def fill_fuentes(fl: Filler, B, rep: FillReport):
         for i, row in enumerate(canal):
             put_row(w, hdr + 1 + i, 0, TRAF_NOSHARE[:-1], row)
             w.blank(hdr + 1 + i, 6)
+        mark_max(w, hdr + 1, hdr + 1 + len(canal), KPI_T)
         for r in (n, n + 1):
             for c in range(7):
                 w.blank(r, c)
