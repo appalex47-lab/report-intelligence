@@ -421,3 +421,7 @@ Fuente de verdad: `docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md`
 | Fixtures sintéticas | `tools/make_fixtures_fase1.py`, `tests/fixtures/fase1/` | Deterministas, con manifiesto y `sintetico: true` |
 
 El patrón de configuración como dato ya existía (`profiles/*.yaml`, `importer/profile.py`); la configuración de Fase 1 lo sigue, en JSON, dentro de `backend/app/` para que `tools/build_site.py` la empaquete sin cambios. No se modificaron pipeline, reglas actuales, narrativa, plantillas ni importadores.
+
+### 17.1 Motor de reglas (Fase 2A) — añadido
+
+`backend/app/validator/motor.py` y módulos asociados (ver `docs/MOTOR_REGLAS.md`, con diagrama). Flujo: lector existente (`raw/common.read_tables`) → `validator/normalizar.py` (`Contexto` de solo lectura) → `motor.ejecutar()` (catálogo en `config/reglas.json`) → reglas (`rules_datos.py`, `rules_conc.py`, `rel_pedidos_carritos.py`) → `Resultado` → `a_hallazgos()` → `Finding`. Ningún servicio lo consume todavía.

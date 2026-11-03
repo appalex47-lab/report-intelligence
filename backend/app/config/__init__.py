@@ -32,6 +32,8 @@ TIPOS_DEFINICION = ("entidad", "metrica", "indicador")
 UNIDADES_NEGOCIO = ("GLP1", "AETOPS")
 FLAGS = ("validacion_fase1", "relacion_pedidos_carritos", "anexo_calidad", "qa_pptx_exportado", "escenarios_estrictos")
 REGLAS_FASE1 = ("R-REL-PAC-PED", "R-CUADRE-DIM", "R-CONC-COMPRAS", "R-DENOM", "R-COBERTURA-ATC")
+ESTADOS_REGLA = ("valid", "warning", "error", "not_verifiable", "not_applicable")   # resultados del motor de reglas (Fase 2A)
+SEVERITIES = ("block", "warn", "info")
 # La metodología agregada NO usa identificadores de carrito, de transacción ni de sesión (spec §8.2, AC-23).
 PROHIBIDO_EN_MAPEO = re.compile(r"carrit|transacci|sesion|session|cart_id", re.IGNORECASE)
 
@@ -184,6 +186,64 @@ def validar_reglas(d) -> list[str]:
         _campo(dd, "justificacion", str, errs, ruta, nulo=True)
         if dd.get("exclusiva") is not None and dd.get("exhaustiva") is not None and not dd.get("justificacion"):
             errs.append(f"{ruta}: declarar exclusiva/exhaustiva exige justificación")
+    errs += _validar_catalogo_reglas(d, pars or {})
+    return errs
+
+
+def _validar_catalogo_reglas(d: dict, parametros: dict) -> list[str]:
+    """Catálogo de reglas (Fase 2A): cada regla se describe como DATO; el código solo la ejecuta."""
+    errs: list[str] = []
+    items = _campo(d, "reglas", list, errs, "reglas")
+    vistos: set[str] = set()
+    for i, r in enumerate(items or []):
+        ruta = f"reglas.reglas[{i}]"
+        if not isinstance(r, dict):
+            errs.append(f"{ruta}: debe ser un objeto")
+            continue
+        rid = _campo(r, "id", str, errs, ruta)
+        if rid is not None:
+            ruta = f"reglas.reglas[{rid}]"
+            if rid in vistos:
+                errs.append(f"{ruta}: regla duplicada")
+            vistos.add(rid)
+        for k in ("nombre", "descripcion", "tipo"):
+            _campo(r, k, str, errs, ruta)
+        ver = _campo(r, "version", str, errs, ruta)
+        if ver is not None and not SEMVER.match(ver):
+            errs.append(f"{ruta}.version: {ver!r} no es MAJOR.MINOR.PATCH")
+        _campo(r, "gravedad", str, errs, ruta, nulo=True)
+        un = _campo(r, "unidades", list, errs, ruta)
+        if un is not None and (not un or any(u not in UNIDADES_NEGOCIO for u in un)):
+            errs.append(f"{ruta}.unidades: debe contener solo {UNIDADES_NEGOCIO}")
+        cols = _campo(r, "columnas_requeridas", list, errs, ruta)
+        for c in cols or []:
+            if not (isinstance(c, dict) and isinstance(c.get("hoja"), str) and isinstance(c.get("columna"), str)):
+                errs.append(f"{ruta}.columnas_requeridas: cada elemento debe ser {{hoja, columna}}")
+        pn = _campo(r, "parametros", list, errs, ruta)
+        for n in pn or []:
+            if n not in parametros:
+                errs.append(f"{ruta}.parametros: {n!r} no existe en reglas.parametros")
+        act = _campo(r, "activacion", dict, errs, ruta)
+        if act is not None:
+            fl = _campo(act, "flag", str, errs, f"{ruta}.activacion")
+            if fl is not None and fl not in FLAGS:
+                errs.append(f"{ruta}.activacion.flag: {fl!r} no está en {FLAGS}")
+            _campo(act, "condicion", str, errs, f"{ruta}.activacion")
+        sev = _campo(r, "severidad", dict, errs, ruta)
+        if sev is not None:
+            if set(sev) != set(ESTADOS_REGLA):
+                errs.append(f"{ruta}.severidad: debe definir exactamente {ESTADOS_REGLA}")
+            if any(v not in SEVERITIES for v in sev.values()):
+                errs.append(f"{ruta}.severidad: valores válidos {SEVERITIES}")
+        sc = _campo(r, "severidad_codigos", dict, errs, ruta)
+        if sc is not None and any(v not in SEVERITIES for v in sc.values()):
+            errs.append(f"{ruta}.severidad_codigos: valores válidos {SEVERITIES}")
+        ev = _campo(r, "evidencia", list, errs, ruta)
+        if ev is not None and not all(isinstance(x, str) and x for x in ev):
+            errs.append(f"{ruta}.evidencia: debe ser una lista de textos")
+        ms = _campo(r, "mensajes", dict, errs, ruta)
+        if ms is not None and (not ms or not all(isinstance(k, str) and isinstance(v, str) and v for k, v in ms.items())):
+            errs.append(f"{ruta}.mensajes: debe ser {{codigo.estado: texto}} no vacío")
     return errs
 
 

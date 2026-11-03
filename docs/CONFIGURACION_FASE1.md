@@ -46,6 +46,9 @@ Evolución sin tocar código: cambiar una descripción o limitación solo exige 
 
 Parámetros hoy: heredados — `e1_recuperacion_negados_medio` 0.25, `e2_recuperacion_abandono_medio` 0.10, `umbral_conciliacion_compras` 0.2; nuevos (de la especificación) — `max_pacientes_por_pedido` 1, `tolerancia_conteo` 0, `tolerancia_monto_fraccion` 0.005, `unidad_carritos` `"no_declarada"`; **no configurados (`null`)** — conservador/optimista de E1 y E2, `estatus_excluidos`, `cobertura_minima_paciente`, `fuente_pedidos`, `filtro_canal_relacion`.
 
+#### Catálogo de reglas (`reglas.json` → `reglas`, versión 1.1.0 del archivo; Fase 2A)
+Cada regla es un dato: `id`, `nombre`, `descripcion`, `version`, `tipo`, `gravedad` (`null`), `unidades`, `columnas_requeridas`, `parametros` (nombres que deben existir en `parametros`), `activacion` (`flag` y `condicion`), `severidad` (por estado), `severidad_codigos` (excepciones por `codigo.estado`), `evidencia` (qué evidencia produce), `mensajes` (`codigo.estado` → texto con `{marcadores}`) y, según la regla, `dimensiones_candidatas`, `entidades`, `hipotesis`. `config.validar("reglas", …)` comprueba estructura y referencias cruzadas. Los marcadores de cada mensaje los llena la función de la regla; ver `docs/MOTOR_REGLAS.md`.
+
 ### 3.3 `mapeo_columnas.json` — alias de columnas
 `unidades.<GLP1|AETOPS>.hojas.<hoja>.alias.<columna_canónica> = [alias…]`. Hoy **todos vacíos**: no se declara ningún alias; los nombres canónicos son los del contrato. AETOPS no tiene `trafico`. El validador rechaza cualquier alias o columna relacionada con carrito, transacción o sesión (AC-23).
 
