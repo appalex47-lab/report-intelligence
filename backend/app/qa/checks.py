@@ -134,18 +134,23 @@ _BLIPS = etree.XPath(".//a:blip/@r:embed | .//asvg:svgBlip/@r:embed", namespaces
     "asvg": "http://schemas.microsoft.com/office/drawing/2016/SVG/main"})
 
 
-def _picture_hashes(slide) -> list[str]:
-    """SHA-1 del binario de cada imagen (incluye SVG con respaldo PNG), leído desde la relación del XML."""
+ADDED = "RI_"        # prefijo de las formas que añade el generador (embudo, notas): no cuentan como cambio de la plantilla
+
+
+def _picture_hashes(slide, ignore: set[str] = frozenset()) -> list[str]:
+    """SHA-1 del binario de cada imagen (incluye SVG con respaldo PNG), leído desde la relación del XML.
+    `ignore`: nombres de imágenes decorativas (p. ej. coronas) que el generador puede mover o quitar."""
     out = []
     for sh in slide.shapes:
-        if sh.shape_type != 13:
+        if sh.shape_type != 13 or sh.name in ignore:
             continue
         for rid in _BLIPS(sh._element):
             out.append(hashlib.sha1(slide.part.related_part(rid).blob).hexdigest())
     return sorted(out)
 
 
-def check_editable_and_static(out: Path, template: Path, rep: QAReport, slide_map: list[int] | None = None) -> None:
+def check_editable_and_static(out: Path, template: Path, rep: QAReport, slide_map: list[int] | None = None,
+                              decorative: dict[int, set[str]] | None = None) -> None:
     """`slide_map[i]` = diapositiva de la plantilla de la que proviene la i-ésima del resultado (las clonadas)."""
     a, b = Presentation(template), Presentation(out)
     slide_map = slide_map or list(range(len(a.slides)))
@@ -159,10 +164,11 @@ def check_editable_and_static(out: Path, template: Path, rep: QAReport, slide_ma
         tb = sum(1 for s in sb.shapes if getattr(s, "has_table", False) and s.has_table)
         if ta != tb:
             rep.add("TABLE_LOST", "error", n, f"Tablas editables: {tb} (plantilla {ta}).")
-        if _picture_hashes(sa) != _picture_hashes(sb):
+        deco = (decorative or {}).get(it, set())
+        if _picture_hashes(sa, deco) != _picture_hashes(sb, deco):
             rep.add("PICTURES_CHANGED", "error", n, "Las imágenes (logos) no son idénticas a las de la plantilla.")
-        na = sum(1 for s in sa.shapes if s.has_text_frame)
-        nb = sum(1 for s in sb.shapes if s.has_text_frame)
+        na = sum(1 for s in sa.shapes if s.has_text_frame and not s.name.startswith(ADDED))
+        nb = sum(1 for s in sb.shapes if s.has_text_frame and not s.name.startswith(ADDED))
         if na != nb:
             rep.add("TEXT_SHAPES_CHANGED", "error", n, f"Cuadros de texto: {nb} (plantilla {na}).")
         for s in sb.shapes:
@@ -171,14 +177,14 @@ def check_editable_and_static(out: Path, template: Path, rep: QAReport, slide_ma
                 rep.add("PLACEHOLDER_LEFT", "error", n, f"Marcador sin rellenar en '{s.name}'.")
 
 
-def static_zones(template: Path, slide_idx: int) -> dict[str, tuple[float, float, float, float]]:
+def static_zones(template: Path, slide_idx: int, skip: set[str] = frozenset()) -> dict[str, tuple[float, float, float, float]]:
     """Cajas (fracciones de la diapositiva) de los elementos fijos de la plantilla: imágenes, barras y pie de página."""
     prs = Presentation(template)
     W, H = prs.slide_width, prs.slide_height
     zones = {}
     for sh in prs.slides[slide_idx].shapes:
         fixed = sh.shape_type == 13 or sh.name.startswith("Rect") or (sh.is_placeholder and "pie" in sh.name.lower())
-        if not fixed or not sh.width or not sh.height:
+        if not fixed or not sh.width or not sh.height or sh.name in skip:
             continue
         m = 0.004                                                      # margen para el antialiasing
         zones[sh.name] = (max(sh.left / W - m, 0), max(sh.top / H - m, 0),
@@ -187,7 +193,7 @@ def static_zones(template: Path, slide_idx: int) -> dict[str, tuple[float, float
 
 
 def check_static_regions(png_out: list[Path], png_tpl: list[Path], rep: QAReport, template: Path | None = None,
-                         slide_map: list[int] | None = None) -> None:
+                         slide_map: list[int] | None = None, decorative: dict[int, set[str]] | None = None) -> None:
     """Logos, barras y pie de página deben ser idénticos a los de la plantilla renderizada (geometría real del PPTX)."""
     from PIL import Image, ImageChops, ImageStat                      # solo con render (no se carga en el navegador)
     slide_map = slide_map or list(range(len(png_out)))
@@ -198,7 +204,7 @@ def check_static_regions(png_out: list[Path], png_tpl: list[Path], rep: QAReport
             rep.add("RENDER_SIZE_DIFF", "error", n, "El render tiene otro tamaño que la plantilla.")
             continue
         W, H = io.size
-        zones = static_zones(template, ti) if template else {
+        zones = static_zones(template, ti, (decorative or {}).get(ti, set())) if template else {
             "barra superior": (0.0, 0.0, 1.0, 0.07), "logo inferior": (0.80, 0.90, 1.0, 1.0)}
         for name, (x0, y0, x1, y1) in zones.items():
             box = (int(x0 * W), int(y0 * H), max(int(x1 * W), int(x0 * W) + 1), max(int(y1 * H), int(y0 * H) + 1))

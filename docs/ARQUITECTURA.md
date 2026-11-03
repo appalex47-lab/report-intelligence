@@ -376,14 +376,19 @@ La app web estática actual se **conserva** (no se sobrescribe) mientras `fronte
 | 3 | IA externa | **Proveedor: Cohere**, siempre **opt-in por reporte**, con modo determinista como valor por defecto (ver §8.1). |
 | 4 | GLP-1 trimestral | **Aprobado:** basarlo en el formato mensual con comparativo trimestral; se confirma cuando exista un PPTX de referencia. |
 
-### 8.1 Narrativa con Cohere (diseño)
+### 8.1 Narrativa con Cohere (implementado, opcional)
 
-- **Clave de API** solo por variable de entorno (`COHERE_API_KEY`) o secreto del servidor; nunca en el repositorio, en el navegador ni en logs.
-- **Qué sale del entorno:** únicamente los agregados ya calculados y validados que el usuario aprueba enviar (p. ej. "Ventas +67 % YoY"), mostrados en pantalla **antes** de enviarlos; nunca el Excel, ni filas de pacientes o pedidos. Se guarda en el historial exactamente qué se envió.
-- El **modelo es configurable** (`config/rules.yaml`); no se fija en el código.
-- La respuesta se pide en formato estructurado `{texto, tipo, evidencia[]}` y el verificador descarta cualquier frase con una cifra que no esté en la evidencia (§8).
-- Antes de activarlo con información confidencial real, **revisar los términos de retención y uso de datos de Cohere** y la política interna de la empresa.
-- Sin clave o sin autorización del usuario, la herramienta funciona completa con las frases deterministas.
+La aplicación corre en el navegador (GitHub Pages), así que **la llamada a Cohere sale del navegador del usuario con su propia clave** (`POST https://api.cohere.com/v2/chat`); no hay servidor intermedio.
+
+- **Clave de API:** la escribe el usuario en la pantalla de revisión. Vive en `sessionStorage` (se olvida al cerrar la pestaña) o, si lo pide, en `localStorage` de ese navegador. **Nunca** va al repositorio, a los workflows ni al historial. Quien comparta el equipo comparte la clave guardada: se recomienda no marcar «Recordar» en equipos compartidos.
+- **Qué sale del navegador:** únicamente el **texto de los párrafos ya calculados y verificados** (cifras agregadas, nombres de líneas, canales y productos), mostrado en pantalla **antes** de enviarlo, con confirmación explícita. Nunca el Excel, filas de pacientes o pedidos, ni el contexto escrito por el equipo. Lo enviado y lo recibido queda en `ia_log.json` junto al reporte.
+- **Qué puede hacer la IA:** solo mejorar la **redacción**. Cada respuesta pasa por `verify_rewrite`: se descarta si **quita o agrega una cifra**, usa vocabulario causal, incluye enlaces o crece más de 1.5×; entonces queda el texto original. Las cifras vuelven a ponerse en negrita automáticamente.
+- **Modelo:** configurable en pantalla (por defecto `command-a-03-2025`). Se pide JSON estructurado (`response_format: json_object`), una llamada por sección.
+- **Descubrimiento único (implementado, opcional):** una diapositiva extra, distinta en cada reporte. El motor arma una **hoja de hechos** (`narrative/facts.py`: ~50–70 frases deterministas con id y tema, incluidos cruces entre dimensiones). La IA (Cohere, con la clave del usuario) debe proponer un título, un ángulo y 3–4 viñetas que **citan ids de hechos**. `verify_discovery` descarta cualquier viñeta que: use una cifra que no esté en los hechos que cita (el signo `-` cuenta; el `+` es opcional), cite hechos inexistentes, use vocabulario causal, traiga enlaces, o sea una hipótesis sin «qué validar». El conjunto debe cruzar al menos dos temas. El usuario revisa la evidencia de cada viñeta, edita y **valida explícitamente**; al guardar, el servicio vuelve a verificar (la interfaz no puede saltarse la regla). La diapositiva se inserta antes de «Recomendaciones», marca las hipótesis como tales y lleva una nota de transparencia. Lo enviado y lo recibido queda en `ia_log.json`. «Buscar otro ángulo» pide a la IA evitar los ángulos ya propuestos.
+- **Redacción más humana:** el modo «Redactar mejor» admite tres estilos (ejecutivo cercano, conversacional profesional, narrativo) y el prompt pide variar el arranque de las frases, usar conectores naturales y evitar muletillas de reporte; las cifras siguen verificadas una a una.
+- Sin clave o sin confirmación, todo funciona con el texto determinista.
+- Antes de usarlo con información confidencial real, **revisar los términos de retención y uso de datos de Cohere** y la política interna de la empresa.
+- Límite conocido: algunas redes corporativas bloquean la conexión a `api.cohere.com`; si el navegador no puede conectarse, la herramienta lo dice y sigue con el texto determinista.
 
 ## 16. Riesgos y decisiones pendientes del usuario
 

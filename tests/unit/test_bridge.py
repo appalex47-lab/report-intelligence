@@ -133,3 +133,27 @@ def test_period_without_data_gives_a_clear_finding_not_a_crash(br, tmp_path):
         assert a["status"] == 200, a
         ids = {x["id"] for x in a["json"]["findings"]}
         assert "RAW_PERIOD_EMPTY" in ids and a["json"]["can_generate"] is False and a["json"]["kpis"] == []
+
+
+def test_ai_rewrite_verifier_accepts_only_wording_changes():
+    from backend.app.web.service import verify_rewrite as v
+    orig = "En septiembre, la venta total llega a $12.22 M, +56% vs 2025 y +10% vs agosto."
+    ok = v(orig, "La venta de septiembre alcanza $12.22 M: +56% frente a 2025 y +10% contra agosto.")
+    assert ok["ok"] and "**$12.22 M**" in ok["texto"] and "**+56%**" in ok["texto"] and "**2025**" not in ok["texto"]
+    assert not v(orig, "La venta llega a $12.22 M, +56% vs 2025.")["ok"]                          # se perdió +10%
+    assert "nueva" in " ".join(v(orig, "La venta llega a $12.22 M, +56% vs 2025, +10% vs agosto y +99%.")["problemas"])
+    assert not v(orig, "La venta llega a $12.22 M, +56% vs 2025 y +10% vs agosto debido a una campaña.")["ok"]
+    assert not v(orig, "")["ok"] and not v(orig, None)["ok"]
+    assert not v(orig, orig + " " + "texto " * 80)["ok"]
+    assert not v(orig, "La venta llega a $12.22 M, +56% vs 2025 y +10% vs agosto https://x.co")["ok"]
+    assert v(orig, orig)["ok"]                                                                    # idéntico: válido
+
+
+def test_ai_check_route_logs_what_was_sent(br, tmp_path):
+    bridge, S, t = br
+    rid = call(bridge, "POST", "/api/runs", {"unit": "aetops", "periodicity": "mensual", "year": 2026, "index": 9})["json"]["id"]
+    out = call(bridge, "POST", f"/api/runs/{rid}/ia/check", {"model": "command-a-03-2025", "items": [
+        {"original": "Ventas $5 M (+10%).", "rewritten": "Las ventas suman $5 M (+10%)."}, {"original": "Ventas $5 M (+10%).", "rewritten": "Ventas $9 M."}]})
+    assert out["status"] == 200 and [x["ok"] for x in out["json"]] == [True, False]
+    log = json.loads((Path(S.RUNS_DIR) / rid / "ia_log.json").read_text(encoding="utf-8"))
+    assert log[0]["proveedor"] == "Cohere" and log[0]["enviado"][0].startswith("Ventas") and log[0]["recibido"][1]["aceptado"] is False

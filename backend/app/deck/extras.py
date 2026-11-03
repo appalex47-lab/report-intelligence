@@ -62,3 +62,19 @@ def add_executive_slides(prs, resumen_paras, recs_paras, to_paragraphs, fit_fn, 
         ops.set_paragraphs(b, to_paragraphs(kept), align="l")
         kept_all.append(kept)
     return [src] + list(range(n0)) + [src], kept_all[0], kept_all[1]
+
+
+def add_discovery_slide(prs, title: str, paragraphs, to_paragraphs, fit_fn, slide_map: list[int] | None, n_template: int):
+    """Descubrimiento único (IA, validado por el usuario): se clona la última diapositiva de texto y se coloca antes de ella.
+    Devuelve (mapa de QA actualizado, párrafos que cupieron)."""
+    n = len(prs.slides)
+    sl = clone_slide(prs, n - 1, n - 1)
+    t, b = ops.shape_by_name(sl, TITLE), ops.shape_by_name(sl, BODY)
+    ops.set_simple_text(t, title)
+    t.width = 9_600_000 - t.left                       # los títulos de la plantilla son cortos; este puede ser una frase
+    t.text_frame.word_wrap = True
+    cpl, lines = ops.narrative_box(b)
+    kept = fit_fn(paragraphs, cpl, max(int(lines * 0.85), 4))
+    ops.set_paragraphs(b, to_paragraphs(kept), align="l")
+    sm = list(slide_map) if slide_map else list(range(n_template))
+    return sm[:-1] + [sm[-1], sm[-1]], kept

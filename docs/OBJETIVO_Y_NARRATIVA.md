@@ -134,6 +134,6 @@ pesa más que lo que solo pide investigar. Máximo 5 recomendaciones por reporte
 | Respetar el estilo de los originales | ✅ | — |
 | Permitir edición manual | ✅ (`narrative.json`, con verificación) | UI de revisión |
 | **Explicar causas** | ✅ (aportadas por el equipo) | **«Contexto del periodo»** (`--contexto` / parámetro `context`): sale en el resumen ejecutivo como *contexto aportado*, sin verificar, y queda en el historial. Tiene prioridad sobre los hallazgos de menor importancia. |
-| IA para redactar mejor (Cohere) | ⏳ Fase 6 | Opcional; solo reformula insights ya verificados |
+| IA para redactar mejor (Cohere) | ✅ | Opcional; solo reformula insights ya verificados; cada texto se reverifica (ver `docs/ARQUITECTURA.md` §8.1) |
 
 **Pendiente de la lista:** desviaciones (necesita meta o presupuesto) y la UI de revisión (la maqueta ya está aprobada).

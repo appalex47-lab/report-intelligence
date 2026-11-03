@@ -66,6 +66,21 @@ def verify(rid: str, body: dict = Body(...)):
     return S.verify_text(rid, [str(t) for t in body.get("texts", [])], body.get("allowed"))
 
 
+@app.get("/api/runs/{rid}/ia/facts")
+def ia_facts(rid: str):
+    return S.discovery_facts(rid)
+
+
+@app.post("/api/runs/{rid}/ia/discovery/check")
+def ia_discovery_check(rid: str, body: dict = Body(...)):
+    return S.check_discovery(rid, body.get("payload"), str(body.get("model", "")))
+
+
+@app.put("/api/runs/{rid}/discovery")
+def discovery_set(rid: str, body: dict = Body(...)):
+    return S.set_discovery(rid, body)
+
+
 @app.post("/api/runs/{rid}/generate")
 def generate(rid: str):
     return S.generate(rid)
