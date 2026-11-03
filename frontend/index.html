@@ -282,7 +282,12 @@ function vTargets(box){
     <textarea id="ctx" rows="4" placeholder="Ej.: Campaña de ecommerce del 10 al 20 de septiembre.">${esc((r.context||[]).join("\n"))}</textarea>
     <div class="row"><span></span><button class="btn" id="saveC">Guardar contexto</button></div></div>
     <div class="row"><button class="btn" id="back">← Validar</button>
-    <button class="btn primary" id="nx" ${a.can_generate&&a.generator_available?"":"disabled"}>${a.generator_available?"Revisar narrativa →":"Generador no disponible"}</button></div>`;
+    <button class="btn primary" id="nx" ${a.can_generate&&a.generator_available?"":"disabled"}>${a.generator_available?"Revisar narrativa →":"Falta la plantilla"}</button></div>`;
+  if(!a.generator_available){
+    const w = document.createElement("div"); w.className = "banner warn";
+    w.innerHTML = `<div><strong>Falta la plantilla PPTX: ${esc(a.template_label||"")}</strong><span class="sub">${esc(a.message||"")}</span></div><button class="btn primary" id="gotpl">Ir a Plantillas</button>`;
+    box.prepend(w); $("#gotpl").onclick = () => document.querySelector('[data-tab="tpl"]').click();
+  }
   const readT = () => { const o = {}; document.querySelectorAll("[data-t]").forEach(i=>{ if(i.value.trim()) o[i.dataset.t] = i.value.trim() }); return o };
   $("#saveT").onclick = async () => { try{ S.run = await api(`/runs/${r.id}/targets`, J("PUT", readT())); await refreshAnalysis(); S.narr=null; toast("Metas guardadas"); render() }catch(e){ $("#tmsg").textContent = e.message } };
   $("#saveC").onclick = async () => { try{ S.run = await api(`/runs/${r.id}/context`, J("PUT", {items:$("#ctx").value.split("\n")})); S.narr=null; toast("Contexto guardado") }catch(e){ toast(e.message) } };
@@ -434,6 +439,7 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   $("#p-rep").hidden = t.dataset.tab!=="rep"; $("#p-hist").hidden = t.dataset.tab!=="hist"; $("#p-tpl").hidden = t.dataset.tab!=="tpl";
   if(t.dataset.tab==="hist") renderHist();
   if(t.dataset.tab==="tpl") renderTpl();
+  if(t.dataset.tab==="rep" && S.run && S.run.filename) go(S.step);              // al volver (p. ej. tras cargar una plantilla) se refresca el estado
 });
 $("#newRun").onclick = () => { S.run=null; S.analysis=null; S.narr=null; S.result=null; S.step=0; S.err=null; store.set("ri.run",""); render() };
 (async () => {

@@ -89,3 +89,19 @@ def test_full_flow_without_render_for_both_units(br, tmp_path):
         assert dl["status"] == 200 and Path(dl["file"]).stat().st_size > 50_000
     assert call(bridge, "GET", "/api/history/runs")["json"]
     assert call(bridge, "GET", "/api/history/export")["status"] == 200
+
+
+def test_missing_template_is_explained_and_unblocked_after_upload(br, tmp_path):
+    bridge, S, t = br
+    m = _mod("mrs3")
+    f = m.build_aetops(tmp_path / "a.xlsx")
+    rid = call(bridge, "POST", "/api/runs", {"unit": "aetops", "periodicity": "mensual", "year": 2026, "index": 9})["json"]["id"]
+    call(bridge, "POST", f"/api/runs/{rid}/file", up=f)
+    call(bridge, "PUT", f"/api/runs/{rid}/targets", {"total": "10000000"})
+    a = call(bridge, "GET", f"/api/runs/{rid}/analysis")["json"]
+    assert a["generator_available"] is False and a["template_key"] == "aetops-mensual"
+    assert "Falta la plantilla PPTX de AETOPS mensual" in a["message"] and "Plantillas" in a["message"]
+    assert call(bridge, "GET", f"/api/runs/{rid}/narrative")["status"] in (404, 409, 500)      # no hay plantilla: error legible, no un fallo mudo
+    if HAS_TPL:
+        call(bridge, "POST", "/api/templates/aetops-mensual", up=TPL_DIR / "aetops-mensual/1/template.pptx")
+        assert call(bridge, "GET", f"/api/runs/{rid}/analysis")["json"]["generator_available"] is True

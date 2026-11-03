@@ -207,7 +207,9 @@ def analyze(run_id: str) -> dict:
             "kpis": _kpis(res, st), "cumplimiento": att,
             "targets_required": st["unit"] == "aetops", "targets_lines": [],
             "generator_available": gen_ok,
-            "message": None if gen_ok else "No hay plantilla para este formato: la validación está disponible, el generador no."}
+            "template_key": f"{st['unit']}-{st['periodicity']}", "template_label": TEMPLATE_KEYS.get(f"{st['unit']}-{st['periodicity']}", ""),
+            "message": None if gen_ok else (f"Falta la plantilla PPTX de {TEMPLATE_KEYS.get(st['unit'] + '-' + st['periodicity'], 'este formato')}: "
+                                            "cárgala en la pestaña «Plantillas» para poder revisar la narrativa y generar el reporte.")}
 
 
 def _has_template(st: dict) -> bool:
