@@ -294,23 +294,25 @@ async function aiRun(plans, key, model){
   const m = $("#aiMsg"); if(m) m.textContent = bad ? `Se descartaron ${bad} por cambiar cifras o introducir causas (p. ej.: ${firstErr}). Quedó el texto original.` : "Todos los textos pasaron la verificación.";
 }
 /* ---------------------------------------------------------------- descubrimiento único (IA propone, el usuario valida) */
-const DISC_TYPE = { hecho: "Hecho", interpretacion: "Interpretación", hipotesis: "Hipótesis a validar" };
-const discSystem = (avoid) => `Eres un analista senior de e-commerce farmacéutico. Recibes una HOJA DE HECHOS ya verificados (cada hecho tiene id, tema y texto). Tu trabajo es encontrar UN descubrimiento propio de este reporte: algo que un lector no vería en los titulares y que conecte al menos dos temas distintos.
+const DISC_SEC = { datos: ["Lo que dicen los datos", "hecho"], significado: ["Lo que significa", "interpretacion"], hipotesis: ["Hipótesis a validar", "contexto"], accion: ["Qué haríamos", "recomendacion"] };
+const discSystem = (avoid) => `Eres un analista senior de e-commerce farmacéutico. Recibes una HOJA DE HECHOS ya verificados (cada hecho tiene id, tema, texto y "nuevo"). Tu trabajo es escribir UNA hoja de análisis completa —del tamaño de una diapositiva— con un descubrimiento propio de este reporte.
+Lo más importante: la presentación YA muestra panorama, canales, líneas, categorías, productos, negados, conclusiones y recomendaciones. Los hechos con "nuevo": false son justo lo que ya está en esas diapositivas: úsalos solo como contexto y NO los repitas. Construye el hallazgo sobre los hechos con "nuevo": true (cruces, productividad, mezcla, pacientes, geografía, calendario, tendencias…), que no aparecen en ninguna otra diapositiva.
+Estructura FIJA (se repite cada mes), con estas secciones:
+- "titular": una frase de máximo 230 caracteres con el hallazgo central (apoyada en hechos nuevos).
+- viñetas con "seccion": "datos" (3 o 4: lo que dicen los datos nuevos), "significado" (2 o 3: qué significa el patrón, sin causas externas), "hipotesis" (1 o 2: posibles explicaciones a comprobar, con cautela, cada una con "validar" = qué dato o área la confirmaría o descartaría), "accion" (2 o 3: qué haríamos, empezando con un verbo: Revisar, Priorizar, Comparar, Vigilar…).
 Reglas inviolables:
 1. Usa únicamente cifras que aparezcan en los hechos que cites, tal como están escritas. No calcules, no redondees, no inventes.
-2. Cada viñeta cita los ids de los hechos en que se apoya (campo "hechos").
-3. Campo "tipo": "hecho" = lo que dicen los datos; "interpretacion" = qué significa el patrón, sin causas externas; "hipotesis" = una posible explicación a comprobar, redactada con cautela, con el campo "validar" (qué dato o área la confirmaría o descartaría).
-4. Nunca afirmes causas (no uses "debido a", "porque", "gracias a", "se debe", "por culpa de", "a raíz de").
-5. Título corto (máximo 60 caracteres, sin cifras) que nombre el hallazgo, no el tema.
-6. Entre 3 y 4 viñetas, máximo 330 caracteres cada una, en español natural y directo, como lo contaría una persona que conoce el negocio. Evita muletillas de reporte.
-7. No repitas el titular obvio (la venta total sube o baja) salvo como contexto; prioriza el cruce menos evidente que sí tenga respaldo en los hechos.${avoid.length ? "\n8. Ya se propusieron estos ángulos; propón uno distinto: " + avoid.map(a => "«" + a + "»").join(", ") + "." : ""}
-Responde SOLO un JSON: {"titulo": "...", "angulo": "...", "viñetas": [{"texto": "...", "tipo": "hecho|interpretacion|hipotesis", "hechos": ["ID", ...], "validar": ""}]}`;
+2. Cada viñeta y el titular citan los ids de los hechos en que se apoyan (campo "hechos"). Las viñetas de datos, significado e hipótesis deben citar al menos un hecho con "nuevo": true.
+3. Nunca afirmes causas (no uses "debido a", "porque", "gracias a", "se debe", "por culpa de", "a raíz de").
+4. Título corto (máximo 60 caracteres, sin cifras) que nombre el hallazgo, no el tema.
+5. Cada viñeta: máximo 280 caracteres, español natural y directo, como lo contaría una persona que conoce el negocio; evita muletillas de reporte. Se puede repetir la estructura de un mes a otro, pero el contenido debe salir de los datos de este.${avoid.length ? "\n6. Ya se propusieron estos ángulos; propón uno distinto: " + avoid.map(a => "«" + a + "»").join(", ") + "." : ""}
+Responde SOLO un JSON: {"titulo": "...", "angulo": "...", "titular": {"texto": "...", "hechos": ["ID"]}, "viñetas": [{"seccion": "datos|significado|hipotesis|accion", "texto": "...", "hechos": ["ID"], "validar": ""}]}`;
 async function cohereDiscovery(facts, key, model, avoid){
   let r;
   try{
     r = await fetch("https://api.cohere.com/v2/chat", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
       body: JSON.stringify({ model, temperature: 0.8, response_format: { type: "json_object" },
-        messages: [{ role: "system", content: discSystem(avoid) }, { role: "user", content: JSON.stringify({ hechos: facts.map(f => ({ id: f.id, tema: f.tema, texto: f.texto })) }) }] }) });
+        messages: [{ role: "system", content: discSystem(avoid) }, { role: "user", content: JSON.stringify({ hechos: facts.map(f => ({ id: f.id, tema: f.tema, nuevo: !!f.nuevo, texto: f.texto })) }) }] }) });
   }catch{ throw new Error("No se pudo conectar con Cohere desde el navegador (revisa tu red; algunas redes corporativas bloquean la conexión).") }
   if(!r.ok){
     const t = await r.text().catch(() => "");
@@ -326,9 +328,9 @@ function discRender(){
   const d = S.run.discovery;
   const keyRow = `<div class="grid g2"><label class="f">Clave de API de Cohere<input id="dKey" type="password" autocomplete="off" value="${esc(($("#aiKey")||{}).value || aiKey())}" placeholder="pega tu clave"></label>
     <label class="f">Modelo<input id="dModel" type="text" value="${esc(($("#aiModel")||{}).value || aiModel())}"></label></div>`;
-  const added = d ? `<div class="banner ok"><div><strong>Agregado a la presentación: «${esc(d.titulo)}»</strong><span class="sub">${d.items.length} viñeta(s) validadas por ti. Se genera como diapositiva extra antes de «Recomendaciones».</span></div><button class="btn" id="dRemove">Quitar</button></div>` : "";
+  const added = d ? `<div class="banner ok"><div><strong>Agregada a la presentación: «${esc(d.titulo)}»</strong><span class="sub">Hoja completa con ${d.items.length} viñeta(s) y ${(d.evidencia || []).length} hecho(s) de evidencia, validada por ti. Va antes de «Recomendaciones».</span></div><button class="btn" id="dRemove">Quitar</button></div>` : "";
   if(S.disc){ host.innerHTML = added + discReview(); discBind(); return }
-  host.innerHTML = added + `<div class="sub">La IA recibe una hoja de hechos del reporte (cifras ya calculadas, con cruces entre temas) y propone <b>una diapositiva con un hallazgo propio</b> de este periodo. Cada viñeta cita sus hechos; lo que use cifras que no estén en ellos o afirme causas se descarta. <b>Tú decides qué entra.</b></div>
+  host.innerHTML = added + `<div class="sub">Una <b>hoja completa y distinta cada mes</b> (misma estructura: titular, lo que dicen los datos, lo que significa, hipótesis a validar y qué haríamos, más la evidencia citada). La IA debe apoyarse en <b>hechos nuevos</b> —cruces y métricas que ninguna otra diapositiva muestra— y no repetir lo que ya está. Cada viñeta cita sus hechos; lo que use cifras que no estén en ellos o afirme causas se descarta. <b>Tú decides qué entra.</b></div>
     ${keyRow}<div class="row"><button class="btn" id="dPlan">${d ? "Buscar otro descubrimiento" : "Buscar un descubrimiento"}</button></div><div id="dPlanBox"></div><div id="dMsg" class="sub"></div>`;
   $("#dPlan").onclick = discPlan; $("#dRemove")?.addEventListener("click", async () => { try{ S.run = await api(`/runs/${S.run.id}/discovery`, J("PUT", {})); toast("Descubrimiento quitado"); discRender() }catch(e){ toast(e.message) } });
 }
@@ -337,8 +339,9 @@ async function discPlan(){
   const key = $("#dKey").value.trim(), model = $("#dModel").value.trim() || AI_DEFAULT;
   if(!key){ $("#dMsg").textContent = "Pega tu clave de API de Cohere para continuar."; return }
   let facts; try{ facts = (await api(`/runs/${S.run.id}/ia/facts`)) }catch(e){ $("#dMsg").textContent = e.message; return }
-  $("#dPlanBox").innerHTML = `<div class="plan"><strong>Esto se enviará a Cohere: ${facts.hechos.length} hechos de ${facts.temas.length} temas (${esc(facts.temas.join(", "))})</strong>
-    <pre>${esc(facts.hechos.map(f => `${f.id} · ${f.texto}`).join("\n"))}</pre>
+  const nNew = facts.hechos.filter(f => f.nuevo).length;
+  $("#dPlanBox").innerHTML = `<div class="plan"><strong>Esto se enviará a Cohere: ${facts.hechos.length} hechos de ${facts.temas.length} temas, ${nNew} de ellos nuevos (no están en otras diapositivas)</strong>
+    <pre>${esc(facts.hechos.map(f => `${f.nuevo ? "★ nuevo" : "  ya en el reporte"} · ${f.id} · ${f.texto}`).join("\n"))}</pre>
     <label class="sub"><input type="checkbox" id="dOk"> Entiendo que esta hoja de hechos (agregados del reporte) sale de mi navegador hacia Cohere (modelo ${esc(model)}).</label>
     <div class="row"><button class="btn" id="dCancel">Cancelar</button><button class="btn primary" id="dGo" disabled>Buscar descubrimiento</button></div></div>`;
   $("#dOk").onchange = () => { $("#dGo").disabled = !$("#dOk").checked };
@@ -358,18 +361,23 @@ async function discRun(facts, key, model){
   discRender();
 }
 function discReview(){
-  const v = S.disc;
-  const probs = v.problemas.length ? `<div class="warnline">${v.problemas.map(esc).join(" · ")}</div>` : `<div class="okline">✓ Pasó la verificación automática (cifras, citas y lenguaje). Falta tu validación.</div>`;
-  const items = v.viñetas.map((b, i) => `<div class="para" data-k="${b.tipo === "hipotesis" ? "interpretacion" : b.tipo === "interpretacion" ? "interpretacion" : "hecho"}">
-      <div class="row"><span class="chip ${b.tipo === "hipotesis" ? "contexto" : b.tipo === "interpretacion" ? "interpretacion" : "hecho"}">${DISC_TYPE[b.tipo] || b.tipo}</span>
-        <label class="sub"><input type="checkbox" data-inc="${i}" ${b.ok ? "checked" : "disabled"}> Incluir</label></div>
+  const v = S.disc, t = v.titular || { texto: "", hechos: [], ok: false, problemas: [] };
+  const probs = v.problemas.length ? `<div class="warnline">${v.problemas.map(esc).join(" · ")}</div>` : `<div class="okline">✓ Pasó la verificación automática (cifras, citas, hechos nuevos y lenguaje). Falta tu validación.</div>`;
+  const ev = (arr) => `<details><summary class="sub" style="cursor:pointer">Evidencia (${arr.length} hecho(s))</summary><div class="sub">${arr.map(e => "• " + esc(e)).join("<br>")}</div></details>`;
+  const head = `<div class="para" data-k="interpretacion"><div class="row"><span class="chip interpretacion">Titular del hallazgo</span><label class="sub"><input type="checkbox" id="tInc" ${t.ok ? "checked" : "disabled"}> Incluir</label></div>
+      <textarea rows="2" id="tTxt" ${t.ok ? "" : "disabled"}>${esc((t.texto || "").replace(/\*\*/g, ""))}</textarea>${(t.problemas || []).length ? `<div class="warnline">Descartado: ${t.problemas.map(esc).join(" · ")}</div>` : ""}${ev(t.evidencia || [])}</div>`;
+  const groups = Object.keys(DISC_SEC).map(sec => {
+    const rows = v.viñetas.map((b, i) => [b, i]).filter(([b]) => b.seccion === sec);
+    if(!rows.length) return "";
+    return `<div class="sub" style="margin-top:6px"><b>${DISC_SEC[sec][0]}</b></div>` + rows.map(([b, i]) => `<div class="para" data-k="${DISC_SEC[sec][1] === "hecho" ? "hecho" : "interpretacion"}">
+      <div class="row"><span class="chip ${DISC_SEC[sec][1]}">${DISC_SEC[sec][0]}</span><label class="sub"><input type="checkbox" data-inc="${i}" ${b.ok ? "checked" : "disabled"}> Incluir</label></div>
       <textarea rows="3" data-txt="${i}" ${b.ok ? "" : "disabled"}>${esc(b.texto.replace(/\*\*/g, ""))}</textarea>
-      ${b.tipo === "hipotesis" ? `<label class="f">Qué validar<input type="text" data-val="${i}" value="${esc(b.validar)}" ${b.ok ? "" : "disabled"}></label>` : ""}
-      ${b.problemas.length ? `<div class="warnline">Descartada: ${b.problemas.map(esc).join(" · ")}</div>` : ""}
-      <details><summary class="sub" style="cursor:pointer">Evidencia (${b.hechos.length} hecho(s))</summary><div class="sub">${b.evidencia.map(e => "• " + esc(e)).join("<br>")}</div></details></div>`).join("");
+      ${sec === "hipotesis" ? `<label class="f">Qué validar<input type="text" data-val="${i}" value="${esc(b.validar)}" ${b.ok ? "" : "disabled"}></label>` : ""}
+      ${b.problemas.length ? `<div class="warnline">Descartada: ${b.problemas.map(esc).join(" · ")}</div>` : ""}${ev(b.evidencia)}</div>`).join("");
+  }).join("");
   return `<div class="grid"><label class="f">Título de la diapositiva<input type="text" id="dTitle" maxlength="64" value="${esc(v.titulo)}"></label>
-    <div class="sub">Ángulo propuesto: <b>${esc(v.angulo || "—")}</b></div>${probs}${items}
-    <label class="sub"><input type="checkbox" id="dValidate"> Revisé la evidencia de cada viñeta y valido que estas conclusiones entren a la presentación.</label>
+    <div class="sub">Ángulo propuesto: <b>${esc(v.angulo || "—")}</b></div>${probs}${head}${groups}
+    <label class="sub"><input type="checkbox" id="dValidate"> Revisé la evidencia de cada parte y valido que esta hoja entre a la presentación.</label>
     <div class="row"><button class="btn" id="dAgain">Buscar otro ángulo</button><button class="btn" id="dDiscard">Descartar</button><button class="btn primary" id="dAdd" disabled>Agregar a la presentación</button></div></div>`;
 }
 function discBind(){
@@ -379,8 +387,9 @@ function discBind(){
   $("#dAgain").onclick = () => { S.disc = null; discRender(); $("#dPlan").click() };
   $("#dAdd").onclick = async () => {
     const items = [...document.querySelectorAll("[data-inc]:checked")].map(c => { const i = +c.dataset.inc, b = v.viñetas[i];
-      return { texto: document.querySelector(`[data-txt="${i}"]`).value.trim(), tipo: b.tipo, hechos: b.hechos, validar: (document.querySelector(`[data-val="${i}"]`) || {}).value || "" } });
-    try{ S.run = await api(`/runs/${S.run.id}/discovery`, J("PUT", { titulo: $("#dTitle").value.trim(), items })); S.disc = null; toast("Descubrimiento agregado a la presentación"); discRender() }
+      return { seccion: b.seccion, texto: document.querySelector(`[data-txt="${i}"]`).value.trim(), hechos: b.hechos, validar: (document.querySelector(`[data-val="${i}"]`) || {}).value || "" } });
+    const titular = $("#tInc") && $("#tInc").checked ? { texto: $("#tTxt").value.trim(), hechos: v.titular.hechos } : null;
+    try{ S.run = await api(`/runs/${S.run.id}/discovery`, J("PUT", { titulo: $("#dTitle").value.trim(), titular, items })); S.disc = null; toast("Hoja agregada a la presentación"); discRender() }
     catch(e){ toast(e.message); const m = document.createElement("div"); m.className = "warnline"; m.textContent = e.message; $("#dAdd").before(m) }
   };
 }
@@ -554,7 +563,7 @@ function vNarr(box){
           <div class="grid sub" style="padding-top:8px;gap:6px">
             <div><b>Dos usos, los dos opcionales y con tu clave de Cohere:</b></div>
             <div>① <b>Redactar mejor:</b> toma los párrafos que ya calculó el motor y los reescribe para que se lean como los escribiría una persona (tú eliges el estilo). No cambia el contenido.</div>
-            <div>② <b>Descubrimiento único:</b> lee una hoja de hechos del reporte (cifras ya calculadas, incluidos cruces entre temas) y propone <i>una</i> diapositiva extra con un hallazgo propio de este periodo. Cada viñeta cita los hechos en que se apoya.</div>
+            <div>② <b>Descubrimiento único:</b> escribe una <b>hoja completa</b> (titular, lo que dicen los datos, lo que significa, hipótesis a validar y qué haríamos, con la evidencia al lado). Debe apoyarse en <b>hechos nuevos</b> —cruces y métricas que ninguna otra diapositiva muestra— y no repetir lo que ya está en la presentación. Cada viñeta cita los hechos en que se apoya.</div>
             <div><b>Lo que NO puede hacer:</b> inventar ni calcular cifras (solo puede usar las de los hechos que cita), afirmar causas («debido a…»), ni usar datos fuera de la hoja de hechos. Lo que viole eso se descarta automáticamente.</div>
             <div><b>Qué sale de tu navegador:</b> solo texto de párrafos o de la hoja de hechos (agregados), y siempre lo ves antes de enviarlo. Nunca el Excel, filas de pacientes ni el contexto del equipo.</div>
             <div><b>Quién decide:</b> tú. Lo redactado se puede editar o restaurar, y el descubrimiento solo entra a la presentación si lo revisas y lo validas. Queda un registro de lo enviado y recibido (<code>ia_log.json</code>).</div>
@@ -627,7 +636,7 @@ function vGen(box){
   box.innerHTML = `<div class="card grid"><strong>Generar presentación${S.info.render?" y PDF":""}</strong>
     <div class="sub">Se rellena la plantilla original (tablas y textos editables)${S.info.render?", se convierte a PDF y":" y"} se aplica el QA: si el QA no aprueba, la descarga queda bloqueada.
     ${S.info.render?"":"<br><b>QA estructural:</b> esta versión corre 100 % en tu navegador, sin PDF ni vista previa. Revisa el PPTX en PowerPoint (Guardar como PDF) o usa el flujo opcional «PDF en GitHub» del README."}
-    ${nEdits?`<br>Incluye ${nEdits} diapositiva(s) con texto editado a mano.`:""}${S.run.discovery?`<br>Incluye la diapositiva de descubrimiento «${esc(S.run.discovery.titulo)}» (propuesta por IA y validada por ti).`:""}</div>
+    ${nEdits?`<br>Incluye ${nEdits} diapositiva(s) con texto editado a mano.`:""}${S.run.discovery?`<br>Incluye la hoja de descubrimiento «${esc(S.run.discovery.titulo)}» (propuesta por IA y validada por ti).`:""}</div>
     <div class="row"><button class="btn" id="b4">← Narrativa</button><button class="btn primary" id="go" ${S.busy?"disabled":""}>${S.busy?'<span class="spin" style="display:inline-block;vertical-align:-3px;margin-right:6px"></span>Generando…':res?"Volver a generar":"Generar reporte"}</button></div></div><div id="out"></div>`;
   $("#b4").onclick = () => go(3);
   $("#go").onclick = async () => {

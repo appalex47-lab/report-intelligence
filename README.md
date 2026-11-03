@@ -24,7 +24,7 @@ se ejecuta **dentro de tu navegador** (Pyodide). Los Excel y los reportes **nunc
 - La meta general es obligatoria en AETOPS y opcional en GLP-1. El contexto del equipo sale en el resumen, marcado como no verificado.
 - Cada texto de la narrativa se puede editar; toda cifra nueva se verifica contra los datos.
 - **Redacción con IA (opcional, Cohere):** en la revisión, con tu propia clave de API, la IA puede mejorar la redacción de los párrafos. Ves lo que se enviará, lo confirmas, y cada texto se reverifica: si cambia, quita o agrega una cifra, o introduce causas, se descarta. La clave se queda en tu navegador y nunca va al repositorio.
-- **Descubrimiento único (IA, opcional):** la IA propone una diapositiva extra con un hallazgo propio del periodo a partir de una hoja de hechos del reporte; cada viñeta cita sus hechos y solo puede usar sus cifras. Tú revisas la evidencia, editas y validas antes de que entre a la presentación.
+- **Descubrimiento único (IA, opcional):** una **hoja completa** (titular, lo que dicen los datos, lo que significa, hipótesis a validar y qué haríamos, con la evidencia al lado), con la misma estructura cada mes pero con contenido propio del periodo. La IA debe apoyarse en **hechos nuevos** —cruces y métricas que ninguna otra diapositiva muestra— y no repetir lo que ya está; cada viñeta cita sus hechos y solo puede usar sus cifras. Tú revisas la evidencia, editas y validas antes de que entre a la presentación.
 - Se descarga el **PPTX** con tablas y textos editables.
 - El **historial** (inmutable, con versiones) se guarda en tu navegador; se puede exportar e importar (pestaña *Historial*).
 

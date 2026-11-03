@@ -23,7 +23,7 @@ from ..history import store as hist
 from ..models import Period
 from ..narrative import trends
 from ..narrative.executive import build_executive
-from ..narrative.facts import aetops_facts, glp1_facts, verify_discovery
+from ..narrative.facts import aetops_facts, glp1_facts, trend_facts, verify_discovery
 from ..narrative.glp1_exec import attainment_glp1, build_executive_glp1
 from ..narrative.targets import attainment
 from ..narrative.writer import CAUSAL, NUMBER, Para, verify_all, verify_edited
@@ -493,8 +493,16 @@ def _facts(run_id: str):
         raise ServiceError("Hay hallazgos bloqueantes: corrígelos antes de pedir un descubrimiento.", 409)
     per = period_of(st)
     if st["unit"] == "aetops":
-        return st, aetops_facts(res, per, attainment(res, _targets(st)))
-    return st, glp1_facts(res.blocks, res.funnel, per)
+        facts = aetops_facts(res, per, attainment(res, _targets(st)))
+    else:
+        facts = glp1_facts(res.blocks, res.funnel, per, getattr(res, "extras", None))
+    if HISTORY_DB.exists():                           # el «patrón» entre meses: tendencias del historial (si hay suficientes periodos)
+        con = hist.connect(HISTORY_DB)
+        try:
+            facts += trend_facts(trends.trends_for(con, per.unit, per.periodicity))
+        finally:
+            con.close()
+    return st, facts
 
 
 def discovery_facts(run_id: str) -> dict:
@@ -517,19 +525,26 @@ def check_discovery(run_id: str, payload: dict, model: str = "") -> dict:
 
 
 def set_discovery(run_id: str, body: dict | None) -> dict:
-    """Guarda el descubrimiento que el usuario validó (o lo quita con None). Se vuelve a verificar aquí: la interfaz no puede saltarse la regla."""
+    """Guarda la hoja que el usuario validó (o la quita). Se vuelve a verificar aquí: la interfaz no puede saltarse la regla."""
     st = _load(run_id)
     if not body or not body.get("items"):
         st["discovery"] = None
         _save(run_id, st)
         return public(st)
     _st, facts = _facts(run_id)
-    payload = {"titulo": body.get("titulo", ""), "viñetas": [{"texto": i.get("texto", ""), "tipo": i.get("tipo", ""), "hechos": i.get("hechos", []), "validar": i.get("validar", "")}
-                                                              for i in body["items"]]}
+    byid = {f.id: f for f in facts}
+    payload = {"titulo": body.get("titulo", ""), "titular": body.get("titular") or {},
+               "viñetas": [{"seccion": i.get("seccion", ""), "texto": i.get("texto", ""), "hechos": i.get("hechos", []), "validar": i.get("validar", "")} for i in body["items"]]}
     chk = verify_discovery(facts, payload, strict=False)
     if not chk["ok"]:
         raise ServiceError("El descubrimiento no pasa la verificación: " + "; ".join(chk["problemas"] + [p for b in chk["viñetas"] for p in b["problemas"]])[:300], 400)
+    cited: list[str] = []
+    for i in list(chk["titular"]["hechos"]) + [h for b in chk["viñetas"] for h in b["hechos"]]:
+        if i in byid and i not in cited:
+            cited.append(i)
     st["discovery"] = {"titulo": chk["titulo"], "angulo": chk["angulo"],
-                       "items": [{"texto": b["texto"], "tipo": b["tipo"], "validar": b["validar"], "hechos": b["hechos"]} for b in chk["viñetas"]]}
+                       "titular": {"texto": chk["titular"]["texto"], "hechos": chk["titular"]["hechos"]} if chk["titular"]["texto"] else None,
+                       "items": [{"seccion": b["seccion"], "tipo": b["tipo"], "texto": b["texto"], "validar": b["validar"], "hechos": b["hechos"]} for b in chk["viñetas"]],
+                       "evidencia": [{"id": i, "texto": byid[i].texto} for i in cited]}
     _save(run_id, st)
     return public(st)

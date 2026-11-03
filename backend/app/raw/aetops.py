@@ -37,6 +37,7 @@ def _norm(s) -> str:
 
 @dataclass
 class RawTables:
+    extras: dict = field(default_factory=dict)
     ventas: list[dict] = field(default_factory=list)
     catalogo: list[dict] = field(default_factory=list)
     negados: list[dict] = field(default_factory=list)
@@ -196,6 +197,8 @@ def aggregate(raw: RawTables, period: Period) -> tuple[dict, dict, dict, list[Fi
     dup = 0
     month_rows: dict[tuple, int] = defaultdict(int)
     nuevo_bad = 0
+    X = {"pac": defaultdict(lambda: [Decimal(0), set(), set()]), "estado": defaultdict(Decimal), "cl": defaultdict(Decimal), "ord_n": defaultdict(int),
+         "ord_m": defaultdict(Decimal), "quinc": defaultdict(Decimal), "pac_m": defaultdict(Decimal)}      # cruces para el descubrimiento (no se muestran en la presentación)
     for r in raw.ventas:
         d = _date(r.get("fecha_pedido"))
         if d is None:
@@ -234,6 +237,20 @@ def aggregate(raw: RawTables, period: Period) -> tuple[dict, dict, dict, list[Fi
         pr = prod[(win, sku)]
         pr["monto"] += monto
         pr["canales"].add(canal)
+        if win in ("cur", "yoy"):
+            nuevo = str(r.get("paciente_nuevo") or "").strip().upper() in ("SI", "SÍ", "S", "1", "TRUE")
+            q = X["pac"][(win, "nuevo" if nuevo else "recurrente")]
+            q[0] += monto
+            q[1].add(pac)
+            q[2].add(pid)
+            est = str(r.get("estado") or "").strip()
+            if est:
+                X["estado"][(win, est)] += monto
+            X["cl"][(win, canal, c["linea"])] += monto
+            X["ord_n"][(win, pid)] += 1
+            X["ord_m"][(win, pid)] += monto
+            X["quinc"][(win, 1 if d.day <= 15 else 2)] += monto
+            X["pac_m"][(win, pac)] += monto
     ev = lambda n: f"{n} fila(s)"          # noqa: E731
     for n, code, msg in ((bad_date, "RAW_DATE_UNREADABLE", "con fecha ilegible"), (bad_num, "RAW_NUMBER_UNREADABLE", "con piezas o monto ilegibles"),
                          (empty_id, "RAW_ID_EMPTY", "sin id_pedido, id_paciente o sku"), (unknown_sku, "RAW_SKU_NOT_IN_CATALOG", "con un SKU que no está en el catálogo")):
@@ -299,6 +316,7 @@ def aggregate(raw: RawTables, period: Period) -> tuple[dict, dict, dict, list[Fi
                 "aetops.productos.growth": ProductTable("aetops.productos.growth", "growth", grow),
                 "aetops.productos.decline": ProductTable("aetops.productos.decline", "decline", decl)}
 
+    raw.extras = _extras(X)
     negados: dict[str, NegadosTable] = {}
     if raw.has_negados:
         label = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index} {period.year}"
@@ -317,3 +335,23 @@ def aggregate(raw: RawTables, period: Period) -> tuple[dict, dict, dict, list[Fi
         negados["aetops.negados.producto"] = NegadosTable("aetops.negados.producto", label, nrows, total)
         negados["aetops.negados.alta"] = derive_alta(negados["aetops.negados.producto"], None)
     return tables, products, negados, f
+
+
+def _extras(X) -> dict:
+    """Cruces calculados de las filas crudas (periodo `cur` y mismo periodo del año anterior `yoy`)."""
+    out: dict = {}
+    for w in ("cur", "yoy"):
+        pac = {k: X["pac"][(w, k)] for k in ("nuevo", "recurrente") if (w, k) in X["pac"]}
+        out[f"pac_{w}"] = {k: {"monto": v[0], "pacientes": len(v[1]), "pedidos": len(v[2])} for k, v in pac.items()}
+        out[f"estado_{w}"] = {e: m for (ww, e), m in X["estado"].items() if ww == w}
+        out[f"cl_{w}"] = {(c, l): m for (ww, c, l), m in X["cl"].items() if ww == w}
+        orders = [(X["ord_n"][k], X["ord_m"][k]) for k in X["ord_n"] if k[0] == w]
+        multi = [m for n, m in orders if n >= 2]
+        single = [m for n, m in orders if n < 2]
+        out[f"canasta_{w}"] = {"un": {"pedidos": len(single), "monto": sum(single, Decimal(0))}, "varios": {"pedidos": len(multi), "monto": sum(multi, Decimal(0))}}
+        out[f"quinc_{w}"] = {q: m for (ww, q), m in X["quinc"].items() if ww == w}
+        pm = sorted((m for (ww, _p), m in X["pac_m"].items() if ww == w), reverse=True)
+        if pm:
+            top = max(1, len(pm) // 10)
+            out[f"conc_{w}"] = {"top10": sum(pm[:top], Decimal(0)), "total": sum(pm, Decimal(0)), "n": len(pm), "top_n": top}
+    return out

@@ -66,21 +66,10 @@ def _render_and_check(pptx: Path, template: Path, out_dir: Path, slide_map, qa, 
 
 
 def _discovery_slide(prs, discovery: dict | None, fill, slide_map, n_template: int):
-    """Agrega la diapositiva del descubrimiento (IA validada por el usuario) y la deja registrada en narrative.json."""
-    items = (discovery or {}).get("items") or []
-    if not items:
+    """Agrega la hoja de descubrimiento (IA propuesta y validada por el usuario) y la deja registrada en narrative.json."""
+    if not (discovery or {}).get("items"):
         return slide_map
-    paras = []
-    for it in items:
-        if it.get("tipo") == "hipotesis":
-            text = f"• **Hipótesis a validar:** {it['texto']}" + (f" Para validarla: {it['validar']}" if it.get("validar") else "")
-        else:
-            text = f"• {it['texto']}"
-        paras.append(Para(text, "hipotesis" if it.get("tipo") == "hipotesis" else ("interpretacion" if it.get("tipo") == "interpretacion" else "hecho"),
-                          0 if len(paras) < 3 else 2, basis="descubrimiento propuesto por IA y validado por el usuario", evidence=list(it.get("hechos", []))))
-    paras.append(Para("Descubrimiento propuesto con IA a partir de los datos de este reporte; cada cifra proviene de los hechos citados y fue validado por el equipo.",
-                      "contexto", 1, basis="nota de transparencia"))
-    sm, kept = add_discovery_slide(prs, (discovery.get("titulo") or "Descubrimiento del periodo")[:64], paras, to_paragraphs, fit, slide_map, n_template)
+    sm, kept = add_discovery_slide(prs, discovery, slide_map, n_template)
     fill.narrative["descubrimiento_ia"] = kept
     return sm
 

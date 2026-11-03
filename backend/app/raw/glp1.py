@@ -84,7 +84,7 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
     tabs, f = read_tables(path, SPECS, optional={"negados", "trafico"})
     file = str(path).replace("\\", "/").split("/")[-1]
     if any(x.severity == "block" for x in f):
-        return {}, None, f
+        return {}, None, f, {}
     ventas, trafico = tabs["ventas"], tabs.get("trafico", [])
     cat = {str(r["sku"]).strip(): str(r.get("producto") or "").strip() for r in tabs["catalogo"] if r.get("sku") is not None}
     wins = _windows(period)
@@ -94,6 +94,7 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
     money: dict[tuple, _M] = defaultdict(_M)           # (bloque, ventana, clave) -> acumulado
     bad_date = bad_num = empty = unknown = neg = 0
     orders_cur: set = set()
+    X = {"pac": defaultdict(lambda: [Decimal(0), set(), set()]), "est": defaultdict(set), "est_m": defaultdict(Decimal), "quinc": defaultdict(Decimal), "pac_m": defaultdict(Decimal)}
     has_loyalty = any(r.get("programa_lealtad") not in (None, "") for r in ventas)
     for r in ventas:
         d = to_date(r.get("fecha_pedido"))
@@ -123,6 +124,17 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
         dims = {"region": str(r.get("region") or r.get("estado") or "").strip(), "pago": str(r.get("forma_pago") or "").strip(),
                 "entrega": str(r.get("modo_entrega") or "").strip(), "productos": prod}
         dims["total"] = "TOTAL"
+        if w in ("cur", "yoy"):
+            q = X["pac"][(w, "nuevo" if new else "recurrente")]
+            q[0] += monto
+            q[1].add(pac)
+            q[2].add(pid)
+            est = str(r.get("estado") or "").strip()
+            if est:
+                X["est"][(w, norm(est))].add(pid)
+                X["est_m"][(w, norm(est))] += monto
+            X["quinc"][(w, 1 if d.day <= 15 else 2)] += monto
+            X["pac_m"][(w, pac)] += monto
         if has_loyalty:
             dims["programas"] = str(r.get("programa_lealtad") or "").strip() or "Sin programa"
         for blk, key in dims.items():
@@ -195,7 +207,7 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
         if not any(w == "cur" for (_b, w, _k, _d2) in traf) and not funnel.get("cur"):
             f.append(Finding("RAW_PERIOD_EMPTY", "block", "Tráfico: no hay datos del periodo del reporte.", "trafico"))
     if any(x.severity == "block" for x in f):
-        return {}, None, f
+        return {}, None, f, {}
 
     blocks: dict[str, GBlock] = {}
 
@@ -337,4 +349,17 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
         if compras is not None and abs(compras - len(orders_cur)) / len(orders_cur) > Decimal("0.2"):
             f.append(Finding("TRAFICO_PURCHASE_DIFFERS", "warn",
                              f"Compras de analítica ({compras:,.0f}) vs pedidos del sistema de ventas ({len(orders_cur):,}): difieren más de 20 %.", "trafico"))
-    return blocks, fb, f
+    return blocks, fb, f, _extras_glp1(X)
+
+
+def _extras_glp1(X) -> dict:
+    out: dict = {}
+    for w in ("cur", "yoy"):
+        out[f"pac_{w}"] = {k: {"monto": v[0], "pacientes": len(v[1]), "pedidos": len(v[2])} for (ww, k), v in X["pac"].items() if ww == w}
+        out[f"estado_{w}"] = {e: {"pedidos": len(p), "monto": X["est_m"][(w, e)]} for (ww, e), p in X["est"].items() if ww == w}
+        out[f"quinc_{w}"] = {q: m for (ww, q), m in X["quinc"].items() if ww == w}
+        pm = sorted((m for (ww, _p), m in X["pac_m"].items() if ww == w), reverse=True)
+        if pm:
+            top = max(1, len(pm) // 10)
+            out[f"conc_{w}"] = {"top10": sum(pm[:top], Decimal(0)), "total": sum(pm, Decimal(0)), "n": len(pm), "top_n": top}
+    return out
