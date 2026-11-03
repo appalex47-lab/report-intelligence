@@ -120,3 +120,16 @@ def test_wrong_template_is_rejected_with_a_clear_message(br):
     assert call(bridge, "POST", "/api/templates/aetops-trimestral", up=TPL_DIR / "aetops-mensual/1/template.pptx")["status"] == 400
     # la plantilla válida anterior sigue en su lugar
     assert {x["key"]: x["available"] for x in call(bridge, "GET", "/api/templates")["json"]}["aetops-mensual"]
+
+
+def test_period_without_data_gives_a_clear_finding_not_a_crash(br, tmp_path):
+    bridge, S, t = br
+    m = _mod("mrs4")
+    f = m.build_aetops(tmp_path / "a.xlsx", until=(2026, 9))
+    for unit, build in (("aetops", m.build_aetops), ("glp1", m.build_glp1)):
+        rid = call(bridge, "POST", "/api/runs", {"unit": unit, "periodicity": "mensual", "year": 2026, "index": 12})["json"]["id"]
+        call(bridge, "POST", f"/api/runs/{rid}/file", up=build(tmp_path / f"{unit}.xlsx", until=(2026, 9)))
+        a = call(bridge, "GET", f"/api/runs/{rid}/analysis")
+        assert a["status"] == 200, a
+        ids = {x["id"] for x in a["json"]["findings"]}
+        assert "RAW_PERIOD_EMPTY" in ids and a["json"]["can_generate"] is False and a["json"]["kpis"] == []

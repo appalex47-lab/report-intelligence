@@ -45,7 +45,7 @@ SLIDE_TITLES = {
     "resumen_ejecutivo": "Resumen ejecutivo", "recomendaciones": "Recomendaciones", "panorama": "Panorama",
     "linea_yoy": "Líneas YoY", "linea_mom": "Líneas MoM", "canal_yoy": "Canales YoY", "canal_mom": "Canales MoM",
     "productos": "Productos", "movers": "Mayores alzas y bajas", "cat_yoy": "Categorías YoY", "cat_mom": "Categorías MoM",
-    "negados": "Negados", "conclusiones": "Conclusiones",
+    "negados": "Negados", "conclusiones": "Conclusiones", "crecimiento": "Productos: mayor crecimiento", "decrecimiento": "Productos: mayor decrecimiento",
     "quien": "¿Quién busca GLP1?", "producto_sexo": "Producto por sexo", "region": "Región", "pago": "Pago y entrega",
     "funnel": "Embudo y negados", "programas": "Programas", "fuentes": "Fuentes de tráfico",
 }
@@ -183,8 +183,8 @@ def _finding(f) -> dict:
 
 
 def _kpis(res, st) -> list[dict]:
-    if st["unit"] != "aetops":
-        return []
+    if st["unit"] != "aetops" or "aetops.panorama.yoy" not in res.tables or not res.tables["aetops.panorama.yoy"].groups:
+        return []                                   # periodo sin datos: ya hay un hallazgo que lo explica
     g = res.tables["aetops.panorama.yoy"].groups[0]
     out = []
     for k, label in (("monto", "Venta"), ("pacientes", "Pacientes"), ("ticket", "Ticket"), ("piezas", "Piezas")):
@@ -199,7 +199,7 @@ def analyze(run_id: str) -> dict:
     res = _run_engine(run_id, st)
     findings = [_finding(f) for f in res.findings]
     att = []
-    if st["unit"] == "aetops":
+    if st["unit"] == "aetops" and res.tables:
         att = [{"nombre": a.name, "real": float(a.actual), "meta": float(a.target), "cumplimiento": float(a.pct),
                 "brecha": float(a.gap), "estado": a.status} for a in attainment(res, _targets(st))]
     gen_ok = _has_template(st)
