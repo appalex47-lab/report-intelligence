@@ -75,6 +75,14 @@ def set_cell(cell, text: str, *, fill: str | None | bool = False, font: str | No
         run = runs[0]
     else:
         src = _first_rpr(proto) if proto is not None else _first_rpr(cell)
+        if proto is not None:                                                  # alineación del prototipo (la celda vacía no la trae)
+            pp = proto.text_frame.paragraphs[0]._p.find(qn("a:pPr"))
+            if pp is not None and pp.get("algn"):
+                mine = p._p.find(qn("a:pPr"))
+                if mine is None:
+                    mine = etree.SubElement(p._p, qn("a:pPr"))
+                    p._p.insert(0, mine)
+                mine.set("algn", pp.get("algn"))
         run = p.add_run()
         run.text = text
         if src is not None:

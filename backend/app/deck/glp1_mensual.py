@@ -52,17 +52,21 @@ def cellfmt(kind: str, row: GRow) -> str:
     return {"n": lambda: F.fmt_num(val, 0), "m": lambda: F.fmt_money(val, 0), "p": lambda: F.fmt_pct(val, 0, sign=False), "t": lambda: hms(val)}[m]()
 
 
-def put_row(w, r: int, c0: int, spec: list[str], row: GRow | None):
+def put_row(w, r: int, c0: int, spec: list[str], row: GRow | None, proto_row: int | None = None):
+    """`proto_row`: fila de la que copiar el formato de texto cuando la celda de la plantilla está vacía (sin runs)."""
     for i, kind in enumerate(spec):
         c = c0 + i
         if w.t.cell(r, c).is_spanned:
             continue
+        proto = w.t.cell(proto_row, c) if proto_row is not None else None
         if row is None:
             w.blank(r, c)
         elif kind == "delta":
-            w.delta(r, c, row.delta if row.delta is not None else ind.make(None))
+            style = ops.delta_style(row.delta.v if row.delta is not None else None, 0)
+            w.put(r, c, F.fmt_pct(row.delta if row.delta is not None else ind.make(None), 0, sign=False),
+                  fill=style[0] if style else None, font=style[1] if style else None, proto=proto)
         else:
-            w.put(r, c, cellfmt(kind, row), fill=None)
+            w.put(r, c, cellfmt(kind, row), fill=None, proto=proto)
 
 
 def fill_region(w, start: int, end: int, proto: int, rows: list[GRow], spec: list[str], c0: int = 0):
@@ -180,7 +184,7 @@ def fill_edad_producto(fl: Filler, B, rep: FillReport):
         b = prods[pk]
         w.put(hr, c0, f"Edad / {_title(b)}")
         for i, row in enumerate(b.rows[:6]):
-            put_row(w, hr + 1 + i, c0, spec, row)
+            put_row(w, hr + 1 + i, c0, spec, row, proto_row=1)
     sizes = {}
     for gi, hr in enumerate((0, 8, 16)):
         left = len(prods[order[2 * gi]].rows) if 2 * gi < len(order) else 0
@@ -254,7 +258,7 @@ def fill_producto_sexo(fl: Filler, B, rep: FillReport):
     ops.sync_frame_height(w.shape)
 
 
-def fill_region_slide(fl: Filler, B):
+def fill_region_slide(fl: Filler, B, rep: FillReport):
     w = fl.table(5, "Tabla 8", rows=7, cols=8)
     clear_red(w.t)
     rows = B["region"].rows
@@ -268,7 +272,10 @@ def fill_region_slide(fl: Filler, B):
     w.finish()
     w2 = fl.table(5, "Tabla 11", rows=11, cols=7)
     clear_red(w2.t)
-    fill_region(w2, 1, 11, 1, B["trafico_estado"].rows, TRAF_NOSHARE)
+    est = B["trafico_estado"].rows
+    if len(est) > 10:
+        rep.notes.append(f"Diap. 5: {len(est)} estados con tráfico y la plantilla admite 10; se muestran los 10 con más visitas.")
+    fill_region(w2, 1, 11, 1, est[:10], TRAF_NOSHARE)
     w2.finish()
 
 
@@ -386,7 +393,7 @@ def fill_glp1(prs, blocks: dict[str, GBlock], funnel: GBlock | None, period: Per
     fill_quien(fl, blocks)
     fill_edad_producto(fl, blocks, rep)
     fill_producto_sexo(fl, blocks, rep)
-    fill_region_slide(fl, blocks)
+    fill_region_slide(fl, blocks, rep)
     fill_pago(fl, blocks)
     fill_funnel(fl, blocks, funnel, rep)
     fill_productos(fl, blocks)

@@ -115,3 +115,16 @@ def test_missing_columns_and_tables(tmp_path):
     wb.save(p)
     ids = {x.id for x in run_aetops_raw(p, P9).findings}
     assert {"RAW_COLUMN_MISSING", "RAW_TABLE_MISSING"} <= ids
+
+
+def test_realistic_samples_have_report_scale_and_pass(tmp_path):
+    spec2 = importlib.util.spec_from_file_location("mrs2", ROOT / "tools/make_realistic_samples.py")
+    m = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(m)
+    f = m.build_aetops(tmp_path / "a.xlsx")
+    res = run_aetops_raw(f, P9)
+    g = res.tables["aetops.panorama.yoy"].groups[0]
+    assert res.can_generate and res.findings == []
+    assert Decimal("10e6") < g.current.values["monto"].v < Decimal("14e6") and Decimal("7000") < g.current.values["ticket"].v < Decimal("10000")
+    bad = run_aetops_raw(m.build_aetops(tmp_path / "b.xlsx", defects=True), P9)
+    assert {"RAW_SKU_NOT_IN_CATALOG", "RAW_DATE_UNREADABLE", "RAW_NUMBER_UNREADABLE", "RAW_ID_EMPTY"} <= {x.id for x in bad.findings} and not bad.can_generate

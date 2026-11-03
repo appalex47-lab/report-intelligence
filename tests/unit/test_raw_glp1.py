@@ -85,3 +85,14 @@ def test_missing_columns_block(tmp_path):
     wb.save(p)
     ids = {f.id for f in run_glp1_raw(p, P9).findings}
     assert {"RAW_COLUMN_MISSING", "RAW_TABLE_MISSING"} <= ids
+
+
+def test_realistic_glp1_sample_scale_and_defects(tmp_path):
+    spec2 = importlib.util.spec_from_file_location("mrs2", ROOT / "tools/make_realistic_samples.py")
+    m = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(m)
+    r = run_glp1_raw(m.build_glp1(tmp_path / "g.xlsx"), P9)
+    p = r.blocks["panorama"].rows[0].values
+    assert r.can_generate and Decimal("10e6") < p["monto"].v < Decimal("15e6") and Decimal("4500") < p["ticket"].v < Decimal("6500")
+    bad = run_glp1_raw(m.build_glp1(tmp_path / "b.xlsx", defects=True), P9)
+    assert {"RAW_SKU_NOT_IN_CATALOG", "RAW_DATE_UNREADABLE", "RAW_ID_EMPTY"} <= {x.id for x in bad.findings} and not bad.can_generate
