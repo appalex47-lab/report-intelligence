@@ -100,7 +100,8 @@ async function handle(m) {
   }
   if (out.file) {
     const data = pyodide.FS.readFile(out.file);
-    return { ok: true, status: 200, file: { name: out.name, buffer: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) } };
+    const fname = out.name || String(out.file).split("/").pop() || "reporte.pptx";
+    return { ok: true, status: 200, file: { name: fname, buffer: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) } };
   }
   return { ok: true, status: out.status, json: out.json };
 }
