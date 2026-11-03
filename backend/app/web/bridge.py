@@ -91,6 +91,12 @@ def files(m, body, up):
     return _file(S.file_path(m[1], m[2]))
 
 
+@route("POST", r"/api/runs/(\w+)/ia/check")
+def ia_check(m, body, up):
+    b = body or {}
+    return {"status": 200, "json": S.check_rewrites(m[1], b.get("items", []), str(b.get("model", "")))}
+
+
 @route("GET", r"/api/templates")
 def templates(m, body, up):
     return {"status": 200, "json": S.list_templates()}

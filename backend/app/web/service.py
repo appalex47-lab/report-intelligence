@@ -25,7 +25,7 @@ from ..narrative import trends
 from ..narrative.executive import build_executive
 from ..narrative.glp1_exec import attainment_glp1, build_executive_glp1
 from ..narrative.targets import attainment
-from ..narrative.writer import Para, verify_all, verify_edited
+from ..narrative.writer import CAUSAL, NUMBER, Para, verify_all, verify_edited
 from ..pipeline import run_aetops, run_aetops_raw, run_glp1, run_glp1_raw
 from ..raw.aetops import is_raw_workbook
 from ..targets import Targets
@@ -319,6 +319,7 @@ def generate(run_id: str) -> dict:
                            context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB, render=RENDER)
             st["generated"] = True
             _save(run_id, st)
+            _copy_ia_log(run_id)
             return result_info(run_id, b.qa.passed)
         b = build_aetops(res, period_of(st), template_path(st), out, narrative=st["edits"] or None,
                          context=st["context"] or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st),
@@ -329,6 +330,7 @@ def generate(run_id: str) -> dict:
         raise ServiceError(f"Faltan datos para la plantilla: {e}", 409) from None
     st["generated"] = True
     _save(run_id, st)
+    _copy_ia_log(run_id)
     return result_info(run_id, b.qa.passed)
 
 
@@ -341,7 +343,7 @@ def result_info(run_id: str, passed: bool | None = None) -> dict:
     pdf = next(out.glob("*.pdf"), None)
     pngs = sorted(p.name for p in (out / "png").glob("*.png")) if (out / "png").is_dir() else []
     ok = bool(qa.get("passed", passed))
-    return {"qa": qa, "qa_passed": ok, "downloadable": ok, "pptx": pptx.name if pptx else None, "pdf": pdf.name if pdf else None,
+    return {"ia_log": (out / "ia_log.json").exists(), "qa": qa, "qa_passed": ok, "downloadable": ok, "pptx": pptx.name if pptx else None, "pdf": pdf.name if pdf else None,
             "slides": pngs, "trends": json.loads((out / "trends.json").read_text(encoding="utf-8")) if (out / "trends.json").exists() else []}
 
 
@@ -349,7 +351,7 @@ def file_path(run_id: str, name: str) -> Path:
     out = _dir(run_id) / "out"
     if not out.is_dir():
         raise ServiceError("Aún no se ha generado el reporte.", 404)
-    if name in ("qa_report.json", "narrative.json", "manifest.json", "trends.json") or name.lower().endswith((".pptx", ".pdf")):
+    if name in ("qa_report.json", "narrative.json", "manifest.json", "trends.json", "ia_log.json") or name.lower().endswith((".pptx", ".pdf")):
         p, base = out / name, out
     elif re.fullmatch(r"[\w\-]+\.png", name):
         p, base = out / "png" / name, out / "png"
@@ -421,3 +423,60 @@ def _check_template_matches(key: str, data: bytes) -> None:
         if shape not in [sh.name for sh in prs.slides[slide - 1].shapes]:
             raise ServiceError(f"Esta plantilla no corresponde a «{label}»: en la diapositiva {slide} no existe «{shape}». "
                                "Carga el PPTX original de ese formato.")
+
+
+# ------------------------------------------------------------------ redacción con IA (opcional; la llamada a Cohere la hace el navegador con la clave del usuario)
+YEAR = re.compile(r"(19|20)\d\d")
+MAX_GROWTH = 1.5
+
+
+def _nums(text: str) -> set[str]:
+    return {m.group(0).strip() for m in NUMBER.finditer(text.replace("**", ""))}
+
+
+def _bold_numbers(text: str) -> str:
+    """Devuelve el texto sin negritas previas y con cada cifra en **negrita** (como el texto determinista)."""
+    plain = text.replace("**", "")
+    return NUMBER.sub(lambda m: f"**{m.group(0)}**" if m.group(0).strip() and not YEAR.fullmatch(m.group(0).strip()) else m.group(0), plain)
+
+
+def verify_rewrite(original: str, rewritten: str) -> dict:
+    """La IA solo puede cambiar la redacción: mismas cifras (ni una más ni una menos), sin vocabulario causal, sin enlaces, longitud acotada."""
+    probs: list[str] = []
+    if not isinstance(rewritten, str) or not rewritten.strip():
+        return {"ok": False, "problemas": ["respuesta vacía"], "texto": original}
+    o_plain, r_plain = original.replace("**", ""), rewritten.replace("**", "")
+    on, rn = _nums(o_plain), _nums(r_plain)
+    missing = sorted(on - rn)
+    extra = sorted(x for x in rn - on if not YEAR.fullmatch(x))
+    if missing:
+        probs.append("falta(n) la(s) cifra(s): " + ", ".join(missing[:4]))
+    if extra:
+        probs.append("cifra(s) nueva(s) no respaldada(s): " + ", ".join(extra[:4]))
+    if any(c in r_plain.lower() for c in CAUSAL):
+        probs.append("vocabulario causal")
+    if re.search(r"https?://|www\.|\[[^\]]+\]\([^)]+\)", r_plain):
+        probs.append("contiene enlaces")
+    if len(r_plain) > MAX_GROWTH * max(len(o_plain), 40):
+        probs.append("demasiado largo")
+    return {"ok": not probs, "problemas": probs, "texto": _bold_numbers(rewritten) if not probs else original}
+
+
+def check_rewrites(run_id: str, items: list[dict], model: str = "") -> list[dict]:
+    """items: [{original, rewritten}] -> veredictos. Deja constancia de lo enviado y lo recibido (ia_log.json, se publica con el reporte)."""
+    d = _dir(run_id)
+    out = [verify_rewrite(str(i.get("original", "")), i.get("rewritten")) for i in items[:60]]
+    log = d / "ia_log.json"
+    prev = json.loads(log.read_text(encoding="utf-8")) if log.exists() else []
+    from datetime import datetime, timezone
+    prev.append({"fecha": datetime.now(timezone.utc).isoformat(timespec="seconds"), "proveedor": "Cohere", "modelo": model[:80],
+                 "enviado": [str(i.get("original", "")) for i in items[:60]],
+                 "recibido": [{"texto": str(i.get("rewritten", ""))[:2000], "aceptado": o["ok"], "problemas": o["problemas"]} for i, o in zip(items, out)]})
+    log.write_text(json.dumps(prev, ensure_ascii=False, indent=1), encoding="utf-8")
+    return out
+
+
+def _copy_ia_log(run_id: str) -> None:
+    src = _dir(run_id) / "ia_log.json"
+    if src.exists() and (_dir(run_id) / "out").is_dir():
+        shutil.copy(src, _dir(run_id) / "out" / "ia_log.json")
