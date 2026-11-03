@@ -145,7 +145,7 @@ const KIND = {hecho:"Hecho", interpretacion:"Interpretación", recomendacion:"Re
 const fmtM = v => v == null ? "—" : Math.abs(v) >= 1e6 ? `$${(v/1e6).toFixed(2)} M` : `$${Math.round(v).toLocaleString("es-MX")}`;
 const fmtP = v => v == null ? "—" : `${v>=0?"+":""}${(v*100).toFixed(1)} %`;
 
-const S = {aiOpen:false, ai:{}, info:{render:false}, tpls:[], run:null, step:0, analysis:null, narr:null, edits:{}, sec:0, result:null, busy:false, err:null};
+const S = {disc:null, discSeen:[], discOpen:false, aiOpen:false, ai:{}, info:{render:false}, tpls:[], run:null, step:0, analysis:null, narr:null, edits:{}, sec:0, result:null, busy:false, err:null};
 const store = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{localStorage.setItem(k,v)}catch{}}};
 
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3500)}
@@ -164,7 +164,7 @@ worker.onerror = (e) => { const o = $("#boot-msg"); if (o) o.textContent = "No s
 function ask(msg, transfer = []) { return new Promise((res, rej) => { const id = ++seq; pending.set(id, { res, rej }); worker.postMessage({ id, ...msg }, transfer); }); }
 /* ---------------------------------------------------------------- indicador de avance (barra superior + mensaje con segundos) */
 const LOADER_LABELS = [[/\/file$/, "Leyendo y validando el libro de Excel…"], [/\/analysis$/, "Validando los datos…"], [/\/narrative$/, "Calculando la narrativa…"],
-  [/\/generate$/, "Generando la presentación…"], [/\/ia\/check$/, "Verificando la redacción…"], [/\/(targets|context)$/, "Guardando…"], [/^\/templates\/.+/, "Guardando la plantilla…"],
+  [/\/generate$/, "Generando la presentación…"], [/\/ia\/check$/, "Verificando la redacción…"], [/\/ia\/facts$/, "Preparando los hechos…"], [/\/ia\/discovery\/check$/, "Verificando el descubrimiento…"], [/\/discovery$/, "Guardando el descubrimiento…"], [/\/(targets|context)$/, "Guardando…"], [/^\/templates\/.+/, "Guardando la plantilla…"],
   [/^\/history\//, "Cargando el historial…"], [/^\/machote/, "Preparando el machote…"], [/\/files\//, "Preparando la descarga…"], [/^\/templates$/, null]];
 let loaderN = 0, loaderT0 = 0, loaderTimer = null;
 function loaderStart(label){
@@ -216,19 +216,27 @@ const aiModel = () => { try{ return localStorage.getItem(AI_MODEL) || AI_DEFAULT
 function aiSave(key, model, remember){
   try{ sessionStorage.setItem(AI_KEY, key); if(remember) localStorage.setItem(AI_KEY, key); else localStorage.removeItem(AI_KEY); localStorage.setItem(AI_MODEL, model) }catch{ /* sin almacenamiento */ }
 }
-const AI_SYSTEM = `Eres editor de reportes ejecutivos de e-commerce para el sector farmacéutico. Reescribes párrafos YA VERIFICADOS para que se lean mejor, sin cambiar su contenido.
-Reglas estrictas:
+const AI_STYLES = {
+  directo: "Ejecutivo cercano: directo y claro, con criterio; como un buen analista que le explica a su director en una junta de cinco minutos.",
+  conversacional: "Conversacional profesional: cálido y natural, como si lo estuvieras platicando en una reunión, sin perder el rigor ni caer en lo informal.",
+  narrativo: "Narrativo: cuenta lo que pasó como una historia corta con hilo (qué había, qué cambió, qué queda), sin adornos ni dramatismo."
+};
+const aiStyle = () => { try{ return localStorage.getItem("ri.ai.style") || "directo" }catch{ return "directo" } };
+const aiSystem = (style) => `Eres un analista senior que escribe para la dirección de una empresa farmacéutica de e-commerce. Reescribes párrafos YA VERIFICADOS para que suenen a una persona que domina el tema, no a un reporte automático.
+Estilo: ${AI_STYLES[style] || AI_STYLES.directo}
+Para que suene humano: varía cómo empieza cada frase; usa conectores naturales (en cambio, aun así, mientras tanto, lo que deja, de hecho); prefiere verbos concretos a sustantivos abstractos; alterna frases cortas y medianas; evita muletillas de reporte ("se observa", "cabe destacar", "es importante mencionar", "en el periodo analizado", "a nivel de"); sin anglicismos innecesarios; puedes reordenar las ideas, unir o separar frases.
+Reglas inviolables:
 1. Conserva TODAS las cifras, porcentajes, montos y periodos exactamente como están (mismo formato: $12.22 M, +56%, 2025). No agregues ninguna cifra nueva ni quites ninguna.
 2. No agregues datos, nombres ni explicaciones de causa. No uses "debido a", "porque", "gracias a", "por falta de", "se debe", "a raíz de".
-3. Mismo significado y longitud similar o menor. Español neutro, directo, verbos en presente, tono ejecutivo.
-4. Conserva viñetas ("• "), numeración ("1. [ALTA]") y saltos de línea tal como vienen; si el párrafo inicia con un título corto, déjalo igual.
+3. Misma idea y longitud similar o menor.
+4. Conserva viñetas ("• "), numeración ("1. [ALTA]") y saltos de línea; si el párrafo inicia con un título corto, déjalo igual.
 Responde SOLO un JSON {"parrafos": [...]} con el mismo número de elementos y en el mismo orden.`;
-async function cohereRewrite(texts, key, model){
+async function cohereRewrite(texts, key, model, style = "directo"){
   let r;
   try{
     r = await fetch("https://api.cohere.com/v2/chat", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
-      body: JSON.stringify({ model, temperature: 0.2, response_format: { type: "json_object" },
-        messages: [{ role: "system", content: AI_SYSTEM }, { role: "user", content: JSON.stringify({ parrafos: texts }) }] }) });
+      body: JSON.stringify({ model, temperature: 0.6, response_format: { type: "json_object" },
+        messages: [{ role: "system", content: aiSystem(style) }, { role: "user", content: JSON.stringify({ parrafos: texts }) }] }) });
   }catch{ throw new Error("No se pudo conectar con Cohere desde el navegador (revisa tu red; algunas redes corporativas bloquean la conexión).") }
   if(!r.ok){
     const t = await r.text().catch(() => "");
@@ -267,14 +275,14 @@ function aiPlan(secIdx){
   $("#aiGo").onclick = () => aiRun(plans, key, model);
 }
 async function aiRun(plans, key, model){
-  aiSave(key, model, $("#aiRemember").checked);
+  aiSave(key, model, $("#aiRemember").checked); try{ localStorage.setItem("ri.ai.style", $("#aiStyle").value) }catch{}
   $("#aiPlan").innerHTML = ""; let ok = 0, bad = 0, firstErr = "";
   try{
     for(let k = 0; k < plans.length; k++){
       const { sec, texts, idx } = plans[k];
       loaderStart(`Redactando con IA (${k + 1} de ${plans.length}): ${sec.titulo}…`);
       let arr;
-      try{ arr = await cohereRewrite(idx.map(i => texts[i]), key, model) } finally { loaderEnd() }
+      try{ arr = await cohereRewrite(idx.map(i => texts[i]), key, model, $("#aiStyle").value) } finally { loaderEnd() }
       const verdict = await api(`/runs/${S.run.id}/ia/check`, J("POST", { model, items: idx.map((i, n) => ({ original: texts[i], rewritten: arr[n] })) }));
       const next = texts.slice(), marks = new Set(S.ai[sec.clave] || []);
       verdict.forEach((v, n) => { if(v.ok){ next[idx[n]] = v.texto; marks.add(idx[n]); ok++ } else { bad++; firstErr = firstErr || v.problemas.join("; ") } });
@@ -284,6 +292,97 @@ async function aiRun(plans, key, model){
   await persistEdits(); render();
   toast(`IA: ${ok} párrafo(s) redactado(s), ${bad} descartado(s) por no pasar la verificación`);
   const m = $("#aiMsg"); if(m) m.textContent = bad ? `Se descartaron ${bad} por cambiar cifras o introducir causas (p. ej.: ${firstErr}). Quedó el texto original.` : "Todos los textos pasaron la verificación.";
+}
+/* ---------------------------------------------------------------- descubrimiento único (IA propone, el usuario valida) */
+const DISC_TYPE = { hecho: "Hecho", interpretacion: "Interpretación", hipotesis: "Hipótesis a validar" };
+const discSystem = (avoid) => `Eres un analista senior de e-commerce farmacéutico. Recibes una HOJA DE HECHOS ya verificados (cada hecho tiene id, tema y texto). Tu trabajo es encontrar UN descubrimiento propio de este reporte: algo que un lector no vería en los titulares y que conecte al menos dos temas distintos.
+Reglas inviolables:
+1. Usa únicamente cifras que aparezcan en los hechos que cites, tal como están escritas. No calcules, no redondees, no inventes.
+2. Cada viñeta cita los ids de los hechos en que se apoya (campo "hechos").
+3. Campo "tipo": "hecho" = lo que dicen los datos; "interpretacion" = qué significa el patrón, sin causas externas; "hipotesis" = una posible explicación a comprobar, redactada con cautela, con el campo "validar" (qué dato o área la confirmaría o descartaría).
+4. Nunca afirmes causas (no uses "debido a", "porque", "gracias a", "se debe", "por culpa de", "a raíz de").
+5. Título corto (máximo 60 caracteres, sin cifras) que nombre el hallazgo, no el tema.
+6. Entre 3 y 4 viñetas, máximo 330 caracteres cada una, en español natural y directo, como lo contaría una persona que conoce el negocio. Evita muletillas de reporte.
+7. No repitas el titular obvio (la venta total sube o baja) salvo como contexto; prioriza el cruce menos evidente que sí tenga respaldo en los hechos.${avoid.length ? "\n8. Ya se propusieron estos ángulos; propón uno distinto: " + avoid.map(a => "«" + a + "»").join(", ") + "." : ""}
+Responde SOLO un JSON: {"titulo": "...", "angulo": "...", "viñetas": [{"texto": "...", "tipo": "hecho|interpretacion|hipotesis", "hechos": ["ID", ...], "validar": ""}]}`;
+async function cohereDiscovery(facts, key, model, avoid){
+  let r;
+  try{
+    r = await fetch("https://api.cohere.com/v2/chat", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+      body: JSON.stringify({ model, temperature: 0.8, response_format: { type: "json_object" },
+        messages: [{ role: "system", content: discSystem(avoid) }, { role: "user", content: JSON.stringify({ hechos: facts.map(f => ({ id: f.id, tema: f.tema, texto: f.texto })) }) }] }) });
+  }catch{ throw new Error("No se pudo conectar con Cohere desde el navegador (revisa tu red; algunas redes corporativas bloquean la conexión).") }
+  if(!r.ok){
+    const t = await r.text().catch(() => "");
+    throw new Error(r.status === 401 || r.status === 403 ? "Cohere rechazó la clave: revisa que sea válida." : r.status === 429 ? "Cohere pidió esperar (límite de uso de la clave). Intenta de nuevo en un minuto."
+      : r.status === 404 ? "Cohere no reconoce ese modelo: revisa el nombre del modelo." : `Cohere respondió ${r.status}. ${t.slice(0, 140)}`);
+  }
+  const j = await r.json();
+  const txt = (j.message && j.message.content || []).map(c => c.text || "").join("");
+  try{ return JSON.parse(txt) }catch{ throw new Error("La respuesta de Cohere no vino en el formato esperado.") }
+}
+function discRender(){
+  const host = $("#discBody"); if(!host) return;
+  const d = S.run.discovery;
+  const keyRow = `<div class="grid g2"><label class="f">Clave de API de Cohere<input id="dKey" type="password" autocomplete="off" value="${esc(($("#aiKey")||{}).value || aiKey())}" placeholder="pega tu clave"></label>
+    <label class="f">Modelo<input id="dModel" type="text" value="${esc(($("#aiModel")||{}).value || aiModel())}"></label></div>`;
+  const added = d ? `<div class="banner ok"><div><strong>Agregado a la presentación: «${esc(d.titulo)}»</strong><span class="sub">${d.items.length} viñeta(s) validadas por ti. Se genera como diapositiva extra antes de «Recomendaciones».</span></div><button class="btn" id="dRemove">Quitar</button></div>` : "";
+  if(S.disc){ host.innerHTML = added + discReview(); discBind(); return }
+  host.innerHTML = added + `<div class="sub">La IA recibe una hoja de hechos del reporte (cifras ya calculadas, con cruces entre temas) y propone <b>una diapositiva con un hallazgo propio</b> de este periodo. Cada viñeta cita sus hechos; lo que use cifras que no estén en ellos o afirme causas se descarta. <b>Tú decides qué entra.</b></div>
+    ${keyRow}<div class="row"><button class="btn" id="dPlan">${d ? "Buscar otro descubrimiento" : "Buscar un descubrimiento"}</button></div><div id="dPlanBox"></div><div id="dMsg" class="sub"></div>`;
+  $("#dPlan").onclick = discPlan; $("#dRemove")?.addEventListener("click", async () => { try{ S.run = await api(`/runs/${S.run.id}/discovery`, J("PUT", {})); toast("Descubrimiento quitado"); discRender() }catch(e){ toast(e.message) } });
+}
+async function discPlan(){
+  S.discOpen = true;
+  const key = $("#dKey").value.trim(), model = $("#dModel").value.trim() || AI_DEFAULT;
+  if(!key){ $("#dMsg").textContent = "Pega tu clave de API de Cohere para continuar."; return }
+  let facts; try{ facts = (await api(`/runs/${S.run.id}/ia/facts`)) }catch(e){ $("#dMsg").textContent = e.message; return }
+  $("#dPlanBox").innerHTML = `<div class="plan"><strong>Esto se enviará a Cohere: ${facts.hechos.length} hechos de ${facts.temas.length} temas (${esc(facts.temas.join(", "))})</strong>
+    <pre>${esc(facts.hechos.map(f => `${f.id} · ${f.texto}`).join("\n"))}</pre>
+    <label class="sub"><input type="checkbox" id="dOk"> Entiendo que esta hoja de hechos (agregados del reporte) sale de mi navegador hacia Cohere (modelo ${esc(model)}).</label>
+    <div class="row"><button class="btn" id="dCancel">Cancelar</button><button class="btn primary" id="dGo" disabled>Buscar descubrimiento</button></div></div>`;
+  $("#dOk").onchange = () => { $("#dGo").disabled = !$("#dOk").checked };
+  $("#dCancel").onclick = () => { $("#dPlanBox").innerHTML = "" };
+  $("#dGo").onclick = () => discRun(facts, key, model);
+}
+async function discRun(facts, key, model){
+  aiSave(key, model, ($("#aiRemember") || {}).checked || aiRemembered());
+  $("#dPlanBox").innerHTML = "";
+  try{
+    loaderStart("Buscando un descubrimiento con IA…");
+    let payload; try{ payload = await cohereDiscovery(facts.hechos, key, model, S.discSeen) } finally { loaderEnd() }
+    const v = await api(`/runs/${S.run.id}/ia/discovery/check`, J("POST", { payload, model }));
+    if(v.angulo || v.titulo) S.discSeen.push(v.titulo || v.angulo);
+    S.disc = v;
+  }catch(e){ $("#dMsg").textContent = e.message; toast(e.message); return }
+  discRender();
+}
+function discReview(){
+  const v = S.disc;
+  const probs = v.problemas.length ? `<div class="warnline">${v.problemas.map(esc).join(" · ")}</div>` : `<div class="okline">✓ Pasó la verificación automática (cifras, citas y lenguaje). Falta tu validación.</div>`;
+  const items = v.viñetas.map((b, i) => `<div class="para" data-k="${b.tipo === "hipotesis" ? "interpretacion" : b.tipo === "interpretacion" ? "interpretacion" : "hecho"}">
+      <div class="row"><span class="chip ${b.tipo === "hipotesis" ? "contexto" : b.tipo === "interpretacion" ? "interpretacion" : "hecho"}">${DISC_TYPE[b.tipo] || b.tipo}</span>
+        <label class="sub"><input type="checkbox" data-inc="${i}" ${b.ok ? "checked" : "disabled"}> Incluir</label></div>
+      <textarea rows="3" data-txt="${i}" ${b.ok ? "" : "disabled"}>${esc(b.texto.replace(/\*\*/g, ""))}</textarea>
+      ${b.tipo === "hipotesis" ? `<label class="f">Qué validar<input type="text" data-val="${i}" value="${esc(b.validar)}" ${b.ok ? "" : "disabled"}></label>` : ""}
+      ${b.problemas.length ? `<div class="warnline">Descartada: ${b.problemas.map(esc).join(" · ")}</div>` : ""}
+      <details><summary class="sub" style="cursor:pointer">Evidencia (${b.hechos.length} hecho(s))</summary><div class="sub">${b.evidencia.map(e => "• " + esc(e)).join("<br>")}</div></details></div>`).join("");
+  return `<div class="grid"><label class="f">Título de la diapositiva<input type="text" id="dTitle" maxlength="64" value="${esc(v.titulo)}"></label>
+    <div class="sub">Ángulo propuesto: <b>${esc(v.angulo || "—")}</b></div>${probs}${items}
+    <label class="sub"><input type="checkbox" id="dValidate"> Revisé la evidencia de cada viñeta y valido que estas conclusiones entren a la presentación.</label>
+    <div class="row"><button class="btn" id="dAgain">Buscar otro ángulo</button><button class="btn" id="dDiscard">Descartar</button><button class="btn primary" id="dAdd" disabled>Agregar a la presentación</button></div></div>`;
+}
+function discBind(){
+  const v = S.disc, upd = () => { $("#dAdd").disabled = !($("#dValidate").checked && document.querySelectorAll("[data-inc]:checked").length) };
+  $("#dValidate").onchange = upd; document.querySelectorAll("[data-inc]").forEach(c => c.onchange = upd);
+  $("#dDiscard").onclick = () => { S.disc = null; discRender() };
+  $("#dAgain").onclick = () => { S.disc = null; discRender(); $("#dPlan").click() };
+  $("#dAdd").onclick = async () => {
+    const items = [...document.querySelectorAll("[data-inc]:checked")].map(c => { const i = +c.dataset.inc, b = v.viñetas[i];
+      return { texto: document.querySelector(`[data-txt="${i}"]`).value.trim(), tipo: b.tipo, hechos: b.hechos, validar: (document.querySelector(`[data-val="${i}"]`) || {}).value || "" } });
+    try{ S.run = await api(`/runs/${S.run.id}/discovery`, J("PUT", { titulo: $("#dTitle").value.trim(), items })); S.disc = null; toast("Descubrimiento agregado a la presentación"); discRender() }
+    catch(e){ toast(e.message); const m = document.createElement("div"); m.className = "warnline"; m.textContent = e.message; $("#dAdd").before(m) }
+  };
 }
 const onlyTargetsMissing = a => { const b = a.findings.filter(f => f.severity === "block"); return b.length > 0 && b.every(f => f.id === "TARGETS_MISSING") };
 const isNarrow = () => window.matchMedia("(max-width:900px)").matches;
@@ -451,15 +550,27 @@ function vNarr(box){
     <div class="grid">
       <div class="card grid"><div class="row"><div><strong>${esc(sec.titulo)}</strong><div class="sub">Cada texto es un hecho, una interpretación con su regla, o una recomendación. Si cambias una cifra, se verifica contra los datos.</div></div>
         <button class="mini" id="reset" ${edited(sec.clave)?"":"hidden"}>Restaurar texto generado</button></div>
+        <details class="aibox" id="aiInfo"><summary><strong>¿Qué hará la IA y qué no?</strong><span class="chev">▾</span></summary>
+          <div class="grid sub" style="padding-top:8px;gap:6px">
+            <div><b>Dos usos, los dos opcionales y con tu clave de Cohere:</b></div>
+            <div>① <b>Redactar mejor:</b> toma los párrafos que ya calculó el motor y los reescribe para que se lean como los escribiría una persona (tú eliges el estilo). No cambia el contenido.</div>
+            <div>② <b>Descubrimiento único:</b> lee una hoja de hechos del reporte (cifras ya calculadas, incluidos cruces entre temas) y propone <i>una</i> diapositiva extra con un hallazgo propio de este periodo. Cada viñeta cita los hechos en que se apoya.</div>
+            <div><b>Lo que NO puede hacer:</b> inventar ni calcular cifras (solo puede usar las de los hechos que cita), afirmar causas («debido a…»), ni usar datos fuera de la hoja de hechos. Lo que viole eso se descarta automáticamente.</div>
+            <div><b>Qué sale de tu navegador:</b> solo texto de párrafos o de la hoja de hechos (agregados), y siempre lo ves antes de enviarlo. Nunca el Excel, filas de pacientes ni el contexto del equipo.</div>
+            <div><b>Quién decide:</b> tú. Lo redactado se puede editar o restaurar, y el descubrimiento solo entra a la presentación si lo revisas y lo validas. Queda un registro de lo enviado y recibido (<code>ia_log.json</code>).</div>
+          </div></details>
         <details class="aibox" id="aiBox" ${S.aiOpen?"open":""}><summary><strong>✨ Redactar mejor con IA (Cohere) · opcional</strong><span class="chev">▾</span></summary>
           <div class="grid" style="padding-top:8px">
             <div class="sub">La IA solo mejora la <b>redacción</b>: cada texto vuelve a verificarse y se <b>descarta</b> si cambia, quita o agrega una cifra, o introduce causas. Se envía únicamente el texto de los párrafos (cifras ya agregadas), nunca el Excel ni filas de pacientes o pedidos. Antes de enviar verás exactamente qué sale. Usa tu propia clave de API: se queda en este navegador. Las cifras entre ** quedan en negrita en la lámina.</div>
             <div class="grid g2"><label class="f">Clave de API de Cohere<input id="aiKey" type="password" autocomplete="off" placeholder="pega tu clave" value="${esc(aiKey())}"></label>
               <label class="f">Modelo<input id="aiModel" type="text" value="${esc(aiModel())}"></label></div>
+            <label class="f">Estilo de redacción<select id="aiStyle"><option value="directo" ${aiStyle()==="directo"?"selected":""}>Ejecutivo cercano (recomendado)</option><option value="conversacional" ${aiStyle()==="conversacional"?"selected":""}>Conversacional profesional</option><option value="narrativo" ${aiStyle()==="narrativo"?"selected":""}>Narrativo, como lo contaría un analista</option></select></label>
             <label class="sub"><input type="checkbox" id="aiRemember" ${aiRemembered()?"checked":""}> Recordar la clave en este navegador (si no, se olvida al cerrar la pestaña)</label>
             <div class="row"><button class="btn" id="aiOne">Mejorar esta sección</button><button class="btn" id="aiAll">Mejorar todo el reporte</button></div>
             <div id="aiPlan"></div><div id="aiMsg" class="sub"></div>
           </div></details>
+        <details class="aibox" id="discBox" ${S.discOpen||S.run.discovery||S.disc?"open":""}><summary><strong>🔎 Descubrimiento único del periodo (IA) · opcional</strong><span class="chev">▾</span></summary>
+          <div class="grid" style="padding-top:8px"><div id="discBody"></div></div></details>
         <div id="paras" class="grid"></div>
         ${hid.length?`<div class="sub">${hid.length} nota(s) de calidad de datos no se imprimen en la diapositiva (quedan en narrative.json).</div>`:""}</div>
       <div class="row"><button class="btn" id="b3">← Metas</button><button class="btn primary" id="n5">Generar →</button></div></div>
@@ -489,6 +600,7 @@ function vNarr(box){
   });
   $("#reset")?.addEventListener("click", async () => { delete S.edits[sec.clave]; delete S.ai[sec.clave]; await persistEdits(); render() });
   $("#aiOne").onclick = () => aiPlan([S.sec]);
+  discRender();
   $("#aiAll").onclick = () => aiPlan(n.secciones.map((_, i) => i));
   $("#b3").onclick = () => go(2); $("#n5").onclick = async () => { await persistEdits(); go(4) };
 }
@@ -515,7 +627,7 @@ function vGen(box){
   box.innerHTML = `<div class="card grid"><strong>Generar presentación${S.info.render?" y PDF":""}</strong>
     <div class="sub">Se rellena la plantilla original (tablas y textos editables)${S.info.render?", se convierte a PDF y":" y"} se aplica el QA: si el QA no aprueba, la descarga queda bloqueada.
     ${S.info.render?"":"<br><b>QA estructural:</b> esta versión corre 100 % en tu navegador, sin PDF ni vista previa. Revisa el PPTX en PowerPoint (Guardar como PDF) o usa el flujo opcional «PDF en GitHub» del README."}
-    ${nEdits?`<br>Incluye ${nEdits} diapositiva(s) con texto editado a mano.`:""}</div>
+    ${nEdits?`<br>Incluye ${nEdits} diapositiva(s) con texto editado a mano.`:""}${S.run.discovery?`<br>Incluye la diapositiva de descubrimiento «${esc(S.run.discovery.titulo)}» (propuesta por IA y validada por ti).`:""}</div>
     <div class="row"><button class="btn" id="b4">← Narrativa</button><button class="btn primary" id="go" ${S.busy?"disabled":""}>${S.busy?'<span class="spin" style="display:inline-block;vertical-align:-3px;margin-right:6px"></span>Generando…':res?"Volver a generar":"Generar reporte"}</button></div></div><div id="out"></div>`;
   $("#b4").onclick = () => go(3);
   $("#go").onclick = async () => {

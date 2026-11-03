@@ -23,6 +23,7 @@ from ..history import store as hist
 from ..models import Period
 from ..narrative import trends
 from ..narrative.executive import build_executive
+from ..narrative.facts import aetops_facts, glp1_facts, verify_discovery
 from ..narrative.glp1_exec import attainment_glp1, build_executive_glp1
 from ..narrative.targets import attainment
 from ..narrative.writer import CAUSAL, NUMBER, Para, verify_all, verify_edited
@@ -87,13 +88,14 @@ def create_run(unit: str, periodicity: str, year: int, index: int) -> dict:
     rid = uuid.uuid4().hex
     (RUNS_DIR / rid).mkdir(parents=True)
     st = {"id": rid, "unit": unit, "periodicity": periodicity, "year": year, "index": index, "filename": None,
-          "targets": {}, "context": [], "edits": {}, "generated": False}
+          "targets": {}, "context": [], "edits": {}, "generated": False, "discovery": None}
     _save(rid, st)
     return public(st)
 
 
 def public(st: dict) -> dict:
-    return {k: st[k] for k in ("id", "unit", "periodicity", "year", "index", "filename", "targets", "context", "edits", "generated")}
+    return {**{k: st[k] for k in ("id", "unit", "periodicity", "year", "index", "filename", "targets", "context", "edits", "generated")},
+            "discovery": st.get("discovery")}
 
 
 def get_run(run_id: str) -> dict:
@@ -316,14 +318,15 @@ def generate(run_id: str) -> dict:
     try:
         if st["unit"] == "glp1":
             b = build_glp1(res, period_of(st), template_path(st), out, narrative=st["edits"] or None, sources=[_input(run_id)],
-                           context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB, render=RENDER)
+                           context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB, render=RENDER,
+                           discovery=st.get("discovery"))
             st["generated"] = True
             _save(run_id, st)
             _copy_ia_log(run_id)
             return result_info(run_id, b.qa.passed)
         b = build_aetops(res, period_of(st), template_path(st), out, narrative=st["edits"] or None,
                          context=st["context"] or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st),
-                         render=RENDER)
+                         render=RENDER, discovery=st.get("discovery"))
     except ReportBlocked as e:
         raise ServiceError(f"No se genera: hay hallazgos bloqueantes ({e}).", 409) from None
     except (DataMissing, TemplateMismatch) as e:
@@ -480,3 +483,53 @@ def _copy_ia_log(run_id: str) -> None:
     src = _dir(run_id) / "ia_log.json"
     if src.exists() and (_dir(run_id) / "out").is_dir():
         shutil.copy(src, _dir(run_id) / "out" / "ia_log.json")
+
+
+# ------------------------------------------------------------------ descubrimiento único con IA (la IA propone; el usuario valida)
+def _facts(run_id: str):
+    st = _load(run_id)
+    res = _run_engine(run_id, st)
+    if not res.can_generate:
+        raise ServiceError("Hay hallazgos bloqueantes: corrígelos antes de pedir un descubrimiento.", 409)
+    per = period_of(st)
+    if st["unit"] == "aetops":
+        return st, aetops_facts(res, per, attainment(res, _targets(st)))
+    return st, glp1_facts(res.blocks, res.funnel, per)
+
+
+def discovery_facts(run_id: str) -> dict:
+    """La hoja de hechos que se enviaría a la IA (se muestra al usuario antes de enviarla)."""
+    _st, facts = _facts(run_id)
+    return {"hechos": [f.to_dict() for f in facts], "temas": sorted({f.tema for f in facts})}
+
+
+def check_discovery(run_id: str, payload: dict, model: str = "") -> dict:
+    _st, facts = _facts(run_id)
+    out = verify_discovery(facts, payload)
+    log = _dir(run_id) / "ia_log.json"
+    prev = json.loads(log.read_text(encoding="utf-8")) if log.exists() else []
+    from datetime import datetime, timezone
+    prev.append({"fecha": datetime.now(timezone.utc).isoformat(timespec="seconds"), "proveedor": "Cohere", "modelo": model[:80], "modo": "descubrimiento",
+                 "enviado": [f.id + ": " + f.texto for f in facts], "recibido": payload if isinstance(payload, dict) else str(payload)[:2000],
+                 "aceptado": out["ok"], "problemas": out["problemas"]})
+    log.write_text(json.dumps(prev, ensure_ascii=False, indent=1), encoding="utf-8")
+    return out
+
+
+def set_discovery(run_id: str, body: dict | None) -> dict:
+    """Guarda el descubrimiento que el usuario validó (o lo quita con None). Se vuelve a verificar aquí: la interfaz no puede saltarse la regla."""
+    st = _load(run_id)
+    if not body or not body.get("items"):
+        st["discovery"] = None
+        _save(run_id, st)
+        return public(st)
+    _st, facts = _facts(run_id)
+    payload = {"titulo": body.get("titulo", ""), "viñetas": [{"texto": i.get("texto", ""), "tipo": i.get("tipo", ""), "hechos": i.get("hechos", []), "validar": i.get("validar", "")}
+                                                              for i in body["items"]]}
+    chk = verify_discovery(facts, payload, strict=False)
+    if not chk["ok"]:
+        raise ServiceError("El descubrimiento no pasa la verificación: " + "; ".join(chk["problemas"] + [p for b in chk["viñetas"] for p in b["problemas"]])[:300], 400)
+    st["discovery"] = {"titulo": chk["titulo"], "angulo": chk["angulo"],
+                       "items": [{"texto": b["texto"], "tipo": b["tipo"], "validar": b["validar"], "hechos": b["hechos"]} for b in chk["viñetas"]]}
+    _save(run_id, st)
+    return public(st)

@@ -97,6 +97,22 @@ def ia_check(m, body, up):
     return {"status": 200, "json": S.check_rewrites(m[1], b.get("items", []), str(b.get("model", "")))}
 
 
+@route("GET", r"/api/runs/(\w+)/ia/facts")
+def ia_facts(m, body, up):
+    return {"status": 200, "json": S.discovery_facts(m[1])}
+
+
+@route("POST", r"/api/runs/(\w+)/ia/discovery/check")
+def ia_discovery_check(m, body, up):
+    b = body or {}
+    return {"status": 200, "json": S.check_discovery(m[1], b.get("payload"), str(b.get("model", "")))}
+
+
+@route("PUT", r"/api/runs/(\w+)/discovery")
+def discovery_set(m, body, up):
+    return {"status": 200, "json": S.set_discovery(m[1], body)}
+
+
 @route("GET", r"/api/templates")
 def templates(m, body, up):
     return {"status": 200, "json": S.list_templates()}

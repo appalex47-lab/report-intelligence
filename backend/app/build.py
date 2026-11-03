@@ -11,7 +11,7 @@ from pptx import Presentation
 
 from .deck.aetops_mensual import FillReport, fill_aetops_mensual
 from .deck.aetops_trimestral import fill_aetops_trimestral
-from .deck.extras import add_executive_slides
+from .deck.extras import add_discovery_slide, add_executive_slides
 from .deck.glp1_mensual import DECORATIVE, fill_glp1
 from .history import store as hist
 from .narrative import trends
@@ -65,6 +65,26 @@ def _render_and_check(pptx: Path, template: Path, out_dir: Path, slide_map, qa, 
     return pdf, pngs, tpl_dir
 
 
+def _discovery_slide(prs, discovery: dict | None, fill, slide_map, n_template: int):
+    """Agrega la diapositiva del descubrimiento (IA validada por el usuario) y la deja registrada en narrative.json."""
+    items = (discovery or {}).get("items") or []
+    if not items:
+        return slide_map
+    paras = []
+    for it in items:
+        if it.get("tipo") == "hipotesis":
+            text = f"• **Hipótesis a validar:** {it['texto']}" + (f" Para validarla: {it['validar']}" if it.get("validar") else "")
+        else:
+            text = f"• {it['texto']}"
+        paras.append(Para(text, "hipotesis" if it.get("tipo") == "hipotesis" else ("interpretacion" if it.get("tipo") == "interpretacion" else "hecho"),
+                          0 if len(paras) < 3 else 2, basis="descubrimiento propuesto por IA y validado por el usuario", evidence=list(it.get("hechos", []))))
+    paras.append(Para("Descubrimiento propuesto con IA a partir de los datos de este reporte; cada cifra proviene de los hechos citados y fue validado por el equipo.",
+                      "contexto", 1, basis="nota de transparencia"))
+    sm, kept = add_discovery_slide(prs, (discovery.get("titulo") or "Descubrimiento del periodo")[:64], paras, to_paragraphs, fit, slide_map, n_template)
+    fill.narrative["descubrimiento_ia"] = kept
+    return sm
+
+
 def _exec_slides(prs, ex, fill, context, ed_res, ed_rec):
     """Añade resumen ejecutivo y recomendaciones (con contexto del equipo y ediciones manuales verificadas). Devuelve el mapa de QA."""
     ctx = [c.strip() for c in (context or []) if c and c.strip()]
@@ -89,7 +109,7 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
                          narrative: dict | None = None, allow_blockers: bool = False,
                          fix_titles: bool = True, executive: bool = True,
                  context: list[str] | None = None, history_db: Path | None = None,
-                 sources: list[Path] | None = None, targets=None, render: bool = True) -> BuildResult:
+                 sources: list[Path] | None = None, targets=None, render: bool = True, discovery: dict | None = None) -> BuildResult:
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
     if blockers and not allow_blockers:
@@ -97,6 +117,7 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     out_dir.mkdir(parents=True, exist_ok=True)
 
     prs = Presentation(template)
+    n_template = len(prs.slides)
     fill_fn = fill_aetops_mensual if period.periodicity == "mensual" else fill_aetops_trimestral
     att = attainment(result, targets)
     narrative = dict(narrative or {})
@@ -105,6 +126,7 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     slide_map = None
     if executive:                                   # resumen ejecutivo (inicio) + recomendaciones (final)
         slide_map = _exec_slides(prs, build_executive(result, period, att=att), fill, context, ed_res, ed_rec)
+    slide_map = _discovery_slide(prs, discovery, fill, slide_map, n_template)
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_AETOP_{stem}_{period.year}.pptx"
     prs.save(pptx)
@@ -173,7 +195,8 @@ def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sou
 
 def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path, narrative: dict | None = None,
                allow_blockers: bool = False, sources: list[Path] | None = None, executive: bool = True,
-               context: list[str] | None = None, targets=None, history_db: Path | None = None, render: bool = True) -> BuildResult:
+               context: list[str] | None = None, targets=None, history_db: Path | None = None, render: bool = True,
+               discovery: dict | None = None) -> BuildResult:
     """GLP-1 mensual: rellena la plantilla, convierte a PDF y aplica el QA (sin resumen ejecutivo ni metas por ahora)."""
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
@@ -181,6 +204,7 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
         raise ReportBlocked(blockers)
     out_dir.mkdir(parents=True, exist_ok=True)
     prs = Presentation(template)
+    n_template = len(prs.slides)
     narrative = dict(narrative or {})
     ed_res, ed_rec = narrative.pop("resumen_ejecutivo", None), narrative.pop("recomendaciones", None)
     att = attainment_glp1(result.blocks, targets)
@@ -188,6 +212,7 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
     slide_map = None
     if executive:
         slide_map = _exec_slides(prs, build_executive_glp1(result.blocks, result.funnel, period, att=att), fill, context, ed_res, ed_rec)
+    slide_map = _discovery_slide(prs, discovery, fill, slide_map, n_template)
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_GLP1_{stem}_{period.year}.pptx"
     prs.save(pptx)
