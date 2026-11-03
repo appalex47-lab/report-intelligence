@@ -105,3 +105,18 @@ def test_missing_template_is_explained_and_unblocked_after_upload(br, tmp_path):
     if HAS_TPL:
         call(bridge, "POST", "/api/templates/aetops-mensual", up=TPL_DIR / "aetops-mensual/1/template.pptx")
         assert call(bridge, "GET", f"/api/runs/{rid}/analysis")["json"]["generator_available"] is True
+
+
+@pytest.mark.skipif(not HAS_TPL, reason="plantillas reales no disponibles")
+def test_wrong_template_is_rejected_with_a_clear_message(br):
+    bridge, S, t = br
+    ok = call(bridge, "POST", "/api/templates/aetops-mensual", up=TPL_DIR / "aetops-mensual/1/template.pptx")
+    assert ok["status"] == 200
+    # un PPTX de otro formato en la ranura equivocada
+    bad = call(bridge, "POST", "/api/templates/aetops-mensual", up=TPL_DIR / "glp1-mensual/1/template.pptx")
+    assert bad["status"] == 400 and "no corresponde a «AETOPS mensual»" in bad["error"]
+    bad2 = call(bridge, "POST", "/api/templates/glp1-mensual", up=TPL_DIR / "aetops-mensual/1/template.pptx")
+    assert bad2["status"] == 400 and "GLP-1 mensual" in bad2["error"]
+    assert call(bridge, "POST", "/api/templates/aetops-trimestral", up=TPL_DIR / "aetops-mensual/1/template.pptx")["status"] == 400
+    # la plantilla válida anterior sigue en su lugar
+    assert {x["key"]: x["available"] for x in call(bridge, "GET", "/api/templates")["json"]}["aetops-mensual"]

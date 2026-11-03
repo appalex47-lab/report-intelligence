@@ -253,7 +253,10 @@ def narrative(run_id: str) -> dict:
                 "ediciones": st["edits"]}
     att = attainment(res, _targets(st))
     prs = Presentation(tpl)
-    fill = (fill_aetops_mensual if per.periodicity == "mensual" else fill_aetops_trimestral)(prs, res, per, None, True, att=att)
+    try:
+        fill = (fill_aetops_mensual if per.periodicity == "mensual" else fill_aetops_trimestral)(prs, res, per, None, True, att=att)
+    except (DataMissing, TemplateMismatch) as e:
+        raise ServiceError(f"La plantilla cargada no coincide con el formato ({e}). Vuelve a cargar el PPTX original en la pestaña «Plantillas».", 409) from None
     ex = build_executive(res, per, att=att)
     sections = dict(fill.narrative)
     ctx = [c for c in st["context"] if c.strip()]
@@ -395,7 +398,26 @@ def save_template(key: str, filename: str, data: bytes) -> list[dict]:
                 raise ServiceError("La plantilla contiene macros; no se admite.")
     except zipfile.BadZipFile:
         raise ServiceError("El archivo está dañado o no es .pptx.") from None
+    _check_template_matches(key, data)
     d = TEMPLATES_DIR / key / "1"
     d.mkdir(parents=True, exist_ok=True)
     (d / "template.pptx").write_bytes(data)
     return list_templates()
+
+
+def _check_template_matches(key: str, data: bytes) -> None:
+    """Rechaza un PPTX que no sea el original de ese formato (si no, fallaría después, al generar)."""
+    import io
+    from ..deck import aetops_mensual, aetops_trimestral, glp1_mensual
+    spec = {"aetops-mensual": (aetops_mensual.NARR, 11), "aetops-trimestral": (aetops_trimestral.NARR, 8),
+            "glp1-mensual": (glp1_mensual.NARR, 11), "glp1-trimestral": (glp1_mensual.NARR, 11)}[key]
+    narr, n_slides = spec
+    prs = Presentation(io.BytesIO(data))
+    label = TEMPLATE_KEYS[key]
+    if len(prs.slides) != n_slides:
+        raise ServiceError(f"Esta plantilla no corresponde a «{label}»: tiene {len(prs.slides)} diapositivas y el original tiene {n_slides}. "
+                           "Carga el PPTX original de ese formato (sin el resumen ejecutivo ni las recomendaciones añadidas).")
+    for _k, (slide, shape) in narr.items():
+        if shape not in [sh.name for sh in prs.slides[slide - 1].shapes]:
+            raise ServiceError(f"Esta plantilla no corresponde a «{label}»: en la diapositiva {slide} no existe «{shape}». "
+                               "Carga el PPTX original de ese formato.")
