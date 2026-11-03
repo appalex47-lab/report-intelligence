@@ -71,7 +71,7 @@ Detalladas en `docs/MOTOR_REGLAS.md` §4: (1) los pedidos del sistema de ventas 
 ## 7. Riesgos abiertos
 | Riesgo | Nivel |
 |---|---|
-| Rama compartida: las confirmaciones de la 2A están en la misma rama que el PR #11 (Fase 1, abierto); si se quiere revisar por separado, hay que dividir | Medio (de proceso) |
+| Rama compartida: los cambios de la 2A están en la misma rama que el PR #11 (Fase 1, abierto); si se quiere revisar por separado, hay que dividir | Medio (de proceso) |
 | Interpretaciones de §6 aún no confirmadas por el usuario (AMB-1, AMB-5, AMB-7, AMB-9 siguen abiertas) | Medio |
 | El motor no se ejecutó en Pyodide (navegador) | Medio |
 | Lectura duplicada si luego se cablea junto a los pipelines existentes (≈ 4–7 s por libro grande) | Bajo |
