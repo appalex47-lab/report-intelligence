@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from lxml import etree
-from PIL import Image, ImageChops, ImageStat
 from pptx import Presentation
 from pptx.util import Emu
 
@@ -190,6 +189,7 @@ def static_zones(template: Path, slide_idx: int) -> dict[str, tuple[float, float
 def check_static_regions(png_out: list[Path], png_tpl: list[Path], rep: QAReport, template: Path | None = None,
                          slide_map: list[int] | None = None) -> None:
     """Logos, barras y pie de página deben ser idénticos a los de la plantilla renderizada (geometría real del PPTX)."""
+    from PIL import Image, ImageChops, ImageStat                      # solo con render (no se carga en el navegador)
     slide_map = slide_map or list(range(len(png_out)))
     for n, (po, ti) in enumerate(zip(png_out, slide_map), 1):
         pt = png_tpl[ti]
@@ -206,6 +206,66 @@ def check_static_regions(png_out: list[Path], png_tpl: list[Path], rep: QAReport
             mean = ImageStat.Stat(d).mean[0]
             if mean > STATIC_DIFF_MAX:
                 rep.add("STATIC_REGION_CHANGED", "error", n, f"'{name}' difiere de la plantilla (Δ medio {mean:.1f}).")
+
+
+# ----------------------------------------------------------------------------- geometría (sin render)
+CHAR_EM = 0.42           # ancho medio de carácter en em (Aptos Narrow ≈ 0.40-0.46)
+LINE_EM = 1.2
+
+
+def _font_pt(cell, default: float = 10.0) -> float:
+    for r in cell._tc.iter("{http://schemas.openxmlformats.org/drawingml/2006/main}rPr"):
+        if r.get("sz"):
+            return int(r.get("sz")) / 100
+    for r in cell._tc.iter("{http://schemas.openxmlformats.org/drawingml/2006/main}endParaRPr"):
+        if r.get("sz"):
+            return int(r.get("sz")) / 100
+    return default
+
+
+def estimate_table_height(shape) -> float:
+    """Alto estimado (pt) de una tabla: cada fila crece si el texto de alguna celda no cabe en una línea."""
+    tbl = shape.table
+    widths = [Emu(c.width).pt for c in tbl.columns]
+    total = 0.0
+    for row in tbl.rows:
+        need = 0.0
+        for ci, cell in enumerate(row.cells):
+            if cell.is_spanned:
+                continue
+            text = cell.text_frame.text
+            if not text.strip():
+                continue
+            span = cell.span_width if cell.is_merge_origin else 1
+            usable = max(sum(widths[ci:ci + span]) - 3.0, 6.0)
+            fs = _font_pt(cell)
+            cpl = max(int(usable / (CHAR_EM * fs)), 1)
+            lines = sum(max(1, -(-len(par) // cpl)) for par in text.split("\n"))
+            need = max(need, lines * fs * LINE_EM + 1.5)
+        total += max(Emu(row.height).pt, need)
+    return total
+
+
+def check_geometry(pptx: Path, rep: QAReport, template: Path | None = None, slide_map: list[int] | None = None) -> None:
+    """Sin render: una tabla cuyo alto estimado la hace invadir el pie de página se señala (aviso; el QA visual es el definitivo).
+    Con plantilla, solo se avisa si la tabla crece frente a su versión original (lo que ya cabía en la plantilla no se cuestiona)."""
+    prs = Presentation(pptx)
+    footer_top, _ = footer_geometry(prs)
+    tpl = Presentation(template) if template else None
+    smap = slide_map or (list(range(len(tpl.slides))) if tpl else [])
+    for n, slide in enumerate(prs.slides, 1):
+        base = {}
+        if tpl is not None and n - 1 < len(smap):
+            for sh in tpl.slides[smap[n - 1]].shapes:
+                if getattr(sh, "has_table", False) and sh.has_table:
+                    base[sh.name] = Emu(sh.top).pt + estimate_table_height(sh)
+        for sh in slide.shapes:
+            if getattr(sh, "has_table", False) and sh.has_table:
+                bottom = Emu(sh.top).pt + estimate_table_height(sh)
+                if bottom > footer_top + 1 and bottom > base.get(sh.name, 0) + 6:
+                    rep.add("OVERFLOW_ESTIMATED", "error" if bottom > footer_top + 12 else "warn", n,
+                            f"La tabla '{sh.name}' podría invadir el pie de página (borde inferior estimado {bottom:.0f} pt; pie en {footer_top:.0f} pt): "
+                            "acorta nombres o reduce filas.")
 
 
 def check_stale(fill_report, rep: QAReport) -> None:

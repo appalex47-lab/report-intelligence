@@ -46,6 +46,25 @@ def _sha(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
+def _render_and_check(pptx: Path, template: Path, out_dir: Path, slide_map, qa, render: bool):
+    """QA del PPTX. Con `render` (LibreOffice disponible): PDF + comprobaciones visuales completas. Sin él (navegador): solo QA
+    estructural y estimación geométrica; no hay PDF ni vista previa. Devuelve (pdf|None, pngs, carpeta temporal|None)."""
+    checks.check_editable_and_static(pptx, template, qa, slide_map)
+    checks.check_geometry(pptx, qa, template, slide_map)
+    if not render:
+        qa.add("QA_VISUAL_OMITIDO", "info", None,
+               "QA estructural (sin render): no se generó PDF ni se comprobó el desborde visual; revisa el PPTX antes de distribuirlo.")
+        return None, [], None
+    pdf = convert_to_pdf(pptx, out_dir)
+    pngs = pdf_to_pngs(pdf, out_dir / "png")
+    tpl_dir = out_dir / "_plantilla"
+    tpl_pdf = convert_to_pdf(template, tpl_dir)
+    tpl_pngs = pdf_to_pngs(tpl_pdf, tpl_dir / "png")
+    checks.check_render(pptx, pdf, qa)
+    checks.check_static_regions(pngs, tpl_pngs, qa, template, slide_map)
+    return pdf, pngs, tpl_dir
+
+
 def _exec_slides(prs, ex, fill, context, ed_res, ed_rec):
     """Añade resumen ejecutivo y recomendaciones (con contexto del equipo y ediciones manuales verificadas). Devuelve el mapa de QA."""
     ctx = [c.strip() for c in (context or []) if c and c.strip()]
@@ -70,7 +89,7 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
                          narrative: dict | None = None, allow_blockers: bool = False,
                          fix_titles: bool = True, executive: bool = True,
                  context: list[str] | None = None, history_db: Path | None = None,
-                 sources: list[Path] | None = None, targets=None) -> BuildResult:
+                 sources: list[Path] | None = None, targets=None, render: bool = True) -> BuildResult:
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
     if blockers and not allow_blockers:
@@ -90,16 +109,8 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     pptx = out_dir / f"Resultados_AETOP_{stem}_{period.year}.pptx"
     prs.save(pptx)
 
-    pdf = convert_to_pdf(pptx, out_dir)
-    pngs = pdf_to_pngs(pdf, out_dir / "png")
-    tpl_dir = out_dir / "_plantilla"
-    tpl_pdf = convert_to_pdf(template, tpl_dir)
-    tpl_pngs = pdf_to_pngs(tpl_pdf, tpl_dir / "png")
-
     qa = checks.QAReport()
-    checks.check_render(pptx, pdf, qa)
-    checks.check_editable_and_static(pptx, template, qa, slide_map)
-    checks.check_static_regions(pngs, tpl_pngs, qa, template, slide_map)
+    pdf, pngs, tpl_dir = _render_and_check(pptx, template, out_dir, slide_map, qa, render)
     checks.check_stale(fill, qa)
     for prob in fill.narrative_problems:
         qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")
@@ -124,13 +135,14 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
 
     manifest = {
         "periodo": period.label if period.periodicity == "trimestral" else f"{period.month_name} {period.year}", "plantilla": template.name,
-        "plantilla_sha256": _sha(template), "pptx_sha256": _sha(pptx), "pdf_sha256": _sha(pdf),
+        "plantilla_sha256": _sha(template), "pptx_sha256": _sha(pptx), "pdf_sha256": _sha(pdf) if pdf else None,
         "qa_passed": qa.passed, "hallazgos_bloqueantes": [f.id for f in blockers],
         "fuente_render": "Carlito (sustituye Aptos Narrow solo en PDF/QA)",
     }
     (out_dir / "qa_report.json").write_text(json.dumps(qa.to_dict(), ensure_ascii=False, indent=1), encoding="utf-8")
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
-    shutil.rmtree(tpl_dir, ignore_errors=True)
+    if tpl_dir:
+        shutil.rmtree(tpl_dir, ignore_errors=True)
     if history_db:
         _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest, targets)
     return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest)
@@ -161,7 +173,7 @@ def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sou
 
 def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path, narrative: dict | None = None,
                allow_blockers: bool = False, sources: list[Path] | None = None, executive: bool = True,
-               context: list[str] | None = None, targets=None, history_db: Path | None = None) -> BuildResult:
+               context: list[str] | None = None, targets=None, history_db: Path | None = None, render: bool = True) -> BuildResult:
     """GLP-1 mensual: rellena la plantilla, convierte a PDF y aplica el QA (sin resumen ejecutivo ni metas por ahora)."""
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
@@ -179,15 +191,8 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_GLP1_{stem}_{period.year}.pptx"
     prs.save(pptx)
-    pdf = convert_to_pdf(pptx, out_dir)
-    pngs = pdf_to_pngs(pdf, out_dir / "png")
-    tpl_dir = out_dir / "_plantilla"
-    tpl_pdf = convert_to_pdf(template, tpl_dir)
-    tpl_pngs = pdf_to_pngs(tpl_pdf, tpl_dir / "png")
     qa = checks.QAReport()
-    checks.check_render(pptx, pdf, qa)
-    checks.check_editable_and_static(pptx, template, qa, slide_map)
-    checks.check_static_regions(pngs, tpl_pngs, qa, template, slide_map)
+    pdf, pngs, tpl_dir = _render_and_check(pptx, template, out_dir, slide_map, qa, render)
     checks.check_stale(fill, qa)
     for prob in fill.narrative_problems:
         qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")
@@ -209,11 +214,12 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
     if blockers:
         qa.add("GENERATED_WITH_BLOCKERS", "error", None, "Generado ignorando hallazgos bloqueantes (solo desarrollo): NO apto para descarga.")
     manifest = {"periodo": period.label if period.periodicity == "trimestral" else f"{period.month_name} {period.year}", "plantilla": template.name, "plantilla_sha256": _sha(template),
-                "pptx_sha256": _sha(pptx), "pdf_sha256": _sha(pdf), "qa_passed": qa.passed,
+                "pptx_sha256": _sha(pptx), "pdf_sha256": _sha(pdf) if pdf else None, "qa_passed": qa.passed,
                 "hallazgos_bloqueantes": [f.id for f in blockers], "fuente_render": "Carlito (sustituye Aptos Narrow solo en PDF/QA)"}
     (out_dir / "qa_report.json").write_text(json.dumps(qa.to_dict(), ensure_ascii=False, indent=1), encoding="utf-8")
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
-    shutil.rmtree(tpl_dir, ignore_errors=True)
+    if tpl_dir:
+        shutil.rmtree(tpl_dir, ignore_errors=True)
     if history_db:
         class _R:                                   # _record solo usa .findings del resultado
             findings = result.findings

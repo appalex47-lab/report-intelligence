@@ -84,9 +84,12 @@ svg.spark{width:100%;height:42px}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;z-index:9}
 .dlg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:grid;place-items:center;z-index:10;padding:16px}.dlg img{max-width:100%;max-height:100%}
 [hidden]{display:none!important}
+.boot{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:20;padding:16px}.boot .card{max-width:460px;display:grid;gap:8px}
 </style>
 </head>
 <body>
+<div id="boot" class="boot"><div class="card"><strong>Report Intelligence</strong><div class="sub" id="boot-msg">Iniciando el motor en tu navegador…</div>
+  <div class="sub">Todo se procesa en tu equipo: los archivos no se envían a ningún servidor.</div></div></div>
 <div class="wrap">
   <header class="top">
     <div><h1>Report Intelligence</h1><div class="sub">Excel → reporte ejecutivo verificado · el motor calcula, la narrativa se revisa, la presentación sale de la plantilla</div></div>
@@ -95,6 +98,7 @@ svg.spark{width:100%;height:42px}
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" aria-selected="true" data-tab="rep">Reporte</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="hist">Historial y tendencias</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="tpl">Plantillas</button>
   </div>
 
   <section id="p-rep" class="grid">
@@ -103,6 +107,7 @@ svg.spark{width:100%;height:42px}
   </section>
 
   <section id="p-hist" class="grid" hidden></section>
+  <section id="p-tpl" class="grid" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
 
@@ -116,15 +121,43 @@ const KIND = {hecho:"Hecho", interpretacion:"Interpretación", recomendacion:"Re
 const fmtM = v => v == null ? "—" : Math.abs(v) >= 1e6 ? `$${(v/1e6).toFixed(2)} M` : `$${Math.round(v).toLocaleString("es-MX")}`;
 const fmtP = v => v == null ? "—" : `${v>=0?"+":""}${(v*100).toFixed(1)} %`;
 
-const S = {run:null, step:0, analysis:null, narr:null, edits:{}, sec:0, result:null, busy:false, err:null};
+const S = {info:{render:false}, tpls:[], run:null, step:0, analysis:null, narr:null, edits:{}, sec:0, result:null, busy:false, err:null};
 const store = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{localStorage.setItem(k,v)}catch{}}};
 
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3500)}
+/* ---------------------------------------------------------------- motor en el navegador (Pyodide en un Web Worker) */
+const PYQ = new URLSearchParams(location.search).get("py");
+const worker = new Worker("worker.js" + (PYQ ? "?py=" + encodeURIComponent(PYQ) : ""));
+const pending = new Map(); let seq = 0, engineReady = false;
+worker.onmessage = (e) => {
+  const m = e.data;
+  if (m.progress) { const o = $("#boot-msg"); if (o) o.textContent = m.progress; return; }
+  const p = pending.get(m.id); if (!p) return; pending.delete(m.id);
+  if (m.ok) { engineReady = true; const o = $("#boot"); if (o) o.hidden = true; p.res(m); }
+  else p.rej(new Error(m.error || `Error ${m.status}`));
+};
+worker.onerror = (e) => { const o = $("#boot-msg"); if (o) o.textContent = "No se pudo iniciar el motor: " + (e.message || "error") + ". Recarga la página."; };
+function ask(msg, transfer = []) { return new Promise((res, rej) => { const id = ++seq; pending.set(id, { res, rej }); worker.postMessage({ id, ...msg }, transfer); }); }
 async function api(path, opts = {}){
-  const r = await fetch("/api"+path, opts);
-  let body = null; try{ body = await r.json() }catch{}
-  if(!r.ok) throw new Error((body && (body.error||body.detail)) || `Error ${r.status}`);
-  return body;
+  const method = (opts.method || "GET").toUpperCase();
+  let body = null, file = null, p = "/api" + path;
+  const q = p.indexOf("?");
+  if (q >= 0) { body = Object.fromEntries(new URLSearchParams(p.slice(q + 1))); p = p.slice(0, q); }
+  if (opts.body instanceof FormData) { const f = opts.body.get("file"); file = { name: f.name, buffer: await f.arrayBuffer() }; }
+  else if (opts.body) body = JSON.parse(opts.body);
+  const r = await ask({ method, path: p, body, file }, file ? [file.buffer] : []);
+  return r.json;
+}
+async function fetchFile(path, query = null){            // descarga: el archivo sale del sistema de archivos virtual del motor
+  const r = await ask({ method: "GET", path: "/api" + path, body: query });
+  return r.file;
+}
+async function download(path, query = null){
+  try{
+    const f = await fetchFile(path, query);
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([f.buffer])); a.download = f.name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }catch(e){ toast(e.message) }
 }
 const J = (method, data) => ({method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
 
@@ -183,12 +216,13 @@ function vLoad(box){
       <label class="f" id="iw">${per==="mensual"?"Mes":"Trimestre"}<select id="i" ${lock?"disabled":""}></select></label>
     </div>
     <div class="row"><span class="sub">¿Aún no tienes el archivo? Descarga el machote de captura del periodo.</span>
-      <a class="btn" id="mach" href="#">Descargar machote (.xlsx)</a></div>
+      <button class="btn" id="mach">Descargar machote (.xlsx)</button></div>
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Cargar libro de Excel">
       ${r?.filename?`<strong>${esc(r.filename)}</strong><div class="sub">Haz clic o suelta otro archivo para reemplazarlo</div>`:`<strong>Suelta aquí el libro .xlsx</strong><div class="sub">o haz clic para elegirlo · hasta 25 MB · sin macros</div>`}
       <input id="file" type="file" accept=".xlsx" hidden>
     </div>
-    <div class="row"><span class="sub">Los datos se validan antes de cualquier narrativa; nada se envía a servicios externos.</span>
+    ${S.tpls.some(t=>!t.available)?`<div class="warnline">Faltan plantillas PPTX (${S.tpls.filter(t=>!t.available).map(t=>esc(t.label)).join(", ")}). Cárgalas en la pestaña «Plantillas» antes de generar.</div>`:""}
+    <div class="row"><span class="sub">Los datos se validan antes de cualquier narrativa; nada sale de tu navegador.</span>
       <button class="btn primary" id="next" ${r?.filename?"":"disabled"}>Validar →</button></div>
   </div>`;
   const fillIdx = () => {
@@ -198,8 +232,7 @@ function vLoad(box){
     if(cur > sel.options.length) sel.value = "1";
   };
   fillIdx(); $("#p").onchange = fillIdx;
-  const setMach = () => { $("#mach").href = `/api/machote?unit=${$("#u").value}&periodicity=${$("#p").value}&year=${$("#y").value}&index=${$("#i").value}` };
-  setMach(); ["u","p","y","i"].forEach(k=>$("#"+k).addEventListener("change",setMach));
+  $("#mach").onclick = () => download("/machote", {unit:$("#u").value, periodicity:$("#p").value, year:$("#y").value, index:$("#i").value});
   const drop = $("#drop"), file = $("#file");
   drop.onclick = () => file.click();
   drop.onkeydown = e => { if(e.key==="Enter"||e.key===" ") file.click() };
@@ -328,8 +361,9 @@ async function persistEdits(){
 function vGen(box){
   const res = S.result, a = S.analysis;
   const nEdits = Object.keys(S.run.edits||{}).length;
-  box.innerHTML = `<div class="card grid"><strong>Generar presentación y PDF</strong>
-    <div class="sub">Se rellena la plantilla original (tablas y textos editables), se convierte a PDF y se aplica el QA: si el QA no aprueba, la descarga queda bloqueada.
+  box.innerHTML = `<div class="card grid"><strong>Generar presentación${S.info.render?" y PDF":""}</strong>
+    <div class="sub">Se rellena la plantilla original (tablas y textos editables)${S.info.render?", se convierte a PDF y":" y"} se aplica el QA: si el QA no aprueba, la descarga queda bloqueada.
+    ${S.info.render?"":"<br><b>QA estructural:</b> esta versión corre 100 % en tu navegador, sin PDF ni vista previa. Revisa el PPTX en PowerPoint (Guardar como PDF) o usa el flujo opcional «PDF en GitHub» del README."}
     ${nEdits?`<br>Incluye ${nEdits} diapositiva(s) con texto editado a mano.`:""}</div>
     <div class="row"><button class="btn" id="b4">← Narrativa</button><button class="btn primary" id="go" ${S.busy?"disabled":""}>${S.busy?"Generando… (≈15 s)":res?"Volver a generar":"Generar reporte"}</button></div></div><div id="out"></div>`;
   $("#b4").onclick = () => go(3);
@@ -342,14 +376,14 @@ function vGen(box){
 }
 function outView(host, r){
   const id = S.run.id, issues = r.qa.issues.filter(i=>i.severity!=="info"), infos = r.qa.issues.length - issues.length;
-  const dl = (name, label) => name ? `<a class="btn ${r.downloadable?"primary":""}" href="/api/runs/${id}/files/${encodeURIComponent(name)}" ${r.downloadable?"":'aria-disabled="true"'}>${label}</a>` : "";
+  const dl = (name, label) => name ? `<button class="btn ${r.downloadable?"primary":""}" data-dl="${esc(name)}" ${r.downloadable?"":"disabled"}>${label}</button>` : "";
   host.innerHTML = `<div class="card grid"><div class="banner ${r.qa_passed?"ok":"bad"}"><div><strong>QA ${r.qa_passed?"aprobado":"rechazado"} · descarga ${r.downloadable?"habilitada":"bloqueada"}</strong><span class="sub">${issues.length} observación(es) · ${infos} nota(s) informativa(s)</span></div>
       <div class="row">${dl(r.pptx,"Descargar PPTX")}${dl(r.pdf,"Descargar PDF")}</div></div>
     ${issues.length?issues.map(i=>`<div class="find"><span class="sev ${i.severity==="error"?"block":"warn"}">${esc(i.severity.toUpperCase())}</span><div><code>${esc(i.id)}</code> ${esc(i.message)}${i.slide?` <span class="sub">(diap. ${i.slide})</span>`:""}</div></div>`).join(""):""}
-    <div class="row"><a class="mini" href="/api/runs/${id}/files/narrative.json">narrative.json</a><a class="mini" href="/api/runs/${id}/files/qa_report.json">qa_report.json</a><a class="mini" href="/api/runs/${id}/files/manifest.json">manifest.json</a></div></div>
-    <div class="card grid"><strong>Diapositivas generadas</strong><div class="thumbs">${r.slides.map(n=>`<img loading="lazy" src="/api/runs/${id}/files/${encodeURIComponent(n)}" alt="${esc(n)}">`).join("")}</div></div>
+    <div class="row"><button class="mini" data-dl="narrative.json">narrative.json</button><button class="mini" data-dl="qa_report.json">qa_report.json</button><button class="mini" data-dl="manifest.json">manifest.json</button></div></div>
+    ${r.slides.length?`<div class="card grid"><strong>Diapositivas generadas</strong><div class="thumbs">${r.slides.map(n=>`<button class="mini" data-dl="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`:""}
     <div class="card"><strong>Tendencias del historial</strong>${trendsHtml(r.trends)}</div>`;
-  host.querySelectorAll(".thumbs img").forEach(im=>im.onclick=()=>{ const d=document.createElement("div"); d.className="dlg"; d.innerHTML=`<img src="${im.src}" alt="">`; d.onclick=()=>d.remove(); document.body.appendChild(d) });
+  host.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>download(`/runs/${id}/files/${encodeURIComponent(b.dataset.dl)}`));
 }
 
 /* ---------------------------------------------------------------- historial */
@@ -370,18 +404,40 @@ async function renderHist(){
   try{
     const [runs, tr] = await Promise.all([api("/history/runs"), api(`/history/trends?unit=aetops&periodicity=${S.run?.periodicity||"mensual"}`)]);
     host.innerHTML = `<div class="card"><strong>Tendencias (AETOPS ${esc(S.run?.periodicity||"mensual")})</strong>${trendsHtml(tr)}<div class="sub">* periodo derivado de un reporte posterior. Se exigen 2+ variaciones consecutivas fuera de ±5 % y 3 periodos contiguos.</div></div>
+      <div class="card grid"><strong>Historial en este navegador</strong><div class="sub">El historial se guarda en tu navegador (no en un servidor). Expórtalo para respaldarlo o llevarlo a otro equipo.</div>
+      <div class="row"><button class="btn" id="hexp">Exportar historial (.sqlite)</button><label class="btn">Importar historial<input id="himp" type="file" accept=".sqlite" hidden></label></div></div>
       <div class="card"><strong>Reportes generados (inmutables, con versión)</strong>${runs.length?`<table><tr><th>Unidad</th><th>Periodo</th><th>Versión</th><th>Creado</th><th>QA</th></tr>${runs.map(r=>`<tr><td>${esc(r.unidad)}</td><td>${esc(r.periodicidad)} ${r.anio}-${r.indice}</td><td>v${r.version}</td><td>${esc(r.creado)}</td><td>${r.qa_ok?"✓":"✗"}</td></tr>`).join("")}</table>`:`<div class="sub">Sin reportes todavía.</div>`}</div>`;
+    $("#hexp").onclick = () => download("/history/export");
+    $("#himp").onchange = async (ev) => { const f = ev.target.files[0]; if(!f) return;
+      try{ await ask({op:"importHistory", buffer: await f.arrayBuffer()}); toast("Historial importado"); renderHist() }catch(e){ toast(e.message) } };
+  }catch(e){ host.innerHTML = `<div class="banner bad">${esc(e.message)}</div>` }
+}
+
+/* ---------------------------------------------------------------- plantillas (se cargan una vez y quedan en este navegador) */
+async function renderTpl(){
+  const host = $("#p-tpl"); host.innerHTML = `<div class="card">Cargando…</div>`;
+  try{
+    const list = await api("/templates"); S.tpls = list;
+    host.innerHTML = `<div class="card grid"><strong>Plantillas PPTX</strong>
+      <div class="sub">Son los PPTX originales (con logos y formato). No se publican en GitHub: cárgalas una vez y quedan guardadas en este navegador. Si el repositorio es privado, también puedes publicarlas en <code>templates/&lt;formato&gt;/1/template.pptx</code>.</div>
+      ${list.map(t=>`<div class="row"><div><b>${esc(t.label)}</b> <span class="sev ${t.available?"info":"block"}">${t.available?"CARGADA":"FALTA"}</span></div>
+        <label class="btn">${t.available?"Reemplazar":"Cargar"} .pptx<input type="file" accept=".pptx" data-k="${esc(t.key)}" hidden></label></div>`).join("")}</div>`;
+    host.querySelectorAll("input[data-k]").forEach(i=>i.onchange=async()=>{ const f=i.files[0]; if(!f) return;
+      const fd=new FormData(); fd.append("file", f);
+      try{ await api("/templates/"+i.dataset.k, {method:"POST", body:fd}); toast("Plantilla guardada"); renderTpl() }catch(e){ toast(e.message) } });
   }catch(e){ host.innerHTML = `<div class="banner bad">${esc(e.message)}</div>` }
 }
 
 /* ---------------------------------------------------------------- arranque */
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));
-  $("#p-rep").hidden = t.dataset.tab!=="rep"; $("#p-hist").hidden = t.dataset.tab!=="hist";
+  $("#p-rep").hidden = t.dataset.tab!=="rep"; $("#p-hist").hidden = t.dataset.tab!=="hist"; $("#p-tpl").hidden = t.dataset.tab!=="tpl";
   if(t.dataset.tab==="hist") renderHist();
+  if(t.dataset.tab==="tpl") renderTpl();
 });
 $("#newRun").onclick = () => { S.run=null; S.analysis=null; S.narr=null; S.result=null; S.step=0; S.err=null; store.set("ri.run",""); render() };
 (async () => {
+  try{ S.info = await api("/info"); S.tpls = await api("/templates") }catch(e){ const m=$("#boot-msg"); if(m) m.textContent = "No se pudo iniciar el motor: " + e.message; return }
   const id = store.get("ri.run");
   if(id){ try{ S.run = await api(`/runs/${id}`); if(S.run.filename){ S.step = 1; await refreshAnalysis(); if(S.run.generated) S.result = await api(`/runs/${id}/result`).catch(()=>null) } }catch{ S.run = null; S.step = 0 } }
   render();

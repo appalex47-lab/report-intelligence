@@ -48,22 +48,27 @@ python tools/make_glp1_synthetic.py data/GLP1_sintetico_limpio.xlsx            #
 - `Negados`: el segundo bloque de productos (duplicado en el mensual, distinto en el Q3) se ignora y no se valida todavía. Sin `config/rules.yaml`: tolerancias fijas en `validator/rules.py`.
 - Ticket por canal: se usa el valor pegado (ver hallazgo en `docs/DIAGNOSTICO_FASE1.md` §4.3).
 
-## Pantalla de revisión (API + frontend)
+## Pantalla de revisión
+
+**En GitHub (sin servidor):** `frontend/` + `tools/build_site.py` + `.github/workflows/pages.yml`. El motor corre en el navegador con
+Pyodide: `frontend/worker.js` carga `app.zip` (este paquete) y atiende las mismas rutas del API mediante `backend/app/web/bridge.py`.
+Sin LibreOffice no hay PDF ni QA visual: se hace QA estructural y una estimación geométrica del desborde (`qa/checks.py::check_geometry`).
+Plantillas e historial se guardan en IndexedDB del navegador. Ver el `README.md` de la raíz.
+
+**Servidor opcional (Docker, con PDF y QA visual completo):**
 
 ```bash
 pip install -r requirements.txt
-uvicorn backend.app.web.app:app --port 8000      # http://localhost:8000
+uvicorn backend.app.web.app:app --port 8000
 ```
 
 Variables: `REPORT_RUNS_DIR` (corridas, def. `runs/`), `REPORT_HISTORY_DB` (def. `historial/historial.sqlite`),
 `REPORT_TEMPLATES_DIR` (def. `templates/`; plantilla = `<unidad>-<periodicidad>/1/template.pptx`).
 
 Flujo: Cargar → Validar → Metas y contexto → Revisar narrativa (edición con verificación de cifras) → Generar (QA; la descarga
-se bloquea si el QA no aprueba) + pestaña Historial y tendencias. Metas: obligatorias en AETOPS, opcionales en GLP-1.
-GLP-1 (mensual y trimestral): genera la presentación desde datos crudos (`ventas`+`catalogo`+`trafico`+`negados`), con resumen ejecutivo, recomendaciones, contexto del equipo, meta opcional e historial. Plantillas: `templates/glp1-mensual/1/` y `templates/glp1-trimestral/1/`.
+se bloquea si el QA no aprueba) + Historial y tendencias. Metas: obligatorias en AETOPS, opcionales en GLP-1.
+GLP-1 (mensual y trimestral): genera la presentación desde datos crudos (`ventas`+`catalogo`+`trafico`+`negados`), con resumen
+ejecutivo, recomendaciones, contexto del equipo, meta opcional e historial.
 
 Machotes de captura: `python tools/make_machotes.py --todos --periodo 2026-9 --salida machotes/` (o desde la pantalla de carga).
-
 CLI con metas: `--metas metas.json` o `--meta total=33000000 --meta AE-A=21000000 …` (obligatorias al generar AETOPS).
-
-Docker (`Dockerfile`, `docker-compose.yml`): **sin verificar** en este entorno.

@@ -1,7 +1,7 @@
 # Plantillas
 
 La plantilla de cada formato es **el PPTX original publicado** (logos, barras, tipografías y tablas con su formato).
-**No se versiona** (contiene marca y, en el original, datos comerciales): cópiala localmente.
+**No se versiona** (contiene marca y, en el original, datos comerciales). En la app web se cargan una vez en la pestaña **Plantillas** y quedan en el navegador; para el servidor/CLI se copian aquí. (En un repositorio privado se pueden publicar en `templates/<formato>/1/template.pptx` quitando la regla del `.gitignore`: el sitio las toma de ahí.)
 
 | Formato | Ruta | Origen |
 |---|---|---|
