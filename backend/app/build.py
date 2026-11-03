@@ -16,6 +16,7 @@ from .deck.glp1_mensual import fill_glp1
 from .history import store as hist
 from .narrative import trends
 from .narrative.executive import build_executive
+from .narrative.glp1_exec import attainment_glp1, build_executive_glp1
 from .narrative.targets import attainment
 from .narrative.writer import Para, fit, to_paragraphs, verify_all, verify_edited
 from .models import Period
@@ -45,6 +46,26 @@ def _sha(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
+def _exec_slides(prs, ex, fill, context, ed_res, ed_rec):
+    """Añade resumen ejecutivo y recomendaciones (con contexto del equipo y ediciones manuales verificadas). Devuelve el mapa de QA."""
+    ctx = [c.strip() for c in (context or []) if c and c.strip()]
+    if ctx:                                         # contexto aportado por el equipo: marcado, sin verificar, nunca se descarta
+        ex.resumen.append(Para("**Contexto aportado por el equipo**", "contexto", 0, basis="texto del equipo; no verificado"))
+        ex.resumen += [Para(c, "contexto", 0, basis="texto del equipo; no verificado") for c in ctx]
+    fill.narrative_problems += verify_all(ex.resumen + ex.recomendaciones)
+    known = set().union(*(p.nums for ps in fill.narrative.values() for p in ps), *(p.nums for p in ex.resumen + ex.recomendaciones))
+    for edits, attr in ((ed_res, "resumen"), (ed_rec, "recomendaciones")):
+        if edits is not None:                       # edición manual: se publica, pero una cifra sin respaldo se avisa
+            paras = [Para(t, "hecho", 0, edited=True) for t in edits if t.strip() != ""]
+            fill.edited_unverified += [f"{attr}: {x}" for p in paras for x in verify_edited(p.plain, known)]
+            setattr(ex, attr, paras)
+    slide_map, kept_res, kept_rec = add_executive_slides(prs, ex.resumen, ex.recomendaciones, to_paragraphs, fit)
+    fill.narrative["resumen_ejecutivo"], fill.narrative["recomendaciones"] = kept_res, kept_rec
+    fill.narrative["descubrimientos"] = [p for _, p in ex.descubrimientos]
+    fill.recommendations = ex.recs
+    return slide_map
+
+
 def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
                          narrative: dict | None = None, allow_blockers: bool = False,
                          fix_titles: bool = True, executive: bool = True,
@@ -64,22 +85,7 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     fill = fill_fn(prs, result, period, narrative, fix_titles, att=att)
     slide_map = None
     if executive:                                   # resumen ejecutivo (inicio) + recomendaciones (final)
-        ex = build_executive(result, period, att=att)
-        ctx = [c.strip() for c in (context or []) if c and c.strip()]
-        if ctx:                                     # contexto aportado por el equipo: marcado, sin verificar, nunca se descarta
-            ex.resumen.append(Para("**Contexto aportado por el equipo**", "contexto", 0, basis="texto del equipo; no verificado"))
-            ex.resumen += [Para(c, "contexto", 0, basis="texto del equipo; no verificado") for c in ctx]
-        fill.narrative_problems += verify_all(ex.resumen + ex.recomendaciones)
-        known = set().union(*(p.nums for ps in fill.narrative.values() for p in ps), *(p.nums for p in ex.resumen + ex.recomendaciones))
-        for edits, attr in ((ed_res, "resumen"), (ed_rec, "recomendaciones")):
-            if edits is not None:                 # edición manual: se publica, pero una cifra sin respaldo se avisa
-                paras = [Para(t, "hecho", 0, edited=True) for t in edits if t.strip() != ""]
-                fill.edited_unverified += [f"{attr}: {x}" for p in paras for x in verify_edited(p.plain, known)]
-                setattr(ex, attr, paras)
-        slide_map, kept_res, kept_rec = add_executive_slides(prs, ex.resumen, ex.recomendaciones, to_paragraphs, fit)
-        fill.narrative["resumen_ejecutivo"], fill.narrative["recomendaciones"] = kept_res, kept_rec
-        fill.narrative["descubrimientos"] = [p for _, p in ex.descubrimientos]
-        fill.recommendations = ex.recs
+        slide_map = _exec_slides(prs, build_executive(result, period, att=att), fill, context, ed_res, ed_rec)
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_AETOP_{stem}_{period.year}.pptx"
     prs.save(pptx)
@@ -130,12 +136,12 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest)
 
 
-def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest, targets=None):
+def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest, targets=None, kpis=None):
     """Guarda la foto de KPIs del reporte (nueva versión, nunca sobrescribe) y escribe trends.json."""
     con = hist.connect(history_db)
     narrative = {k: [{"texto": p.plain, "tipo": p.kind, "regla": p.basis} for p in ps] for k, ps in fill.narrative.items()}
     rid = hist.record_run(
-        con, period, hist.snapshot_from_result(result, period, targets), profile=period.periodicity, template=template,
+        con, period, kpis if kpis is not None else hist.snapshot_from_result(result, period, targets), profile=period.periodicity, template=template,
         sources=sources, pptx=pptx, pdf=pdf, qa_passed=qa.passed, downloadable=qa.passed,
         findings=[{"id": f.id, "severity": f.severity, "message": f.message} for f in result.findings],
         narrative=narrative, context=context)
@@ -154,7 +160,8 @@ def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sou
 
 
 def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path, narrative: dict | None = None,
-               allow_blockers: bool = False, sources: list[Path] | None = None) -> BuildResult:
+               allow_blockers: bool = False, sources: list[Path] | None = None, executive: bool = True,
+               context: list[str] | None = None, targets=None, history_db: Path | None = None) -> BuildResult:
     """GLP-1 mensual: rellena la plantilla, convierte a PDF y aplica el QA (sin resumen ejecutivo ni metas por ahora)."""
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
@@ -162,7 +169,13 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
         raise ReportBlocked(blockers)
     out_dir.mkdir(parents=True, exist_ok=True)
     prs = Presentation(template)
-    fill = fill_glp1(prs, result.blocks, result.funnel, period, dict(narrative or {}))
+    narrative = dict(narrative or {})
+    ed_res, ed_rec = narrative.pop("resumen_ejecutivo", None), narrative.pop("recomendaciones", None)
+    att = attainment_glp1(result.blocks, targets)
+    fill = fill_glp1(prs, result.blocks, result.funnel, period, narrative)
+    slide_map = None
+    if executive:
+        slide_map = _exec_slides(prs, build_executive_glp1(result.blocks, result.funnel, period, att=att), fill, context, ed_res, ed_rec)
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_GLP1_{stem}_{period.year}.pptx"
     prs.save(pptx)
@@ -173,8 +186,8 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
     tpl_pngs = pdf_to_pngs(tpl_pdf, tpl_dir / "png")
     qa = checks.QAReport()
     checks.check_render(pptx, pdf, qa)
-    checks.check_editable_and_static(pptx, template, qa, None)
-    checks.check_static_regions(pngs, tpl_pngs, qa, template, None)
+    checks.check_editable_and_static(pptx, template, qa, slide_map)
+    checks.check_static_regions(pngs, tpl_pngs, qa, template, slide_map)
     checks.check_stale(fill, qa)
     for prob in fill.narrative_problems:
         qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")
@@ -184,6 +197,8 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
         key: [{"texto": p.plain, "tipo": p.kind, "regla": p.basis, "cifras": sorted(p.nums), "evidencia": p.evidence,
                "prioridad": p.priority, "visible_en_diapositiva": p.visible, "editado": p.edited} for p in paras]
         for key, paras in fill.narrative.items()}, ensure_ascii=False, indent=1), encoding="utf-8")
+    if context:
+        qa.add("CONTEXT_UNVERIFIED", "info", None, "El resumen incluye contexto aportado por el equipo; no se verifica contra los datos.")
     for t in fill.titles_fixed:
         qa.add("LABEL_CROSSED_FIXED", "info", None, f"Título corregido: {t}")
     for n in fill.notes:
@@ -199,6 +214,11 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
     (out_dir / "qa_report.json").write_text(json.dumps(qa.to_dict(), ensure_ascii=False, indent=1), encoding="utf-8")
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     shutil.rmtree(tpl_dir, ignore_errors=True)
+    if history_db:
+        class _R:                                   # _record solo usa .findings del resultado
+            findings = result.findings
+        _record(_R, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest, targets,
+                kpis=hist.snapshot_from_glp1(result.blocks, period, targets))
     return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest)
 
 

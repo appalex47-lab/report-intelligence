@@ -4,6 +4,8 @@ import re
 from pathlib import Path
 
 import pytest
+from decimal import Decimal
+
 from pptx import Presentation
 
 from backend.app.build import build_glp1
@@ -40,7 +42,7 @@ def texts(path):
 
 def test_qa_passes_and_outputs_exist(built):
     _res, b = built
-    assert b.qa.passed and b.downloadable and b.pptx.exists() and b.pdf.exists() and len(b.pngs) == 11
+    assert b.qa.passed and b.downloadable and b.pptx.exists() and b.pdf.exists() and len(b.pngs) == 13
     assert b.fill.narrative_problems == [] and b.fill.stale == []
 
 
@@ -53,13 +55,13 @@ def test_no_template_month_data_survives(built):
 def test_tables_match_engine(built):
     res, b = built
     prs = Presentation(b.pptx)
-    t = [sh for sh in prs.slides[4].shapes if sh.name == "Tabla 8"][0].table
+    t = [sh for sh in prs.slides[5].shapes if sh.name == "Tabla 8"][0].table
     rows = {r.cells[0].text: r for r in list(t.rows)[1:]}
     for g in res.blocks["region"].rows:
         c = rows[g.key.upper()].cells
         assert c[1].text.replace(",", "") == str(int(g.values["pedidos"].v))
         assert c[3].text.replace(",", "").replace("$", "") == str(int(round(g.values["monto"].v)))
-    f = [sh for sh in prs.slides[6].shapes if sh.name == "Tabla 8"][0].table
+    f = [sh for sh in prs.slides[7].shapes if sh.name == "Tabla 8"][0].table
     assert f.cell(0, 4).text.replace(",", "") == str(int(res.funnel.rows[0].values["conteo"].v))
     assert f.cell(8, 0).text == "Carritos abandonados"
 
@@ -106,3 +108,22 @@ def test_quarterly_uses_quarter_labels_and_passes_qa(tmp_path):
     b = build_glp1(res, q3, tq, tmp_path / "o")
     blob = "\n".join(texts(b.pptx))
     assert b.qa.passed and b.pptx.name == "Resultados_GLP1_Q3_2026.pptx" and "vs Q2 2026" in blob and "septiembre" not in blob.lower()
+
+
+def test_executive_and_recommendation_slides_are_added(built):
+    _res, b = built
+    prs = Presentation(b.pptx)
+    titles = [next((sh.text_frame.text for sh in s.shapes if sh.name == "CuadroTexto 9"), "") for s in prs.slides]
+    assert titles[0] == "Resumen Ejecutivo" and titles[-1] == "Recomendaciones" and len(prs.slides) == 13
+    assert "resumen_ejecutivo" in b.fill.narrative and "recomendaciones" in b.fill.narrative
+
+
+def test_context_and_goal_reach_the_deck(tmp_path):
+    from backend.app.targets import Targets
+    res = run_glp1_raw(mg.build(tmp_path / "g.xlsx"), P9)
+    b = build_glp1(res, P9, TPL, tmp_path / "o", context=["Campaña de verano del 10 al 20."], targets=Targets(Decimal(9_000_000), {}),
+                   history_db=tmp_path / "h.sqlite")
+    blob = "\n".join(texts(b.pptx))
+    assert "Campaña de verano" in blob and "de la meta" in blob
+    assert any(i.id == "CONTEXT_UNVERIFIED" for i in b.qa.issues) and b.qa.passed
+    assert (tmp_path / "o" / "trends.json").exists() and b.manifest["historial"]["version"] == 1

@@ -150,6 +150,6 @@ def test_glp1_generate_via_api(client, tmp_path):
     rid = _run(client, "glp1")
     _upload(client, rid, mg.build(tmp_path / "g.xlsx"))
     n = client.get(f"/api/runs/{rid}/narrative")
-    assert n.status_code == 200 and n.json()["secciones"][0]["clave"] == "quien"
+    assert n.status_code == 200 and n.json()["secciones"][0]["clave"] == "resumen_ejecutivo"
     g = client.post(f"/api/runs/{rid}/generate")
     assert g.status_code == 200 and g.json()["downloadable"] and g.json()["pptx"].startswith("Resultados_GLP1")

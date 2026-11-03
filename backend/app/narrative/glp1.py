@@ -51,6 +51,12 @@ def sh(r: GRow) -> str:
     return pct_d(r.share.v if r.share else None, sign=False)
 
 
+def yoy(w, r: GRow) -> str:
+    """', +X% vs el mismo periodo del año anterior' cuando hay datos del año anterior (si no, vacío)."""
+    d = r.delta_yoy.v if r.delta_yoy is not None else None
+    return f", {w.n(pct_d(d))} vs el mismo periodo del año anterior" if d is not None else ""
+
+
 def move(rows: list[GRow], rules: NarrativeRules) -> tuple[list[GRow], list[GRow]]:
     up = sorted((r for r in rows if dl(r) is not None and dl(r) >= rules.relevance), key=lambda r: -dl(r))
     dn = sorted((r for r in rows if dl(r) is not None and dl(r) <= -rules.relevance), key=lambda r: dl(r))
@@ -91,14 +97,14 @@ def s_quien(B: dict[str, GBlock], period: Period, rules: NarrativeRules) -> list
         other = [r for r in sxb if r is not ts]
         ps.append(para("hecho", lambda w: (
             f"**Sexo:**\n{w.b(sx(ts.key))} concentra el interés con {w.n(count(v(ts, 'visitas')))} visitas, {w.n(count(v(ts, 'usuarios')))} usuarios, "
-            f"{w.n(count(v(ts, 'atc')))} Add to Cart y {w.n(sh(ts))} de share ({w.n(pct_d(dl(ts)))} vs {w.t(prev_label(period))})"
+            f"{w.n(count(v(ts, 'atc')))} Add to Cart y {w.n(sh(ts))} de share ({w.n(pct_d(dl(ts)))} vs {w.t(prev_label(period))}{yoy(w, ts)})"
             + (f"; {sx(other[0].key).lower()} {w.n(pct_d(dl(other[0])))}." if other else ".")), 2, evidence=["bloque sexo"]))
     td = top(dv, "visitas")
     if td:
         sec = sorted(dv, key=lambda r: -(v(r, "visitas") or 0))
         ps.append(para("hecho", lambda w: (
             f"**Dispositivo:**\n{w.b(td.key.capitalize())} es el principal punto de entrada: {w.n(sh(td))} de share, {w.n(count(v(td, 'visitas')))} visitas y "
-            f"{w.n(count(v(td, 'usuarios')))} usuarios ({w.n(pct_d(dl(td)))})."
+            f"{w.n(count(v(td, 'usuarios')))} usuarios ({w.n(pct_d(dl(td)))} vs {w.t(prev_label(period))}{yoy(w, td)})."
             + (f" {w.t(sec[1].key.capitalize())} aporta {w.n(sh(sec[1]))} con {w.n(count(v(sec[1], 'visitas')))} visitas." if len(sec) > 1 else "")), 2,
             evidence=["bloque dispositivo"]))
     if t and ts and td:
@@ -155,7 +161,7 @@ def s_region(B, period, rules) -> list[Para]:
         up, dn = move(reg[1:], rules)
         ps.append(para("hecho", lambda w: (
             f"**Región:**\n{w.b(t.key.capitalize())} concentra la mayor venta con {w.n(sh(t))} de share, {w.n(money(v(t, 'monto')))}, "
-            f"{w.n(count(v(t, 'pedidos')))} pedidos y {w.n(count(v(t, 'piezas')))} piezas ({w.n(pct_d(dl(t)))} vs {w.t(prev_label(period))})."), 1,
+            f"{w.n(count(v(t, 'pedidos')))} pedidos y {w.n(count(v(t, 'piezas')))} piezas ({w.n(pct_d(dl(t)))} vs {w.t(prev_label(period))}{yoy(w, t)})."), 1,
             evidence=["bloque region"]))
         if up or dn:
             def mv(w):
@@ -183,7 +189,7 @@ def s_pago(B, period, rules) -> list[Para]:
         up, dn = move(pago[1:], rules)
         ps.append(para("hecho", lambda w: (
             f"**Forma de Pago:**\n{w.b(t.key)} es la forma de pago más fuerte con {w.n(sh(t))} de share, {w.n(count(v(t, 'pedidos')))} pedidos y "
-            f"{w.n(money(v(t, 'monto')))} en venta ({w.n(pct_d(dl(t)))})."
+            f"{w.n(money(v(t, 'monto')))} en venta ({w.n(pct_d(dl(t)))} vs {w.t(prev_label(period))}{yoy(w, t)})."
             + (" " + ", ".join(f"{w.t(r.key)} {w.n(pct_d(dl(r)))}" for r in (up[:2] + dn[:2])) + "." if (up or dn) else "")), 1, evidence=["bloque pago"]))
     if ent:
         t = ent[0]
@@ -270,7 +276,7 @@ def s_programas(B, period, rules) -> list[Para]:
         up, dn = move(rows[1:], rules)
         ps.append(para("hecho", lambda w: (
             f"**Programas de Apoyo**\n{w.b(t.key.title())} es el programa que más sostiene la venta, con {w.n(sh(t))} de share, {w.n(count(v(t, 'pedidos')))} pedidos, "
-            f"{w.n(count(v(t, 'pacientes')))} pacientes y {w.n(money(v(t, 'monto')))} ({w.n(pct_d(dl(t)))})."), 1, evidence=["bloque programas"]))
+            f"{w.n(count(v(t, 'pacientes')))} pacientes y {w.n(money(v(t, 'monto')))} ({w.n(pct_d(dl(t)))} vs {w.t(prev_label(period))}{yoy(w, t)})."), 1, evidence=["bloque programas"]))
         if up or dn:
             ps.append(para("hecho", lambda w: ", ".join(f"{w.t(r.key.title())} {w.n(pct_d(dl(r)))} ({w.n(money(v(r, 'monto')))})" for r in (up[:3] + dn[:2])) + ".", 2,
                            evidence=["bloque programas"]))
@@ -311,7 +317,7 @@ def s_conclusiones(B, F, period, rules, sections: dict[str, list[Para]]) -> list
         t = prod[0]
         ps.append(para("hecho", lambda w: (
             f"**Venta**\n{w.b(short(t.key))} es la presentación con más venta ({w.n(money(v(t, 'monto')))}, {w.n(sh(t))} de share, {w.n(pct_d(dl(t)))} vs "
-            f"{w.t(prev_label(period))})."), 1, evidence=["bloque productos"]))
+            f"{w.t(prev_label(period))}{yoy(w, t)})."), 1, evidence=["bloque productos"]))
     reg, pago = B["region"].rows, B["pago"].rows
     if reg and pago:
         ps.append(para("hecho", lambda w: (

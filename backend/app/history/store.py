@@ -81,6 +81,33 @@ def snapshot_from_result(result, period: Period, targets=None) -> list[KpiRow]:
     return rows
 
 
+def snapshot_from_glp1(blocks: dict, period: Period, targets=None) -> list[KpiRow]:
+    """Foto de KPIs de GLP-1 desde el bloque 'panorama' (periodo actual y sus comparativos)."""
+    pano = blocks.get("panorama")
+    rows: list[KpiRow] = []
+    if not pano:
+        return rows
+    P = pano.rows[0].values
+    py, pp = (f"Q{period.index} {period.year - 1}" if period.periodicity == "trimestral" else str(period.year - 1)), None
+    if period.periodicity == "mensual":
+        pp = period.previous_month_name.capitalize()
+    else:
+        pp = f"Q{period.index - 1} {period.year}" if period.index > 1 else f"Q4 {period.year - 1}"
+    cur = period.label if period.periodicity == "trimestral" else str(period.year)
+    for suf, which, label in (("", "current", cur), ("_prev", "prev_period", pp), ("_yoy", "prev_year", py)):
+        for m in ("monto", "pedidos", "pacientes", "piezas", "ticket"):
+            x = P.get(m + suf)
+            if x is not None and x.v is not None:
+                rows.append(KpiRow("panorama", "TOTAL", which, label, m, x.v))
+    neg = blocks.get("negados")
+    if neg and neg.rows:
+        rows.append(KpiRow("negados", "TOTAL", "current", period.label, "monto",
+                           sum((r.values["monto_negado"].v or Decimal(0)) for r in neg.rows)))
+    if targets is not None and targets.total is not None:
+        rows.append(KpiRow("meta", "TOTAL", "current", period.label, "monto", targets.total))
+    return rows
+
+
 def next_version(con, period: Period) -> int:
     r = con.execute("SELECT COALESCE(MAX(version),0) FROM runs WHERE unit=? AND periodicity=? AND year=? AND idx=?",
                     (period.unit, period.periodicity, period.year, period.index)).fetchone()

@@ -22,6 +22,7 @@ from ..history import store as hist
 from ..models import Period
 from ..narrative import trends
 from ..narrative.executive import build_executive
+from ..narrative.glp1_exec import attainment_glp1, build_executive_glp1
 from ..narrative.targets import attainment
 from ..narrative.writer import Para, verify_all, verify_edited
 from ..pipeline import run_aetops, run_aetops_raw, run_glp1, run_glp1_raw
@@ -232,10 +233,17 @@ def narrative(run_id: str) -> dict:
         except (DataMissing, TemplateMismatch) as e:
             raise ServiceError(f"Faltan datos para la plantilla de GLP-1: {e}", 409) from None
         sections = dict(fill.narrative)
+        ex = build_executive_glp1(res.blocks, res.funnel, per, att=attainment_glp1(res.blocks, _targets(st)))
         ctx = [c for c in st["context"] if c.strip()]
+        if ctx:
+            ex.resumen = ex.resumen + [Para("**Contexto aportado por el equipo**", "contexto", 0, basis="texto del equipo; no verificado")] \
+                + [Para(c, "contexto", 0, basis="texto del equipo; no verificado") for c in ctx]
+        sections["resumen_ejecutivo"], sections["recomendaciones"] = ex.resumen, ex.recomendaciones
+        order = ["resumen_ejecutivo"] + [k for k in sections if k not in ("resumen_ejecutivo", "recomendaciones")] + ["recomendaciones"]
         known = sorted(set().union(*(p.nums for ps in sections.values() for p in ps)))
-        return {"secciones": [{"clave": k, "titulo": SLIDE_TITLES.get(k, k), "parrafos": _paras(ps)} for k, ps in sections.items()],
-                "cifras_validas": known, "problemas": fill.narrative_problems, "ediciones": st["edits"]}
+        return {"secciones": [{"clave": k, "titulo": SLIDE_TITLES.get(k, k), "parrafos": _paras(sections[k])} for k in order],
+                "cifras_validas": known, "problemas": fill.narrative_problems + verify_all(ex.resumen + ex.recomendaciones),
+                "ediciones": st["edits"]}
     att = attainment(res, _targets(st))
     prs = Presentation(tpl)
     fill = (fill_aetops_mensual if per.periodicity == "mensual" else fill_aetops_trimestral)(prs, res, per, None, True, att=att)
@@ -297,7 +305,8 @@ def generate(run_id: str) -> dict:
     shutil.rmtree(out, ignore_errors=True)
     try:
         if st["unit"] == "glp1":
-            b = build_glp1(res, period_of(st), template_path(st), out, narrative=st["edits"] or None, sources=[_input(run_id)])
+            b = build_glp1(res, period_of(st), template_path(st), out, narrative=st["edits"] or None, sources=[_input(run_id)],
+                           context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB)
             st["generated"] = True
             _save(run_id, st)
             return result_info(run_id, b.qa.passed)

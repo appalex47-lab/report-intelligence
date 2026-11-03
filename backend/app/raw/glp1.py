@@ -40,6 +40,7 @@ def clasificar_fuente(valor: str) -> str:
     return "Pago" if PAID_RX.search(valor) else "Orgánico"
 
 
+FUNNEL_COLS = ["visitas", "vistas_producto", "add_to_cart", "begin_checkout", "compras", "carritos_abandonados"]
 FUNNEL = [("ver producto", "vistas_producto"), ("agregar a carrito", "add_to_cart"), ("iniciar compra", "begin_checkout"),
           ("compra", "compras"), ("carritos abandonados", "carritos_abandonados")]
 
@@ -121,6 +122,7 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
         new = str(r.get("paciente_nuevo") or "").strip().upper() in ("SI", "SÍ", "S", "1", "TRUE")
         dims = {"region": str(r.get("region") or r.get("estado") or "").strip(), "pago": str(r.get("forma_pago") or "").strip(),
                 "entrega": str(r.get("modo_entrega") or "").strip(), "productos": prod}
+        dims["total"] = "TOTAL"
         if has_loyalty:
             dims["programas"] = str(r.get("programa_lealtad") or "").strip() or "Sin programa"
         for blk, key in dims.items():
@@ -163,7 +165,7 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
         m["rebotes"] = _d(r.get("sesiones_rebote"), Decimal(0))
         m["segundos"] = _d(r.get("segundos_interaccion_total"), Decimal(0))
         if vista == "general" and not sku:
-            for _, col in FUNNEL:
+            for col in FUNNEL_COLS:
                 funnel[w][col] += _d(r.get(col), Decimal(0))
             continue
         blk = VISTAS.get(vista)
@@ -229,6 +231,26 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
         for r in rows:
             r.share = ind.share(r.values["monto"], tot, "monto/total")
         blocks[blk] = GBlock(blk, "ventas", "agregado", rows, basis="money")
+
+    # panorama: totales del periodo, del anterior y del mismo periodo del año anterior (base del resumen ejecutivo)
+    pano_vals: dict[str, Value] = {}
+    for w, suf in (("cur", ""), ("prev", "_prev"), ("yoy", "_yoy")):
+        a = money.get(("total", w, "TOTAL"))
+        if a is None:
+            continue
+        m = {"monto": _val(a.monto, "sum(monto_venta)", file, "ventas"), "piezas": _val(a.piezas, "sum(piezas)", file, "ventas"),
+             "pedidos": _val(Decimal(len(a.pedidos)), "distinct(id_pedido)", file, "ventas"),
+             "pacientes": _val(Decimal(len(a.pacientes)), "distinct(id_paciente)", file, "ventas"),
+             "pacientes_nuevos": _val(Decimal(len(a.nuevos)), "distinct(id_paciente nuevo)", file, "ventas")}
+        m["ticket"] = ind.ratio(m["monto"], m["pedidos"], "monto/pedidos")
+        for k, x in m.items():
+            pano_vals[k + suf] = x
+        fw = funnel.get(w)
+        if fw:
+            for k in FUNNEL_COLS:
+                pano_vals[k + suf] = _val(fw.get(k), k, file, "trafico")
+    if pano_vals:
+        blocks["panorama"] = GBlock("panorama", "ventas", "agregado", [GRow("TOTAL", "", pano_vals)], basis="panorama")
 
     # bloques de tráfico
     def tvals(acc):
