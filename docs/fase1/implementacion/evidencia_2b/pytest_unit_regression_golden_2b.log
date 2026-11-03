@@ -1,0 +1,16 @@
+........................................................................ [ 17%]
+........................................................................ [ 34%]
+........................................................................ [ 51%]
+........................................................................ [ 68%]
+........................................................................ [ 85%]
+........................sssssssssssssssssssssssssssssssssss              [100%]
+============================= slowest 8 durations ==============================
+50.50s call     tests/unit/test_bridge.py::test_full_flow_without_render_for_both_units
+48.00s call     tests/unit/test_discovery.py::test_end_to_end_full_sheet_cannot_be_forged_and_adds_one_slide[glp1]
+31.43s call     tests/unit/test_bridge.py::test_period_without_data_gives_a_clear_finding_not_a_crash
+31.28s call     tests/unit/test_raw_glp1.py::test_realistic_glp1_sample_scale_and_defects
+31.00s call     tests/unit/test_web.py::test_generate_from_raw_data
+30.24s setup    tests/unit/test_discovery.py::test_fact_sheets_are_rich_flag_what_is_new_and_have_ascii_ids
+27.52s call     tests/unit/test_web.py::test_glp1_generate_via_api
+27.17s call     tests/unit/test_discovery.py::test_end_to_end_full_sheet_cannot_be_forged_and_adds_one_slide[aetops]
+384 passed, 35 skipped in 651.01s (0:10:51)

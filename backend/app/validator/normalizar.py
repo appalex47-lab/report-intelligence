@@ -68,6 +68,10 @@ class Contexto:
                 if ln.monto is not None and ln.piezas is not None and ln.id_pedido and ln.id_paciente and ln.sku and ln.sku in self.catalogo}
 
 
+class ErrorLectura(Exception):
+    """El archivo no existe o no se puede leer como libro de datos crudos (mensaje explicativo, sin traza técnica)."""
+
+
 def _s(v) -> str:
     return "" if v is None else str(v).strip()
 
@@ -76,7 +80,13 @@ def construir_contexto(path: str | Path, period: Period) -> Contexto:
     unidad = period.unit
     specs = (dict(raw_glp1.SPECS) if unidad == "GLP1" else
              {"ventas": raw_aetops.VENTAS_REQ, "catalogo": raw_aetops.CATALOGO_REQ, "negados": raw_aetops.NEGADOS_REQ})
-    tabs, hallazgos = read_tables(path, specs, optional={"negados", "trafico"})
+    if not Path(path).exists():
+        raise ErrorLectura(f"No existe el archivo o carpeta de datos: {Path(path).name}")
+    try:
+        tabs, hallazgos = read_tables(path, specs, optional={"negados", "trafico"})
+    except Exception as e:                                       # noqa: BLE001 — se traduce a un mensaje comprensible
+        raise ErrorLectura(f"No se pudo leer {Path(path).name} como libro de datos crudos ({type(e).__name__}). "
+                           "Verifica que sea un .xlsx válido o una carpeta con un CSV por tabla.") from e
     ctx = Contexto(unidad, period, Path(path).name, hallazgos_lectura=hallazgos)
     for hoja, filas in tabs.items():
         if filas:

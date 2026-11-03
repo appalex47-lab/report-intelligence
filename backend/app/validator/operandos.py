@@ -28,6 +28,8 @@ def pedidos_ventas(ctx, canal: str | None = None) -> Operando:
     ids = ctx.pedidos_sistema_ventas()
     if canal:
         ids = {ln.id_pedido for ln in ctx.lineas_periodo() if ln.id_pedido in ids and ln.valores.get("canal", "") == canal}
+    if not ids:                       # sin pedidos válidos no hay un «cero informado» por la fuente: es un faltante, nunca un 0
+        return Operando(None, SISTEMA_VENTAS, ctx.etiqueta_periodo(), "mes", "ventas.id_pedido distintos (ningún pedido válido en el periodo)")
     return Operando(Decimal(len(ids)), SISTEMA_VENTAS, ctx.etiqueta_periodo(), "mes", "ventas.id_pedido distintos")
 
 
@@ -43,6 +45,8 @@ def carritos_agregados(ctx) -> Operando:
 
 def monto_ventas(ctx) -> Operando:
     ids = ctx.pedidos_sistema_ventas()
+    if not ids:
+        return Operando(None, SISTEMA_VENTAS, ctx.etiqueta_periodo(), "mes", "ventas.monto_venta (ningún pedido válido en el periodo)")
     total = sum((ln.monto for ln in ctx.lineas_periodo() if ln.id_pedido in ids and ln.monto is not None), Decimal(0))
     return Operando(total, SISTEMA_VENTAS, ctx.etiqueta_periodo(), "mes", "ventas.monto_venta")
 
@@ -61,7 +65,7 @@ def razones(ctx, canal: str | None = None) -> list[Razon]:
             Razon("ind01_sistema_ventas", "Relación pedidos (sistema de ventas) / carritos agregados (F-01)", ped, car, ((SISTEMA_VENTAS, GA4),), por_cien=True),
             Razon("ind01_ga4", "Relación compras GA4 / carritos agregados (F-02)", com, car, ((GA4, GA4),), por_cien=True),
             Razon("brecha_compras", "Diferencia compras GA4 frente a pedidos del sistema de ventas (F-03)",
-                  Operando(None if com.valor is None else com.valor - ped.valor, "ga4-sistema_ventas", ctx.etiqueta_periodo(), "mes", "compras GA4 − pedidos del sistema de ventas"),
+                  Operando(None if (com.valor is None or ped.valor is None) else com.valor - ped.valor, "ga4-sistema_ventas", ctx.etiqueta_periodo(), "mes", "compras GA4 − pedidos del sistema de ventas"),
                   ped, (("ga4-sistema_ventas", SISTEMA_VENTAS),), numerador_con_signo=True),
         ]
     return out

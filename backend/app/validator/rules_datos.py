@@ -65,7 +65,13 @@ def r_rel_pac_ped(ctx, d: Definicion) -> list[Resultado]:
 
     cob = Decimal(len(A)) / Decimal(len(ou))
     razon_rec = (Decimal(len(A)) / Decimal(len(pu))) if pu else None
+    no_asig = len(c2)                                                          # C1 inactiva: |C1| = 0
+    tasa_no_asig = (Decimal(no_asig) / Decimal(no_asig + len(elegibles))) if (no_asig + len(elegibles)) else None
+    universo_motor = ctx.pedidos_sistema_ventas()
     evid = {"periodo": ctx.etiqueta_periodo(), "max_pacientes_por_pedido": m, "pedidos_archivo": len(ped),
+            "no_asignables": no_asig, "tasa_no_asignables": None if tasa_no_asig is None else str(tasa_no_asig),
+            "pedidos_universo_motor": len(universo_motor),
+            "nota_universos": "este universo cuenta todo id_pedido con fecha única en el periodo; «pedidos del sistema de ventas» usa los criterios del motor actual (sku en catálogo, importes numéricos, ids no vacíos)",
             "clases": {"C0": 0, "C1": 0, "C2": len(c2), "sin_fecha": len(sf), "E": len(elegibles)},
             "universo_periodo": len(ou), "A": len(A), "B": len(B), "C": len(C), "pacientes_unicos": len(pu),
             "cobertura_paciente": str(cob), "razon_recurrencia": None if razon_rec is None else str(razon_rec),
@@ -96,11 +102,11 @@ def r_rel_pac_ped(ctx, d: Definicion) -> list[Resultado]:
     exactos = sum(c - 1 for c in Counter(tuple(sorted(ln.valores.items())) for ln in lp).values() if c > 1)
     repetidas = sum(c - 1 for c in Counter((ln.id_pedido, ln.sku) for ln in lp).values() if c > 1)
     if exactos:
-        out.append(d.resultado("duplicado_exacto", "warning", n=exactos, evidencia={"n": exactos, "tratamiento": "se informan; no se eliminan"}))
+        out.append(d.resultado("duplicado_exacto", "warning", verificacion="verificado", n=exactos, evidencia={"n": exactos, "tratamiento": "se informan; no se eliminan"}))
     if repetidas:
-        out.append(d.resultado("linea_duplicada", "warning", n=repetidas, evidencia={"n": repetidas, "tratamiento": "se informan; no se eliminan"}))
+        out.append(d.resultado("linea_duplicada", "warning", verificacion="verificado", n=repetidas, evidencia={"n": repetidas, "tratamiento": "se informan; no se eliminan"}))
     if B:
-        out.append(d.resultado("cobertura_paciente", "warning", n_sin_paciente=len(B), cobertura=_pct(cob),
+        out.append(d.resultado("cobertura_paciente", "warning", verificacion="verificado", n_sin_paciente=len(B), cobertura=_pct(cob),
                                evidencia={"sin_paciente": len(B), "cobertura_paciente": str(cob), "muestra_id_pedido": sorted(B)[:5]}))
     else:
         out.append(d.resultado("cobertura_paciente", "valid", evidencia={"cobertura_paciente": str(cob)}))
@@ -133,8 +139,8 @@ def r_cuadre_dim(ctx, d: Definicion) -> list[Resultado]:
     tol = Decimal(str(d.p("tolerancia_conteo") if d.p("tolerancia_conteo") is not None else 0))
     candidatas = d["dimensiones_candidatas"][ctx.unidad]
     declaradas = d["dimensiones_declaradas"]
-    lineas = [ln for ln in ctx.lineas_periodo() if ln.id_pedido and ln.id_paciente]
-    if not lineas:
+    lineas_todas = ctx.lineas_periodo()
+    if not any(ln.id_pedido or ln.id_paciente for ln in lineas_todas):
         return [d.resultado("cuadre_dimensiones", "not_verifiable", clave="columnas_faltantes.not_verifiable",
                             motivo="no hay líneas con fecha en el periodo", faltante=({"archivo": "ventas", "columna": "líneas del periodo", "granularidad": "línea"},))]
     detalle: list[Resultado] = []
@@ -147,10 +153,12 @@ def r_cuadre_dim(ctx, d: Definicion) -> list[Resultado]:
             continue
         for ent, col_ent in d["entidades"].items():
             cats: dict[str, set] = defaultdict(set)
-            for ln in lineas:
+            for ln in lineas_todas:
                 e = getattr(ln, col_ent)
+                if not e:                                  # la línea no identifica a esta entidad: no entra en este análisis (no se elimina del dato)
+                    continue
                 v = _valor_dimension(ctx, dim, ln)
-                cats[e]
+                cats[e]                                    # registra la entidad aunque no tenga valor (queda «sin categoría»)
                 if v:
                     cats[e].add(v)
             total = len(cats)
@@ -172,7 +180,7 @@ def r_cuadre_dim(ctx, d: Definicion) -> list[Resultado]:
                 n_no_excl += 1
                 suma = sum(len(c) for c in cats.values())
                 ej = [{"id": e, "valores": sorted(c)[:5]} for e, c in sorted(multi.items())[:3]]
-                detalle.append(d.resultado(codigo, "warning", clave="dimension_no_exclusiva.warning", dimension=dim["id"], entidad=ent,
+                detalle.append(d.resultado(codigo, "warning", clave="dimension_no_exclusiva.warning", verificacion="verificado", dimension=dim["id"], entidad=ent,
                                            n_multi=_n(len(multi)), n_total=_n(total), total=_n(total), suma=_n(suma),
                                            evidencia={"entidad": ent, "entidades_totales": total, "entidades_con_mas_de_un_valor": len(multi),
                                                       "suma_de_subtotales": suma, "ejemplos": ej, "sin_categoria": sin_cat,

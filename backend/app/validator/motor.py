@@ -41,6 +41,7 @@ class Resultado:
     valor: Decimal | None = None
     estado_validacion: str = ESTADO_VALIDACION
     tipo: str | None = None
+    verificacion: str | None = None               # excepción al estado_verificacion derivado del estado (p. ej. «verificado» en un aviso aritmético)
 
     def __post_init__(self):
         if self.estado not in ESTADOS:
@@ -63,7 +64,7 @@ class Resultado:
     def a_hallazgo(self) -> Finding:
         """Adaptador a `Finding`: `severity` heredado (nunca 'block'); campos de Fase 1 poblados cuando aplican."""
         kw = {"tipo": self.tipo, "regla_id": self.regla_id, "regla_version": self.regla_version}
-        ver = _ESTADO_A_VERIFICACION.get(self.estado)
+        ver = self.verificacion or _ESTADO_A_VERIFICACION.get(self.estado)
         if ver:
             kw["estado_verificacion"] = ver
             if ver == "no_verificable":
@@ -129,11 +130,11 @@ class Definicion:
         return plantilla.format(**kw)
 
     def resultado(self, codigo: str, estado: str, *, clave: str | None = None, evidencia: dict | None = None, faltante=(),
-                  valor: Decimal | None = None, severity: str | None = None, **kw) -> Resultado:
+                  valor: Decimal | None = None, severity: str | None = None, verificacion: str | None = None, **kw) -> Resultado:
         clave = clave or f"{codigo}.{estado}"
         sev = severity or self.severidad_de(clave, estado)
         return Resultado(self.id, self.version, codigo, estado, sev, self.mensaje(clave, **kw), evidencia or {},
-                         tuple(faltante), valor, self.validacion, self.datos.get("tipo"))
+                         tuple(faltante), valor, self.validacion, self.datos.get("tipo"), verificacion)
 
 
 def catalogo(cfg: dict | None = None, registro: dict | None = None, overrides: dict | None = None) -> dict[str, Definicion]:
@@ -172,7 +173,11 @@ def ejecutar(ctx, ids: list[str] | None = None, cfg: dict | None = None, registr
     """
     from . import rules_conc, rules_datos  # noqa: F401  (registran sus funciones)
     out: list[Resultado] = []
-    for rid, d in catalogo(cfg, registro, overrides).items():
+    cat = catalogo(cfg, registro, overrides)
+    desconocidas = [i for i in (ids or []) if i not in cat]
+    if desconocidas:
+        raise ValueError(f"Regla(s) inexistente(s) en el catálogo: {desconocidas}; opciones: {list(cat)}")
+    for rid, d in cat.items():
         if ids and rid not in ids:
             continue
         if ctx.unidad not in d["unidades"]:

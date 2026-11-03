@@ -101,5 +101,13 @@ python -m backend.app.validator.motor data/ejemplos/GLP1_crudo_ejemplo.xlsx --un
 ## 6. Lo que este bloque NO hace
 No modifica pipeline, importadores, narrativa, IA, plantillas, láminas, fórmulas ni cifras; no cambia `has_blockers()`, `severity` ni el aviso `TRAFICO_PURCHASE_DIFFERS`; no implementa E1/E2 parametrizados, el anexo de calidad, QA, anonimización ni procedencia completa; no escribe en el historial; no envía datos fuera del navegador.
 
-## 7. Dependencias para la Fase 2B
+## 6.1 Ajustes de la Fase 2B (defectos corregidos tras la auditoría)
+- Sin pedidos válidos en el periodo, «pedidos del sistema de ventas» es un **faltante** (no un cero): ninguna razón muestra 0 % por falta de datos.
+- `R-CUADRE-DIM` analiza cada entidad con sus propias líneas (una línea sin paciente sigue contando para el pedido).
+- `Resultado.verificacion` permite marcar `verificado` a los avisos aritméticos (R-CONC-COMPRAS, duplicados, solapamiento observado), conforme a la especificación.
+- `motor.ejecutar(ids=[…])` rechaza reglas inexistentes; `normalizar.construir_contexto` lanza `ErrorLectura` con un mensaje comprensible si el archivo no existe o no es legible.
+- La evidencia de `R-REL-PAC-PED` incluye `no_asignables`, `tasa_no_asignables` (F-06) y `pedidos_universo_motor`.
+Detalle en `docs/fase1/implementacion/F2B_INFORME_AUDITORIA.md`.
+
+## 7. Dependencias para la Fase 2B (histórico de la 2A)
 Pruebas exhaustivas T-01…T-05, T-10, T-21 y T-22 con las fixtures funcionales (`tools/make_fixtures_fase1.py` aún solo cubre modelo y catálogo); decidir el cableado (flag `validacion_fase1`) hacia `web/service.analyze` y la interfaz; confirmar AMB-1, AMB-5, AMB-7 y AMB-9; decidir `gravedad` por regla; actualizar `validacion_registro.json` tras aprobar la validación sintética; ejecutar en Pyodide (el motor usa solo biblioteca estándar y `openpyxl`, ya empaquetados, pero no se probó en el navegador).

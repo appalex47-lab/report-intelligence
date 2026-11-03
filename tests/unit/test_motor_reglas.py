@@ -133,7 +133,8 @@ def test_a_hallazgos_usa_severity_heredado_sin_bloquear_y_llena_los_campos_de_fa
     assert (h.regla_id, h.regla_version, h.efecto_generacion, h.estado_verificacion) == ("R-REL-PAC-PED", "1.0.0", "advertir", "inconsistente")
     nv = next(h for h in motor.a_hallazgos(motor.ejecutar(ctx_de(ejemplo_spec(), "AETOPS"))) if h.id.startswith("R-CONC"))
     assert nv.severity == "info" and nv.efecto_generacion == "informar"
-    assert all(h.estado_verificacion != "verificado" for h in hs)                                         # los válidos no son hallazgos
+    assert all(h.estado_verificacion in ("inconsistente", "supuesto", "verificado", "no_verificable", None) for h in hs)
+    assert not any(h.id.endswith("cobertura_paciente") and h.estado_verificacion == "supuesto" for h in hs)     # observación aritmética: verificada
 
 
 # ------------------------------------------------------------------------------------------------ R-REL-PAC-PED

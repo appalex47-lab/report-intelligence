@@ -32,7 +32,7 @@ def r_conc_compras(ctx, d: Definicion) -> list[Resultado]:
     evid = base | {"brecha": str(brecha), "umbral": str(umbral), "aviso_heredado": "TRAFICO_PURCHASE_DIFFERS (raw/glp1.py): se emite si |brecha| > umbral; no se modifica",
                    "hipotesis_a_validar": d["hipotesis"]}
     if abs(brecha) > Decimal(str(umbral)):
-        return [d.resultado("conciliacion_compras", "warning", valor=brecha, evidencia=evid, hipotesis=", ".join(d["hipotesis"]), **kw)]
+        return [d.resultado("conciliacion_compras", "warning", verificacion="verificado", valor=brecha, evidencia=evid, hipotesis=", ".join(d["hipotesis"]), **kw)]
     return [d.resultado("conciliacion_compras", "valid", valor=brecha, evidencia=evid, **kw)]
 
 
