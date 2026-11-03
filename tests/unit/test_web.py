@@ -1,6 +1,7 @@
 """API de la pantalla de revisión (sin plantillas reales: la generación se prueba solo si existen en templates/)."""
 import importlib
 import io
+import shutil
 from pathlib import Path
 
 import pytest
@@ -9,7 +10,7 @@ from fastapi.testclient import TestClient
 from tests.fixtures import build_base
 
 ROOT = Path(__file__).resolve().parents[2]
-HAS_TPL = (ROOT / "templates/aetops-mensual/1/template.pptx").exists()
+HAS_TPL = (ROOT / "templates/aetops-mensual/1/template.pptx").exists() and bool(shutil.which("soffice"))   # estos tests renderizan con LibreOffice
 
 
 @pytest.fixture()
@@ -141,7 +142,7 @@ def test_glp1_raw_validates_via_api(client, tmp_path):
     assert not [f for f in a["findings"] if f["severity"] == "block"] and a["targets_required"] is False
 
 
-@pytest.mark.skipif(not (ROOT / "templates/glp1-mensual/1/template.pptx").exists(), reason="plantilla GLP-1 real no disponible")
+@pytest.mark.skipif(not (ROOT / "templates/glp1-mensual/1/template.pptx").exists() or not shutil.which("soffice"), reason="requiere plantilla GLP-1 real y LibreOffice")
 def test_glp1_generate_via_api(client, tmp_path):
     import importlib.util
     spec = importlib.util.spec_from_file_location("mg", ROOT / "tools/make_raw_glp1_synthetic.py")

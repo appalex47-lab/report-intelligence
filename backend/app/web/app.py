@@ -81,6 +81,21 @@ def files(rid: str, name: str):
     return FileResponse(S.file_path(rid, name), filename=name if not name.endswith(".png") else None)
 
 
+@app.get("/api/templates")
+def templates():
+    return S.list_templates()
+
+
+@app.post("/api/templates/{key}")
+async def template_upload(key: str, file: UploadFile = File(...)):
+    return S.save_template(key, file.filename or "", await file.read(S.MAX_UPLOAD + 1))
+
+
+@app.get("/api/info")
+def info():
+    return {"render": S.RENDER, "browser": S.IN_BROWSER}
+
+
 @app.get("/api/history/runs")
 def h_runs(unit: str | None = None):
     return S.history_runs(unit)

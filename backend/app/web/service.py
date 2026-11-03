@@ -8,6 +8,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import uuid
 import zipfile
 from pathlib import Path
@@ -34,6 +35,10 @@ RUNS_DIR = Path(os.environ.get("REPORT_RUNS_DIR", ROOT / "runs"))
 TEMPLATES_DIR = Path(os.environ.get("REPORT_TEMPLATES_DIR", ROOT / "templates"))
 HISTORY_DB = Path(os.environ.get("REPORT_HISTORY_DB", ROOT / "historial" / "historial.sqlite"))
 MAX_UPLOAD = 25 * 1024 * 1024
+IN_BROWSER = sys.platform == "emscripten"                       # Pyodide: sin LibreOffice (ni PDF ni QA visual)
+RENDER = (not IN_BROWSER) and bool(shutil.which("soffice") or shutil.which("libreoffice"))
+TEMPLATE_KEYS = {"aetops-mensual": "AETOPS mensual", "aetops-trimestral": "AETOPS trimestral", "glp1-mensual": "GLP-1 mensual",
+                 "glp1-trimestral": "GLP-1 trimestral"}
 ID_RE = re.compile(r"^[0-9a-f]{32}$")
 LINES = ["AE-A", "AE-B", "AE-C", "HYR"]
 SLIDE_TITLES = {
@@ -306,12 +311,13 @@ def generate(run_id: str) -> dict:
     try:
         if st["unit"] == "glp1":
             b = build_glp1(res, period_of(st), template_path(st), out, narrative=st["edits"] or None, sources=[_input(run_id)],
-                           context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB)
+                           context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB, render=RENDER)
             st["generated"] = True
             _save(run_id, st)
             return result_info(run_id, b.qa.passed)
         b = build_aetops(res, period_of(st), template_path(st), out, narrative=st["edits"] or None,
-                         context=st["context"] or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st))
+                         context=st["context"] or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st),
+                         render=RENDER)
     except ReportBlocked as e:
         raise ServiceError(f"No se genera: hay hallazgos bloqueantes ({e}).", 409) from None
     except (DataMissing, TemplateMismatch) as e:
@@ -364,3 +370,30 @@ def machote(unit: str, periodicity: str, year: int, index: int, example: bool = 
     if unit not in ("aetops", "glp1") or periodicity not in ("mensual", "trimestral") or not (1 <= index <= (12 if periodicity == "mensual" else 4)):
         raise ServiceError("Periodo no válido.")
     return mod.make(unit, period_of(st), Path(tempfile.mkdtemp(prefix="machote_")), example)
+
+
+# ------------------------------------------------------------------ plantillas (se cargan una vez; no se versionan: llevan marca)
+def list_templates() -> list[dict]:
+    return [{"key": k, "label": v, "available": (TEMPLATES_DIR / k / "1" / "template.pptx").exists()} for k, v in TEMPLATE_KEYS.items()]
+
+
+def save_template(key: str, filename: str, data: bytes) -> list[dict]:
+    if key not in TEMPLATE_KEYS:
+        raise ServiceError("Formato de plantilla desconocido.", 404)
+    if not filename.lower().endswith(".pptx") or data[:2] != b"PK":
+        raise ServiceError("La plantilla debe ser un .pptx.")
+    if len(data) > MAX_UPLOAD:
+        raise ServiceError("La plantilla supera 25 MB.", 413)
+    import io
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            if "ppt/presentation.xml" not in z.namelist():
+                raise ServiceError("El archivo no es una presentación de PowerPoint.")
+            if any(n.lower().endswith(("vbaproject.bin",)) for n in z.namelist()):
+                raise ServiceError("La plantilla contiene macros; no se admite.")
+    except zipfile.BadZipFile:
+        raise ServiceError("El archivo está dañado o no es .pptx.") from None
+    d = TEMPLATES_DIR / key / "1"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "template.pptx").write_bytes(data)
+    return list_templates()

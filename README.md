@@ -1,155 +1,52 @@
 # Report Intelligence
 
-Aplicación web para automatizar reportes ejecutivos **AETOPS** y **GLP-1**.
+Reportes ejecutivos **AETOPS** y **GLP-1** (Excel → PPTX) con cálculos deterministas, narrativa verificada, resumen ejecutivo,
+recomendaciones, historial y tendencias.
 
-100 % estática · Compatible con **GitHub Pages**.
+**Todo corre en GitHub, sin servidor ni localhost**: la aplicación es un sitio de **GitHub Pages**; el motor de cálculo (Python)
+se ejecuta **dentro de tu navegador** (Pyodide). Los Excel y los reportes **nunca salen de tu equipo**.
 
----
+## Puesta en marcha (una sola vez)
 
-## Demo / uso
+1. En GitHub: **Settings → Pages → Build and deployment → Source: _GitHub Actions_**.
+2. Haz merge a `main` (o ejecuta **Actions → Publicar en GitHub Pages → Run workflow**). El workflow arma el sitio y lo publica en
+   `https://<usuario>.github.io/<repositorio>/`.
+3. Abre esa dirección. La primera vez carga el motor (unos segundos; después queda en caché).
+4. Pestaña **Plantillas**: carga una vez los PPTX originales (AETOPS mensual/trimestral y GLP-1 mensual/trimestral). Se guardan en
+   tu navegador; no se publican en el repositorio porque llevan marca y datos.
 
-1. Abre la app en el navegador.
-2. **Generar reporte** → elige unidad (AETOPS / GLP-1) y periodo.
-3. Carga el Excel operativo o el machote.
-4. **Procesar y validar** → revisa KPIs.
-5. **Generar PPTX** (descarga en el navegador).
+## Uso
 
-Los cálculos son determinísticos (JavaScript). Excel es la fuente de datos; el motor de cálculos es la fuente de verdad.
+**Cargar → Validar → Metas y contexto → Revisar narrativa → Generar.**
 
----
+- Entrada: el libro de datos crudos (`ventas`, `catalogo`, `negados` y, en GLP-1, `trafico`; ver `docs/CONTRATO_DATOS.md`) o los
+  machotes por bloques. La pantalla de carga descarga el machote del periodo.
+- La meta general es obligatoria en AETOPS y opcional en GLP-1. El contexto del equipo sale en el resumen, marcado como no verificado.
+- Cada texto de la narrativa se puede editar; toda cifra nueva se verifica contra los datos.
+- Se descarga el **PPTX** con tablas y textos editables.
+- El **historial** (inmutable, con versiones) se guarda en tu navegador; se puede exportar e importar (pestaña *Historial*).
 
-## Stack
+## Qué hay (y qué no) en la versión de GitHub
 
-| Capa | Tecnología |
-|------|------------|
-| UI | HTML5, CSS3, Alpine.js |
-| Excel | SheetJS (xlsx.js) |
-| Cálculos | JavaScript puro |
-| PPTX | PptxGenJS |
-| Historial | localStorage |
-| Hosting | GitHub Pages (estático) |
+| | En el navegador (Pages) | Con LibreOffice (Docker / CI) |
+|---|---|---|
+| Validación, cálculos, narrativa, resumen, recomendaciones, historial | ✅ | ✅ |
+| PPTX editable | ✅ | ✅ |
+| QA estructural (tablas, imágenes, texto viejo, cifras sin evidencia, estimación de desborde) | ✅ | ✅ |
+| PDF y QA visual (desborde y colisiones renderizados) | ❌ | ✅ |
 
-No requiere backend ni Python en el servidor.
+El navegador no puede ejecutar LibreOffice. Para el **PDF** hay un flujo opcional en GitHub: **Actions → «PDF en GitHub»**
+(sube el `.pptx` a `convertir/` en un repositorio privado y descarga el PDF del artefacto). O abre el PPTX en PowerPoint → *Guardar como PDF*.
 
----
-
-## Estructura
-
-```
-report-intelligence/
-├── index.html
-├── css/styles.css
-├── js/
-│   ├── app.js
-│   ├── import-engine.js
-│   ├── calculations/
-│   │   ├── common.js
-│   │   ├── aetops.js
-│   │   └── glp1.js
-│   └── generators/
-│       ├── pptx-aetops.js
-│       └── pptx-glp1.js
-├── data/                    # machotes de ejemplo
-├── .nojekyll                # evita que Jekyll bloquee módulos ES
-└── .github/workflows/pages.yml
-```
-
----
-
-## Despliegue en GitHub Pages
-
-### Opción A — Repositorio dedicado (recomendado)
-
-1. Crea un repo vacío en GitHub (ej. `report-intelligence`).
-2. Sube **el contenido de esta carpeta** (no la carpeta padre):
+## Desarrollo
 
 ```bash
-cd report-intelligence
-git init
-git add .
-git commit -m "Report Intelligence — app estática"
-git branch -M main
-git remote add origin https://github.com/<USUARIO>/report-intelligence.git
-git push -u origin main
+pip install -r requirements.txt
+python -m pytest tests/unit -q                     # las pruebas con plantillas reales se omiten si no están
+python tools/build_site.py --out _site             # arma el sitio estático
+python tools/make_realistic_samples.py --salida data/ejemplos   # datos de ejemplo (inventados) a escala real
 ```
 
-3. En el repo: **Settings → Pages**
-   - Source: **GitHub Actions** (si usas el workflow incluido), **o**
-   - Source: **Deploy from a branch** → branch `main` → folder `/ (root)`
-4. Espera 1–2 minutos. La URL será:
-
-```
-https://<USUARIO>.github.io/report-intelligence/
-```
-
-### Opción B — Carpeta `/docs` en un repo existente
-
-1. Copia el contenido de esta app a `docs/` en tu repo.
-2. Settings → Pages → Deploy from branch → `main` → `/docs`.
-
-### Importante
-
-- Debe existir el archivo **`.nojekyll`** en la raíz publicada (ya incluido).
-- Los paths son relativos (`css/`, `js/`); funciona en subrutas de GitHub Pages.
-- La primera carga requiere red (CDN: Alpine, SheetJS, PptxGenJS).
-
----
-
-## Uso local
-
-```bash
-cd report-intelligence
-npx serve .
-# o
-python -m http.server 8080
-```
-
-Abre `http://localhost:3000` (o el puerto indicado).  
-No abras `index.html` como `file://` si usas módulos ES: algunos navegadores los bloquean.
-
----
-
-## Machotes
-
-Incluidos en `data/`:
-
-- `MACHETE_AETOPS_Report_Intelligence.xlsx`
-- `MACHETE_GLP1_Report_Intelligence.xlsx`
-
-También acepta los Excel operativos mensuales/trimestrales (hoja Base / hojas numeradas).
-
----
-
-## Fórmulas AETOPS (motor)
-
-| KPI | Fórmula |
-|-----|---------|
-| Size B | Piezas ÷ Pacientes |
-| V. Paciente | Monto Venta ÷ Pacientes |
-| Ticket Promedio | Monto Venta ÷ Pedidos |
-| % Δ | (Actual − Anterior) ÷ Anterior |
-| Share | Monto grupo ÷ Monto total |
-
-Ranking productos: excluye venta 0 en ambos periodos, acumula ~80 % de la venta, tope 15, mínimo 8, empates se mantienen.
-
----
-
-## Estado
-
-| Fase | Estado |
-|------|--------|
-| Auditoría y arquitectura | ✅ |
-| Importación Excel + cálculos + UI | ✅ |
-| Generación PPTX (browser) | ✅ |
-| PPTX/PDF de referencia (Python, offline) | ✅ (en `/artifacts`) |
-| GitHub Pages | ✅ (esta carpeta lista) |
-| Narrativa IA | ⏳ |
-| QA formal / matriz de trazabilidad | ⏳ |
-
----
-
-## Limitaciones conocidas
-
-- La calidad del PPTX generado **en el navegador** (PptxGenJS) puede diferir del generador Python offline (gráficas como imagen, más slides).
-- MoM depende de que el Excel traiga periodos distintos; si Agosto = Septiembre en el archivo, Δ MoM = 0 %.
-- Historial solo en el navegador local (localStorage), no sincroniza entre dispositivos.
+- Motor y reglas: `backend/` (ver `backend/README.md`, `docs/`).
+- Servidor opcional (Docker, con PDF y QA visual): `docker-compose up` — no es necesario para usar la aplicación.
+- La app anterior (JavaScript) queda en `legacy/` y se publica en `/legacy/`.

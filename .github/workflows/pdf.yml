@@ -1,0 +1,32 @@
+name: PDF en GitHub (opcional)
+
+# La app en el navegador genera el PPTX. Este flujo convierte a PDF con LibreOffice cuando lo necesites:
+#   1) sube el .pptx a la carpeta `convertir/` (GitHub → Add file → Upload files) — usa un repositorio PRIVADO,
+#   2) el workflow genera el PDF y lo deja como artefacto de la ejecución (Actions → esta ejecución → Artifacts).
+# También se puede lanzar a mano desde Actions → "Run workflow".
+on:
+  push:
+    paths: ["convertir/**.pptx"]
+  workflow_dispatch:
+
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar LibreOffice y la fuente de sustitución (solo para el PDF; el PPTX conserva Aptos Narrow)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-crosextra-carlito
+          mkdir -p ~/.config/fontconfig && cp docker/fonts.conf ~/.config/fontconfig/fonts.conf
+      - name: Convertir
+        run: |
+          shopt -s nullglob
+          files=(convertir/*.pptx)
+          if [ ${#files[@]} -eq 0 ]; then echo "No hay .pptx en convertir/"; exit 1; fi
+          mkdir -p pdf_out
+          soffice --headless --convert-to pdf --outdir pdf_out "${files[@]}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdf
+          path: pdf_out/*.pdf

@@ -1,6 +1,7 @@
 """Generador GLP-1 mensual (requiere la plantilla real, que no se versiona)."""
 import importlib.util
 import re
+import shutil
 from pathlib import Path
 
 import pytest
@@ -14,7 +15,7 @@ from backend.app.pipeline import run_glp1_raw
 
 ROOT = Path(__file__).resolve().parents[2]
 TPL = ROOT / "templates/glp1-mensual/1/template.pptx"
-pytestmark = pytest.mark.skipif(not TPL.exists(), reason="plantilla GLP-1 real no disponible (no se versiona)")
+pytestmark = pytest.mark.skipif(not TPL.exists() or not shutil.which("soffice"), reason="requiere la plantilla real (no se versiona) y LibreOffice")
 spec = importlib.util.spec_from_file_location("mg", ROOT / "tools/make_raw_glp1_synthetic.py")
 mg = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mg)
