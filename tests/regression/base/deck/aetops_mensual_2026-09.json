@@ -1,0 +1,455 @@
+{
+ "diapositivas": [
+  {
+   "n_formas": 7,
+   "sha256": "9edc8fa14bb97df6b02b1d5a60099d6df27f07210e1a02b93abefd0a88701f19",
+   "slide": 1
+  },
+  {
+   "n_formas": 8,
+   "sha256": "cf9da944737a5b49bf3d5f0262138b0a672088c98819b004440d3ba8ffeaaa7e",
+   "slide": 2
+  },
+  {
+   "n_formas": 8,
+   "sha256": "973613c09411dcd2c69e194e83b15412f6d1230972ca7b0bfa4e5b9109008201",
+   "slide": 3
+  },
+  {
+   "n_formas": 8,
+   "sha256": "62e85c23d0943981188359a48d4514b8927e788d5fdc85a2d35ea7eaeff130d2",
+   "slide": 4
+  },
+  {
+   "n_formas": 8,
+   "sha256": "ec765f46b79a7118c412394c24f943dbd3af585fed492b2dc32401c63ee16d1e",
+   "slide": 5
+  },
+  {
+   "n_formas": 8,
+   "sha256": "2e2929d2c9451a29e2b6864b442f21e597f32c4af755d47c5fdebbbabe0c1da4",
+   "slide": 6
+  },
+  {
+   "n_formas": 8,
+   "sha256": "311d2fb122c78f3cac1eb4230ad5b7aba23a4423b26522dcd322cbc35f427d58",
+   "slide": 7
+  },
+  {
+   "n_formas": 12,
+   "sha256": "fcd47c0004942ad063967b77b380e9f343fe5ba192288e61f52ffb81b95d003e",
+   "slide": 8
+  },
+  {
+   "n_formas": 8,
+   "sha256": "a141ae20c5d43f4f40377e5775d414364ffb84636001392cb411aae2d82d7477",
+   "slide": 9
+  },
+  {
+   "n_formas": 9,
+   "sha256": "4acdc3637896ae593a2d700ee06d9fb825bc72eac259c035f1ac6515060503ac",
+   "slide": 10
+  },
+  {
+   "n_formas": 9,
+   "sha256": "f4192ecdc0f942b084faf1429f1230bb32d02d909ce175dcbfae28a6675251a9",
+   "slide": 11
+  },
+  {
+   "n_formas": 7,
+   "sha256": "fc8a94d1d3bf77d9ad5563bdfb946e5df63f61ee47a8b520e1e01d19304a4bcf",
+   "slide": 12
+  },
+  {
+   "n_formas": 7,
+   "sha256": "c31509bea7fd03267fa6937f3a6ba80be5c95aa691f2d6412a52db674cb69d41",
+   "slide": 13
+  }
+ ],
+ "escenario": "aetops_mensual_2026-09",
+ "n_diapositivas": 13,
+ "narrativa": {
+  "canal_mom": [
+   {
+    "regla": "",
+    "texto": "LLAMADAS GOOGLE es el canal que más aporta al crecimiento: +$639.1 K (58% del avance), con venta +27% y share de 21% a 24%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "WHATSAPP crece +25% en venta (piezas +17%, pacientes +14%, pedidos +17%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "crece menos que el total y su share baja; venta ↑ con pacientes ↓",
+    "texto": "APP FESA crece +8% en venta (piezas +3%, pacientes -2%, pedidos +3%), pero pierde participación (27% → 27%): otros canales crecen más rápido. El avance se explica más por valor por paciente (+11%) que por pacientes (-2%).",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "",
+    "texto": "ECOMMERCE se mantiene estable (-3%) (piezas -3%, pacientes +3%, pedidos +2%) y pierde participación (41% → 36%).",
+    "tipo": "hecho"
+   }
+  ],
+  "canal_yoy": [
+   {
+    "regla": "",
+    "texto": "ECOMMERCE es el canal que más aporta al crecimiento: +$1.61 M (37% del avance), con venta +58% y 36% de share (sin cambio relevante).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "APP FESA crece +57% en venta (piezas +53%, pacientes +44%, pedidos +51%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "LLAMADAS GOOGLE crece +59% en venta (piezas +52%, pacientes +51%, pedidos +56%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "crece menos que el total y su share baja",
+    "texto": "WHATSAPP crece +42% en venta (piezas +46%, pacientes +54%, pedidos +53%), pero pierde participación (14% → 13%): otros canales crecen más rápido.",
+    "tipo": "interpretacion"
+   }
+  ],
+  "cat_mom": [
+   {
+    "regla": "",
+    "texto": "Oncología y Hematología es la categoría que más aporta al crecimiento: +$821.5 K (75% del avance), con venta +13% y share de 56% a 58%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Neurología crece +30% en venta (piezas +32%, pacientes +28%, pedidos +30%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Infectología baja -24% en venta (piezas -5%, pacientes 0%, pedidos -7%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Resto: Ortopedia , Reumatología +10%, Inmunología -8%, Gastroenterología -11%, Dermatología +4%.",
+    "tipo": "hecho"
+   }
+  ],
+  "cat_yoy": [
+   {
+    "regla": "",
+    "texto": "Oncología y Hematología es la categoría que más aporta al crecimiento: +$2.91 M (67% del avance), con venta +70% y share de 53% a 58%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Ortopedia , Reumatología crece +63% en venta (piezas +58%, pacientes +53%, pedidos +64%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Neurología crece +64% en venta (piezas +99%, pacientes +79%, pedidos +80%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Resto: Dermatología +38%, Gastroenterología +18%, Inmunología +4%, Infectología +4%.",
+    "tipo": "hecho"
+   }
+  ],
+  "conclusiones": [
+   {
+    "regla": "",
+    "texto": "El monto de venta creció +56% YoY y +10% MoM",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "La cantidad de piezas creció +52% YoY y +5% MoM",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "La cantidad de pacientes creció +39% YoY y +2% MoM",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "La cantidad de pedidos creció +55% YoY y +6% MoM",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "El ticket promedio creció 0% YoY y +4% MoM",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Insights clave:",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "descomposición de la venta (pacientes × piezas por paciente × valor por pieza)",
+    "texto": "En septiembre, la venta llega a $12.22 M (+56% YoY y +10% MoM); el cambio anual se explica principalmente por volumen (94% del cambio).",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "",
+    "texto": "Por canal, ECOMMERCE es el mayor aporte al avance anual (+$1.61 M, share 36%) y WHATSAPP el que menos aporta (+$468.2 K).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Por línea, AE-A es el mayor aporte al avance anual (+$3.04 M, share 61%) y HYR el que menos aporta (+$14.9 K).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "En productos, el crecimiento lo encabezan Lenalidomida, Palbociclib, Enzalutamida; las caídas más relevantes están en Sofosbuvir/velpatasvir, Denosumab, Trastuzumab.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "definición de negado (venta no concretada) — pendiente de validar",
+    "texto": "Los negados suman $399.0 K (3% de la venta del periodo): venta no concretada que conviene revisar para su recuperación.",
+    "tipo": "interpretacion"
+   }
+  ],
+  "crecimiento": [
+   {
+    "regla": "",
+    "texto": "El crecimiento lo encabezan Lenalidomida (+$331.0 K), Palbociclib (+$274.4 K), Enzalutamida (+$209.1 K), Etanercept (+$174.0 K), Ocrelizumab (+$164.5 K).",
+    "tipo": "hecho"
+   }
+  ],
+  "decrecimiento": [
+   {
+    "regla": "",
+    "texto": "Las principales caídas son Sofosbuvir/velpatasvir (-$166.2 K), Denosumab (-$120.8 K), Trastuzumab (-$116.5 K), Secukinumab (-$65.5 K), Adalimumab (-$58.3 K).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Los 10 de la lista suman -$658.3 K; se concentran en AE-A (50%) y HYR (25%).",
+    "tipo": "hecho"
+   }
+  ],
+  "descubrimientos": [
+   {
+    "regla": "Venta = Pacientes × (Piezas/Paciente) × (Venta/Pieza); aporte = ln(factor₁/factor₀) ÷ ln(venta₁/venta₀)",
+    "texto": "Septiembre cierra con una venta de $12.22 M, +56% vs 2025 y +10% vs agosto; el cambio anual se explica principalmente por volumen (94% del cambio).",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "",
+    "texto": "ECOMMERCE es el canal que más aporta: +$1.61 M (37% del avance).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "AE-A concentra 61% de la venta y aporta 70% del crecimiento.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Coinciden caída y negados en Sofosbuvir/velpatasvir (-$166.2 K; negados $20.4 K), Denosumab (-$120.8 K; negados $9.8 K), Trastuzumab (-$116.5 K; negados $20.7 K).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Los negados suman $399.0 K, equivalente a 3% de la venta, concentrados en AE-A (88%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Lenalidomida es la mayor alza: +$331.0 K.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Sofosbuvir/velpatasvir es la mayor caída: -$166.2 K.",
+    "tipo": "hecho"
+   }
+  ],
+  "linea_mom": [
+   {
+    "regla": "",
+    "texto": "AE-A es la línea que más aporta al crecimiento: +$700.6 K (64% del avance), con venta +10% y 61% de share (sin cambio relevante).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "AE-B crece +13% en venta (piezas +12%, pacientes +6%, pedidos +13%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "HYR baja -24% en venta (piezas -5%, pacientes 0%, pedidos -7%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "AE-C crece +14% en venta (piezas +11%, pacientes +7%, pedidos +9%).",
+    "tipo": "hecho"
+   }
+  ],
+  "linea_yoy": [
+   {
+    "regla": "",
+    "texto": "AE-A es la línea que más aporta al crecimiento: +$3.04 M (70% del avance), con venta +69% y share de 56% a 61%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "crece menos que el total y su share baja",
+    "texto": "AE-B crece +41% en venta (piezas +43%, pacientes +36%, pedidos +43%), pero pierde participación (36% → 32%): otras líneas crecen más rápido.",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "crece menos que el total y su share baja",
+    "texto": "AE-C crece +53% en venta (piezas +47%, pacientes +47%, pedidos +52%), pero pierde participación (4% → 4%): otras líneas crecen más rápido.",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "crece menos que el total y su share baja",
+    "texto": "HYR se mantiene estable (+4%) (piezas +47%, pacientes +53%, pedidos +52%), pero pierde participación (4% → 3%): otras líneas crecen más rápido.",
+    "tipo": "interpretacion"
+   }
+  ],
+  "negados": [
+   {
+    "regla": "",
+    "texto": "El monto negado total asciende a $399.0 K, equivalente a 3% de la venta del periodo, concentrado principalmente en AE-A con $350.1 K y 88% del total, seguido de HYR con $40.6 K y 10%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Los productos con mayor monto negado son Bortezomib ($104.7 K), Bevacizumab ($74.1 K), Enzalutamida ($66.1 K), que suman 61% del total.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "En total se registran 85 pedidos y 111 piezas negadas.",
+    "tipo": "hecho"
+   }
+  ],
+  "panorama": [
+   {
+    "regla": "",
+    "texto": "En septiembre, la venta total AETOP llega a $12.22 M, +56% vs 2025 y +10% vs agosto.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "En el comparativo anual, pacientes +39%, piezas +52% y pedidos +55%; el ticket promedio 0%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "Venta = Pacientes × (Piezas/Paciente) × (Venta/Pieza); aporte = ln(factor₁/factor₀) ÷ ln(venta₁/venta₀)",
+    "texto": "El cambio anual en venta se explica principalmente por volumen: pacientes y piezas por paciente aportan 94% del cambio y el valor por pieza 6%.",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "",
+    "texto": "Contra agosto, piezas +5%, pacientes +2% y pedidos +6%; el avance mensual es menor al anual.",
+    "tipo": "hecho"
+   }
+  ],
+  "productos": [
+   {
+    "regla": "",
+    "texto": "Enzalutamida es el producto de mayor venta: $1.04 M (9% de la venta total); los 4 primeros suman 31%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Entre los 20 productos listados, el cambio vs el mes anterior es +$1.16 M: AE-A +$700.6 K, AE-B +$457.5 K.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "la línea aparece en el Top de alzas y en el de bajas",
+    "texto": "En AE-A conviven alzas (Lenalidomida +$331.0 K) y bajas (Denosumab -$120.8 K): lectura mixta dentro de la línea.",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "la línea aparece en el Top de alzas y en el de bajas",
+    "texto": "En AE-B conviven alzas (Etanercept +$174.0 K) y bajas (Secukinumab -$65.5 K): lectura mixta dentro de la línea.",
+    "tipo": "interpretacion"
+   }
+  ],
+  "recomendaciones": [
+   {
+    "regla": "el producto aparece en la lista de caídas y en la de negados (coincidencia, no causa)",
+    "texto": "1. [ALTA] Revisar la disponibilidad de Sofosbuvir/velpatasvir, Denosumab, Trastuzumab: caen $462.8 K y acumulan $211.2 K en negados. Seguimiento: negados y venta de esos productos.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "línea con ≥ 50 % de la venta total (concentración)",
+    "texto": "2. [MEDIA] Proteger AE-A: concentra 61% de la venta; asegurar abasto y continuidad de sus productos principales (Enzalutamida, Bevacizumab). Seguimiento: venta y pacientes de AE-A cada mes.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "negado = producto sin stock negado a la venta (definición del negocio); el escenario es ilustrativo, no pronóstico",
+    "texto": "3. [MEDIA] Priorizar el abasto de los productos más negados (Bortezomib, Bevacizumab, Enzalutamida): $399.0 K (3% de la venta) corresponden a productos sin stock que se negaron a la venta. Escenario ilustrativo: recuperar 25% equivale a +$99.8 K (1% de la venta). Seguimiento: monto y pedidos negados.",
+    "tipo": "recomendacion"
+   }
+  ],
+  "resumen_ejecutivo": [
+   {
+    "regla": "",
+    "texto": "Dónde estamos",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "Venta = Pacientes × (Piezas/Paciente) × (Venta/Pieza); aporte = ln(factor₁/factor₀) ÷ ln(venta₁/venta₀)",
+    "texto": "Septiembre cierra con una venta de $12.22 M, +56% vs 2025 y +10% vs agosto; el cambio anual se explica principalmente por volumen (94% del cambio).",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "",
+    "texto": "Descubrimientos del periodo",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "• ECOMMERCE es el canal que más aporta: +$1.61 M (37% del avance).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "• AE-A concentra 61% de la venta y aporta 70% del crecimiento.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "• Coinciden caída y negados en Sofosbuvir/velpatasvir (-$166.2 K; negados $20.4 K), Denosumab (-$120.8 K; negados $9.8 K), Trastuzumab (-$116.5 K; negados $20.7 K).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "• Los negados suman $399.0 K, equivalente a 3% de la venta, concentrados en AE-A (88%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Qué hacer",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "el producto aparece en la lista de caídas y en la de negados (coincidencia, no causa)",
+    "texto": "• [ALTA] Revisar la disponibilidad de Sofosbuvir/velpatasvir, Denosumab, Trastuzumab.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "línea con ≥ 50 % de la venta total (concentración)",
+    "texto": "• [MEDIA] Proteger AE-A.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "negado = producto sin stock negado a la venta (definición del negocio); el escenario es ilustrativo, no pronóstico",
+    "texto": "• [MEDIA] Priorizar el abasto de los productos más negados.",
+    "tipo": "recomendacion"
+   }
+  ]
+ },
+ "plantilla": "aetops-mensual/1/template.pptx",
+ "plantilla_sha256": "e9633044338b82ecf92be8b5226d4dd221d2cb6f89887afcc716ac24b2bb35c2"
+}

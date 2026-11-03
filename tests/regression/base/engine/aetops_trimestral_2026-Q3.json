@@ -1,0 +1,8192 @@
+{
+ "escenario": "aetops_trimestral_2026-Q3",
+ "hallazgos": [],
+ "libro": "AETOPS_crudo_ejemplo.xlsx",
+ "libro_sha256": "3505f61024ac2d421a88503b8ae8b411f2a309e9e0b522e66d14b0484ee8867d",
+ "motor": {
+  "extras": {
+   "canasta_cur": {
+    "un": {
+     "monto": "15760522.11",
+     "pedidos": 2578
+    },
+    "varios": {
+     "monto": "18449124.57",
+     "pedidos": 1484
+    }
+   },
+   "canasta_yoy": {
+    "un": {
+     "monto": "10382265.56",
+     "pedidos": 1653
+    },
+    "varios": {
+     "monto": "11692415.57",
+     "pedidos": 924
+    }
+   },
+   "cl_cur": {
+    "('APP FESA', 'AE-A')": "5632367.30",
+    "('APP FESA', 'AE-B')": "2865546.00",
+    "('APP FESA', 'AE-C')": "328703.20",
+    "('APP FESA', 'HYR')": "240566.88",
+    "('ECOMMERCE', 'AE-A')": "7914001.80",
+    "('ECOMMERCE', 'AE-B')": "4402296.36",
+    "('ECOMMERCE', 'AE-C')": "416568.02",
+    "('ECOMMERCE', 'HYR')": "513739.90",
+    "('LLAMADAS GOOGLE', 'AE-A')": "4609261.89",
+    "('LLAMADAS GOOGLE', 'AE-B')": "2576355.61",
+    "('LLAMADAS GOOGLE', 'AE-C')": "260337.41",
+    "('LLAMADAS GOOGLE', 'HYR')": "246557.86",
+    "('WHATSAPP', 'AE-A')": "2369240.39",
+    "('WHATSAPP', 'AE-B')": "1407046.91",
+    "('WHATSAPP', 'AE-C')": "208728.11",
+    "('WHATSAPP', 'HYR')": "218329.04"
+   },
+   "cl_yoy": {
+    "('APP FESA', 'AE-A')": "3564225.14",
+    "('APP FESA', 'AE-B')": "1777824.70",
+    "('APP FESA', 'AE-C')": "226217.05",
+    "('APP FESA', 'HYR')": "191538.26",
+    "('ECOMMERCE', 'AE-A')": "4941353.72",
+    "('ECOMMERCE', 'AE-B')": "2848653.72",
+    "('ECOMMERCE', 'AE-C')": "267830.07",
+    "('ECOMMERCE', 'HYR')": "300901.23",
+    "('LLAMADAS GOOGLE', 'AE-A')": "3060728.72",
+    "('LLAMADAS GOOGLE', 'AE-B')": "1785160.30",
+    "('LLAMADAS GOOGLE', 'AE-C')": "164295.43",
+    "('LLAMADAS GOOGLE', 'HYR')": "188114.00",
+    "('WHATSAPP', 'AE-A')": "1666801.85",
+    "('WHATSAPP', 'AE-B')": "927819.11",
+    "('WHATSAPP', 'AE-C')": "92113.16",
+    "('WHATSAPP', 'HYR')": "71104.67"
+   },
+   "conc_cur": {
+    "n": 2033,
+    "top10": "14553975.77",
+    "top_n": 203,
+    "total": "34209646.68"
+   },
+   "conc_yoy": {
+    "n": 1510,
+    "top10": "9058961.11",
+    "top_n": 151,
+    "total": "22074681.13"
+   },
+   "estado_cur": {
+    "BAJA CALIFORNIA": "1007071.04",
+    "CHIHUAHUA": "1534400.43",
+    "CIUDAD DE MÉXICO": "9015576.40",
+    "ESTADO DE MÉXICO": "4383855.93",
+    "GUANAJUATO": "1982272.84",
+    "JALISCO": "5106448.73",
+    "NUEVO LEÓN": "4420268.62",
+    "PUEBLA": "2124806.05",
+    "QUERÉTARO": "1563293.30",
+    "VERACRUZ": "1758556.15",
+    "YUCATÁN": "1313097.19"
+   },
+   "estado_yoy": {
+    "BAJA CALIFORNIA": "895668.91",
+    "CHIHUAHUA": "863847.36",
+    "CIUDAD DE MÉXICO": "6081977.12",
+    "ESTADO DE MÉXICO": "2917301.87",
+    "GUANAJUATO": "1240636.30",
+    "JALISCO": "3407887.98",
+    "NUEVO LEÓN": "2877568.62",
+    "PUEBLA": "1194957.19",
+    "QUERÉTARO": "1106163.37",
+    "VERACRUZ": "877612.62",
+    "YUCATÁN": "611059.79"
+   },
+   "pac_cur": {
+    "nuevo": {
+     "monto": "2483942.55",
+     "pacientes": 282,
+     "pedidos": 282
+    },
+    "recurrente": {
+     "monto": "31725704.13",
+     "pacientes": 1827,
+     "pedidos": 3780
+    }
+   },
+   "pac_yoy": {
+    "nuevo": {
+     "monto": "12895702.29",
+     "pacientes": 1510,
+     "pedidos": 1510
+    },
+    "recurrente": {
+     "monto": "9178978.84",
+     "pacientes": 409,
+     "pedidos": 1067
+    }
+   },
+   "quinc_cur": {
+    "1": "20164424.11",
+    "2": "14045222.57"
+   },
+   "quinc_yoy": {
+    "1": "13118443.01",
+    "2": "8956238.12"
+   }
+  },
+  "negados": {
+   "aetops.negados.alta": {
+    "key": "aetops.negados.alta",
+    "label": "Q3 2026",
+    "rows": [
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(cantidad)"
+       },
+       "status": "ok",
+       "v": "93"
+      },
+      "monto": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto)"
+       },
+       "status": "ok",
+       "v": "350091.58"
+      },
+      "name": "AE-A",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(pedidos)"
+       },
+       "status": "ok",
+       "v": "73"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.8773419403290885769286750209"
+      }
+     },
+     {
+      "alta": "HYR",
+      "cantidad": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(cantidad)"
+       },
+       "status": "ok",
+       "v": "7"
+      },
+      "monto": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto)"
+       },
+       "status": "ok",
+       "v": "40586.45"
+      },
+      "name": "HYR",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(pedidos)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.1017110859794729626833265236"
+      }
+     },
+     {
+      "alta": "AE-C",
+      "cantidad": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(cantidad)"
+       },
+       "status": "ok",
+       "v": "11"
+      },
+      "monto": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto)"
+       },
+       "status": "ok",
+       "v": "8358.61"
+      },
+      "name": "AE-C",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(pedidos)"
+       },
+       "status": "ok",
+       "v": "8"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.02094697369143846038799845548"
+      }
+     }
+    ],
+    "total": {
+     "note": "",
+     "src": {
+      "cells": "",
+      "file": "",
+      "sheet": "",
+      "transform": "sum(monto por Alta)"
+     },
+     "status": "ok",
+     "v": "399036.64"
+    }
+   },
+   "aetops.negados.producto": {
+    "key": "aetops.negados.producto",
+    "label": "Q3 2026",
+    "rows": [
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "42"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "104728.22"
+      },
+      "name": "BORTEZOMIB 3.5 MG POLVO INY FA",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "41"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.2624526409404409580032550394"
+      }
+     },
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "12"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "74148.04"
+      },
+      "name": "BEVACIZUMAB 400 MG SOL INY FA 16 ML",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "9"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.1858176231636272799410099283"
+      }
+     },
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "6"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "66119.13"
+      },
+      "name": "ENZALUTAMIDA 40 MG CAP C/112",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "4"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.1656968893884030298571078586"
+      }
+     },
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "16"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "39122.06"
+      },
+      "name": "LEUPRORELINA 22.5 MG SUSP INY C/1",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "11"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.09804127260093208483311206710"
+      }
+     },
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "3"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "20678.72"
+      },
+      "name": "TRASTUZUMAB 440 MG SOL INY FA",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "2"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.05182160715868096724150443929"
+      }
+     },
+     {
+      "alta": "HYR",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "3"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "20371.93"
+      },
+      "name": "SOFOSBUVIR/VELPATASVIR 400/100 MG TAB C/28",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "2"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.05105278051659617021634905506"
+      }
+     },
+     {
+      "alta": "HYR",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "4"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "20214.52"
+      },
+      "name": "PALIVIZUMAB 100 MG SOL INY FA",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "2"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.05065830546287679246697746854"
+      }
+     },
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "3"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "14692.02"
+      },
+      "name": "RITUXIMAB 500 MG SOL INY FA 50 ML",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "1"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.03681872421540037025171422855"
+      }
+     },
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "3"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "12184.82"
+      },
+      "name": "ABIRATERONA 250 MG TAB C/120",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "2"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.03053559191957911433897398495"
+      }
+     },
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "5"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "9835.3"
+      },
+      "name": "DENOSUMAB 60 MG SOL INY JER PRECARGADA",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "2"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.02464761130707195208941214020"
+      }
+     },
+     {
+      "alta": "AE-A",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "3"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "8583.27"
+      },
+      "name": "GOSERELINA 10.8 MG IMPLANTE C/1",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "1"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.02150997963495282037258533452"
+      }
+     },
+     {
+      "alta": "AE-C",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "5"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "5146.11"
+      },
+      "name": "SEMAGLUTIDA 1 MG SOL INY PLUMA",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "4"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.01289633453208707851990734485"
+      }
+     },
+     {
+      "alta": "AE-C",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "3"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "1758.61"
+      },
+      "name": "INSULINA GLARGINA 100 UI/ML PLUMA C/5",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "2"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.004407139153938345110363800176"
+      }
+     },
+     {
+      "alta": "AE-C",
+      "cantidad": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "3"
+      },
+      "monto": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "1453.89"
+      },
+      "name": "EMPAGLIFLOZINA 25 MG TAB C/30",
+      "pasted_share": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "pedidos": {
+       "note": "",
+       "src": null,
+       "status": "ok",
+       "v": "2"
+      },
+      "share": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "ratio(share(monto/total negado))"
+       },
+       "status": "ok",
+       "v": "0.003643500005413036757727310454"
+      }
+     }
+    ],
+    "total": {
+     "note": "",
+     "src": {
+      "cells": "",
+      "file": "",
+      "sheet": "",
+      "transform": "sum(monto)"
+     },
+     "status": "ok",
+     "v": "399036.64"
+    }
+   }
+  },
+  "products": {
+   "aetops.productos.decline": {
+    "key": "aetops.productos.decline",
+    "role": "decline",
+    "rows": []
+   },
+   "aetops.productos.growth": {
+    "key": "aetops.productos.growth",
+    "role": "growth",
+    "rows": [
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2487477.54"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1506423.80"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "981053.74"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "BEVACIZUMAB 400 MG SOL INY FA 16 ML",
+      "sivec": "22525"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2394993.89"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1485010.55"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "909983.34"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "TRASTUZUMAB 440 MG SOL INY FA",
+      "sivec": "23161"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2142048.33"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1286904.14"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "855144.19"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "PALBOCICLIB 125 MG CAP C/21",
+      "sivec": "26131"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2509251.28"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1707363.66"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "801887.62"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "ENZALUTAMIDA 40 MG CAP C/112",
+      "sivec": "24369"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2178763.32"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1480131.97"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "698631.35"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "OCRELIZUMAB 300 MG SOL INY FA",
+      "sivec": "31665"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1880712.39"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1205945.66"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "674766.73"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "ETANERCEPT 50 MG SOL INY PLUMA C/4",
+      "sivec": "28627"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2208495.78"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1578713.89"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "629781.89"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "LENALIDOMIDA 25 MG CAP C/21",
+      "sivec": "25529"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1514078.35"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "898066.27"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "616012.08"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "RITUXIMAB 500 MG SOL INY FA 50 ML",
+      "sivec": "23708"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1398202.62"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "789096.89"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "609105.73"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "ABIRATERONA 250 MG TAB C/120",
+      "sivec": "24918"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2235641.61"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1630847.52"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "604794.09"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "ADALIMUMAB 40 MG SOL INY PLUMA C/2",
+      "sivec": "28001"
+     }
+    ]
+   },
+   "aetops.productos.top": {
+    "key": "aetops.productos.top",
+    "role": "top",
+    "rows": [
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2509251.28"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1707363.66"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "801887.62"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "ENZALUTAMIDA 40 MG CAP C/112",
+      "sivec": "24369"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2487477.54"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1506423.80"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "981053.74"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "BEVACIZUMAB 400 MG SOL INY FA 16 ML",
+      "sivec": "22525"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2394993.89"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1485010.55"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "909983.34"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "TRASTUZUMAB 440 MG SOL INY FA",
+      "sivec": "23161"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2235641.61"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1630847.52"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "604794.09"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "ADALIMUMAB 40 MG SOL INY PLUMA C/2",
+      "sivec": "28001"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2208495.78"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1578713.89"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "629781.89"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "LENALIDOMIDA 25 MG CAP C/21",
+      "sivec": "25529"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2178763.32"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1480131.97"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "698631.35"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "OCRELIZUMAB 300 MG SOL INY FA",
+      "sivec": "31665"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "2142048.33"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1286904.14"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "855144.19"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "PALBOCICLIB 125 MG CAP C/21",
+      "sivec": "26131"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1880712.39"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1205945.66"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "674766.73"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "ETANERCEPT 50 MG SOL INY PLUMA C/4",
+      "sivec": "28627"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1567689.50"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1043626.46"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "524063.04"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "LEUPRORELINA 22.5 MG SUSP INY C/1",
+      "sivec": "20628"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1514078.35"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "898066.27"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "616012.08"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "RITUXIMAB 500 MG SOL INY FA 50 ML",
+      "sivec": "23708"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1424378.42"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1087289.19"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "337089.23"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "GOSERELINA 10.8 MG IMPLANTE C/1",
+      "sivec": "21867"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1398202.62"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "789096.89"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "609105.73"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "ABIRATERONA 250 MG TAB C/120",
+      "sivec": "24918"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1237792.41"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "846733.46"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "391058.95"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "DENOSUMAB 60 MG SOL INY JER PRECARGADA",
+      "sivec": "21290"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1193010.25"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "814718.18"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "378292.07"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "SECUKINUMAB 150 MG SOL INY PLUMA C/2",
+      "sivec": "29900"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "1109882.94"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "657561.94"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "452321.00"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "USTEKINUMAB 45 MG SOL INY JER",
+      "sivec": "30432"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "970309.28"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "623119.25"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "347190.03"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "FULVESTRANT 250 MG SOL INY JER C/2",
+      "sivec": "26829"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "941809.99"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "534503.08"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "407306.91"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "FINGOLIMOD 0.5 MG CAP C/28",
+      "sivec": "32263"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "906206.07"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "444026.64"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "462179.43"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "VEDOLIZUMAB 300 MG POLVO INY FA",
+      "sivec": "31070"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "805218.31"
+      },
+      "aetop": "AE-B",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "571722.84"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "233495.47"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "TOCILIZUMAB 162 MG SOL INY JER",
+      "sivec": "29290"
+     },
+     {
+      "actual": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "670153.98"
+      },
+      "aetop": "AE-A",
+      "anterior": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "sum(monto_venta)"
+       },
+       "status": "ok",
+       "v": "380761.87"
+      },
+      "canales": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "distinct(canal)"
+       },
+       "status": "ok",
+       "v": "4"
+      },
+      "delta": {
+       "note": "",
+       "src": {
+        "cells": "",
+        "file": "",
+        "sheet": "",
+        "transform": "delta(actual-anterior)"
+       },
+       "status": "ok",
+       "v": "289392.11"
+      },
+      "pasted_delta": {
+       "note": "",
+       "src": null,
+       "status": "missing",
+       "v": null
+      },
+      "producto": "BORTEZOMIB 3.5 MG POLVO INY FA",
+      "sivec": "27382"
+     }
+    ]
+   }
+  },
+  "tables": {
+   "aetops.canal.yoy": {
+    "comparison": "YoY",
+    "groups": [
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "9067183.38"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "770"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "1077"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "2102"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.2650475599708824587018505857"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.729870129870129870129870130"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8418.926072423398328690807799"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "11775.56283116883116883116883"
+        }
+       }
+      },
+      "name": "APP FESA",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.5742170340606053314147267638"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.4232902033271719038817005545"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5518731988472622478386167147"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.5165945165945165945165945166"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.01580526046819176870136751410"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.06555536815277075017334757606"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "0.01439797737981439183084528688"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.1060407992555681614225547785"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "5759805.15"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "541"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "694"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "1386"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.2609235945959958697713700565"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.561922365988909426987060998"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8299.431051873198847262247839"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "10646.58992606284658040665434"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "13246606.08"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "1032"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "1553"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "3074"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.3872184417427604955316656313"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.978682170542635658914728682"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8529.688396651641983258209916"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "12835.85860465116279069767442"
+        }
+       }
+      },
+      "name": "ECOMMERCE",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.5847613488156467969711899382"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.4393305439330543933054393305"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5798575788402848423194303154"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.5619918699186991869918699187"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.02260925900489616509084821927"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.08522109567025902817167706550"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "0.003103931671462203105395820456"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.1010405882759871641747511494"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "8358738.74"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "717"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "983"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "1968"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.3786572811980636750425395612"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.744769874476987447698744770"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8503.294750762970498474059003"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "11657.93408647140864714086471"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "7692512.77"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "668"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "912"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "1795"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.2248638473807236643462463261"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.687125748502994011976047904"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8434.772774122807017543859649"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "11515.73767964071856287425150"
+        }
+       }
+      },
+      "name": "LLAMADAS GOOGLE",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.4798136051615120328460556165"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.4944071588366890380313199105"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.6084656084656084656084656085"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.4945878434637801831806827644"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "-0.04511105386908660485075889387"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.0001209072280085956313850233181"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "-0.07998430468577047957926147529"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "-0.009765446845515151673372963170"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "5198298.45"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "447"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "567"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "1201"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.2354869100661840454861419781"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.686800894854586129753914989"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "9168.074867724867724867724868"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "11629.30302013422818791946309"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "4203344.45"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "419"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "520"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "1038"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.1228701509056333814202374568"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.477326968973747016706443914"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8083.354711538461538461538462"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "10031.84832935560859188544153"
+        }
+       }
+      },
+      "name": "WHATSAPP",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.5241443645079776399838077555"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.4498269896193771626297577855"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5615615615615615615615615616"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.6068111455108359133126934985"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "-0.01650545656556030400333574698"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.1082778545408868232634091193"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "-0.02396139734392970362575387958"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.05125947814512061564515618486"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "2757838.79"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "289"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "333"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "646"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.1249322141397564096999484042"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.235294117647058823529411765"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8281.798168168168168168168168"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "9542.694775086505190311418685"
+        }
+       }
+      }
+     }
+    ],
+    "key": "aetops.canal.yoy"
+   },
+   "aetops.categoria.yoy": {
+    "comparison": "YoY",
+    "groups": [
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "19287078.97"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "1383"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "2286"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "3696"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "11"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.5637906509357728333018843093"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.672451193058568329718004338"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8437.042419072615923009623797"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "13945.82716558206796818510484"
+        }
+       }
+      },
+      "name": "Oncología y Hematología",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.5571204213979627811991888052"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.4376299376299376299376299376"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.6087262491203377902885292048"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.5451505016722408026755852843"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.004773218060352596035056503808"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.07479015373007639347354522310"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "-0.03207868818613074711983932973"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.08311630179670296132582764258"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "12386375.97"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "962"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "1421"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "2392"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "11"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.5611123393835406219523498050"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.486486486486486486486486486"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8716.661484869809992962702322"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "12875.65069646569646569646570"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "3923723.11"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "594"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "790"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "1205"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "3"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.1146963938769331949148327188"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.028619528619528619528619529"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "4966.738113924050632911392405"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "6605.594461279461279461279461"
+        }
+       }
+      },
+      "name": "Ortopedia , Reumatología",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.4950922799950964828573744854"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.3530751708428246013667425968"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5076335877862595419847328244"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.4803439803439803439803439803"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "-0.03525208402367420116655080733"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.09405893496802587711678620773"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "-0.008318538332366383522450341336"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.1049587725889686127514939378"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "2624401.96"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "439"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "524"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "814"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "3"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.1188874233129183143946958567"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.854214123006833712984054670"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "5008.400687022900763358778626"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "5978.136583143507972665148064"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "3120573.31"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "227"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "254"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "367"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "2"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.09121910375719788053654344261"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.616740088105726872246696035"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "12285.72169291338582677165354"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "13747.01898678414096916299559"
+        }
+       }
+      },
+      "name": "Neurología",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.5489521588537834681273911124"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.5337837837837837837837837838"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5974842767295597484276729560"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.6383928571428571428571428571"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "-0.0004975698181523471677762143232"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.06820327249842668344870987992"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "-0.03038034150491507310135753230"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.009889513261497591554422398635"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "2014635.05"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "148"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "159"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "224"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "2"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.09126451422494454849685975962"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.513513513513513513513513514"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "12670.66069182389937106918239"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "13612.39898648648648648648649"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "2302893.19"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "283"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "310"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "444"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "2"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.06731707028550930359974124117"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.568904593639575971731448763"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "7428.687709677419354838709677"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "8137.431766784452296819787986"
+        }
+       }
+      },
+      "name": "Dermatología",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.5641678229004409840160036936"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.5722222222222222222222222222"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.6062176165803108808290155440"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.5689045936395759717314487633"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.009320740647109964788935035923"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "-0.002110152455393374870456617032"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "-0.02617938767811254866100415207"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "-0.005122939497952731014555954556"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "1472280.12"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "180"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "193"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "283"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "2"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.06669541957727930269767842395"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.572222222222222222222222222"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "7628.394404145077720207253886"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "8179.334"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "2235641.61"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "287"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "333"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "485"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "1"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.06535120432293222386475696860"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.689895470383275261324041812"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "6713.638468468468468468468468"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "7789.692020905923344947735192"
+        }
+       }
+      },
+      "name": "Inmunología",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.3708464970409986581700783406"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.3601895734597156398104265403"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.3703703703703703703703703704"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.3700564971751412429378531073"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "-0.1154249681845140320559911531"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.007254079804720565365459949843"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "0.0003474437866746965024895997898"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.007834881099828281790545400320"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "1630847.52"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "211"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "243"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "354"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "1"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.07387864451566825418510586658"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.677725118483412322274881517"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "6711.306666666666666666666667"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "7729.135165876777251184834123"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "1219193.68"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "208"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "234"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "351"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "3"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.03563888547006764935112156499"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.6875"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "5210.229401709401709401709402"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "5861.508076923076923076923077"
+        }
+       }
+      },
+      "name": "Infectología",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.6220055137830207284651842268"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.4647887323943661971830985915"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5918367346938775510204081633"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.6714285714285714285714285714"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.04664204347935705102258180112"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.1410714285714285714285714285"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "0.01895218173548738070248752720"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.1073306872941776127021930780"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "751658.16"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "142"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "147"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "210"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "3"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.03405069163053409868213122406"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.478873239436619718309859155"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "5113.320816326530612244897959"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "5293.367323943661971830985915"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "906206.07"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "102"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "109"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "160"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "1"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.02648978162436841630660185468"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.568627450980392156862745098"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8313.817155963302752293577982"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "8884.373235294117647058823529"
+        }
+       }
+      },
+      "name": "Gastroenterología",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "1.040882209229608385659022621"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.8888888888888888888888888889"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.8793103448275862068965517241"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "1.051282051282051282051282051"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.3169333321110333100989802230"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.08597285067873303167420814510"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "0.08597401959006684741489277071"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.08046705194508679240771785796"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "444026.64"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "54"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "58"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "78"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "1"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.02011474763259694705270698513"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.444444444444444444444444444"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "7655.631724137931034482758621"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "8222.715555555555555555555556"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "616979.07"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "254"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "299"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "448"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "2"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.01803523654515568940099909854"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.763779527559055118110236220"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "2063.475150501672240802675585"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "2429.051456692913385826771654"
+        }
+       }
+      },
+      "name": "Cardiología",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.8329424260383384350971244376"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.7162162162162162162162162162"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.8121212121212121212121212121"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.8589211618257261410788381743"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.1827546762738132468134635098"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.08315091318979318456562224324"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "0.01148996754624027354858037520"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.06801369706170900942667093240"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "336605.81"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "148"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "165"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "241"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "2"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.01524850157597723813644052398"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.628378378378378378378378378"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "2040.035212121212121212121212"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "2274.363581081081081081081081"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "597357.67"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "470"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "591"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "853"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "3"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.01746167318206280872351880133"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.814893617021276595744680851"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "1010.757478849407783417935702"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "1270.973765957446808510638298"
+        }
+       }
+      },
+      "name": "Endocrinología",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.4434162482581245035941775025"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.3905325443786982248520710059"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5115089514066496163682864450"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.4099173553719008264462809917"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "-0.06859741299850757918786528407"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.01394056620362229646562335135"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "-0.04504948719301746039708391966"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.03803125938562996215921701263"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "413849.90"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "338"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "391"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "605"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "3"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.01874771814654067440203155496"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.789940828402366863905325444"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "1058.439641943734015345268542"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "1224.407988165680473372781065"
+        }
+       }
+      }
+     }
+    ],
+    "key": "aetops.categoria.yoy"
+   },
+   "aetops.linea.yoy": {
+    "comparison": "YoY",
+    "groups": [
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "20524871.38"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "1516"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "2594"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "4315"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "12"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.5999732055695115995275751267"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.846306068601583113456464380"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "7912.440778720123361603700848"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "13538.83336411609498680738786"
+        }
+       }
+      },
+      "name": "AE-A",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.5510240800600709609638586658"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.4128611369990680335507921715"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5992601726263871763255240444"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.5334044065387348969438521677"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.0008393922493927876033198921760"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.08531855423223122982899299225"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "-0.03016150429551461114750240711"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.09778947091322964453444613949"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "13233109.43"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "1073"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "1622"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "2814"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "12"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.5994700150851057842664294014"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.622553588070829450139794967"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8158.513828606658446362515413"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "12332.81400745573159366262815"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "11251244.88"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "885"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "1293"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "2042"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "8"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.3288909992332022529967854085"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.307344632768361581920903955"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8701.658839907192575406032483"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "12713.27105084745762711864407"
+        }
+       }
+      },
+      "name": "AE-B",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.5329803836477659821910850873"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.3720930232558139534883720930"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5105140186915887850467289720"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.5341848234410217881292261458"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "-0.01080378104713298097911071352"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.1181347018298972354162156656"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "0.01487332436387291628427597424"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.1172568897771853768511298096"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "7339457.83"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "645"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "856"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "1331"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "8"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.3324830735618422045129672956"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.063565891472868217054263566"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8574.132978971962616822429907"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "11379.00438759689922480620155"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "1214336.74"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "636"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "872"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "1301"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "5"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.03549690972721849812451789987"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "2.045597484276729559748427673"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "1392.588004587155963302752294"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "1909.334496855345911949685535"
+        }
+       }
+      },
+      "name": "AE-C",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.6181324544788925651588419522"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.4587155963302752293577981651"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5883424408014571948998178506"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.5378250591016548463356973995"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.04414284932117263513956829591"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.05423227322063130975214475793"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "0.01875540998728442462408742170"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.1092857706804986767441117790"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "750455.71"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "436"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "549"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "846"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "5"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.03399621972251791253847207894"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.940366972477064220183486239"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "1366.950291438979963570127505"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "1721.228692660550458715596330"
+        }
+       }
+      }
+     },
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "1219193.68"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "208"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "234"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "351"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "3"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.03563888547006764935112156499"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.6875"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "5210.229401709401709401709402"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "5861.508076923076923076923077"
+        }
+       }
+      },
+      "name": "HYR",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.6220055137830207284651842268"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.4647887323943661971830985915"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5918367346938775510204081633"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.6714285714285714285714285714"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "ok",
+        "v": "0.04664204347935705102258180112"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.1410714285714285714285714285"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "0.01895218173548738070248752720"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.1073306872941776127021930780"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "751658.16"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "142"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "147"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "210"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "3"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "0.03405069163053409868213122406"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "1.478873239436619718309859155"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "5113.320816326530612244897959"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "5293.367323943661971830985915"
+        }
+       }
+      }
+     }
+    ],
+    "key": "aetops.linea.yoy"
+   },
+   "aetops.panorama.yoy": {
+    "comparison": "YoY",
+    "groups": [
+     {
+      "current": {
+       "label": "2026",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "34209646.68"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "2033"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "4062"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "8009"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "1"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "3.939498278406296114117068372"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8421.872644017725258493353028"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "16827.17495327102803738317757"
+        }
+       }
+      },
+      "name": "TOTAL",
+      "pct": {
+       "monto": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(monto)"
+        },
+        "status": "ok",
+        "v": "0.5497232543716476324928911895"
+       },
+       "pacientes": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pacientes)"
+        },
+        "status": "ok",
+        "v": "0.3463576158940397350993377483"
+       },
+       "pedidos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(pedidos)"
+        },
+        "status": "ok",
+        "v": "0.5762514551804423748544819558"
+       },
+       "piezas": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(piezas)"
+        },
+        "status": "ok",
+        "v": "0.5398961738127283214766391079"
+       },
+       "productos": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(productos)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "share": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(share)"
+        },
+        "status": "zero",
+        "v": "0"
+       },
+       "size_b": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(size_b)"
+        },
+        "status": "ok",
+        "v": "0.1437497405101917193456591505"
+       },
+       "ticket": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(ticket)"
+        },
+        "status": "ok",
+        "v": "-0.01682992946436830405362368404"
+       },
+       "v_paciente": {
+        "note": "",
+        "src": {
+         "cells": "",
+         "file": "",
+         "sheet": "",
+         "transform": "pct_change(v_paciente)"
+        },
+        "status": "ok",
+        "v": "0.1510487526321632686002290685"
+       }
+      },
+      "previous": {
+       "label": "2025",
+       "values": {
+        "monto": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(monto_venta)"
+         },
+         "status": "ok",
+         "v": "22074681.13"
+        },
+        "pacientes": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_paciente)"
+         },
+         "status": "ok",
+         "v": "1510"
+        },
+        "pedidos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(id_pedido)"
+         },
+         "status": "ok",
+         "v": "2577"
+        },
+        "piezas": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "sum(piezas)"
+         },
+         "status": "ok",
+         "v": "5201"
+        },
+        "productos": {
+         "note": "",
+         "src": {
+          "cells": "agregado",
+          "file": "AETOPS_crudo_ejemplo.xlsx",
+          "sheet": "ventas",
+          "transform": "distinct(sku)"
+         },
+         "status": "ok",
+         "v": "28"
+        },
+        "share": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(share(monto/total))"
+         },
+         "status": "ok",
+         "v": "1"
+        },
+        "size_b": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(piezas/pacientes)"
+         },
+         "status": "ok",
+         "v": "3.444370860927152317880794702"
+        },
+        "ticket": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pedidos)"
+         },
+         "status": "ok",
+         "v": "8566.038467209934031819945673"
+        },
+        "v_paciente": {
+         "note": "",
+         "src": {
+          "cells": "",
+          "file": "",
+          "sheet": "",
+          "transform": "ratio(monto/pacientes)"
+         },
+         "status": "ok",
+         "v": "14618.99412582781456953642384"
+        }
+       }
+      }
+     }
+    ],
+    "key": "aetops.panorama.yoy"
+   }
+  }
+ },
+ "puede_generar": true
+}
