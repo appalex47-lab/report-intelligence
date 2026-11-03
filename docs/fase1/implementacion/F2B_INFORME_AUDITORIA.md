@@ -164,5 +164,19 @@ python tools/archivos_protegidos.py --check
 python tools/evidencia_reglas.py
 ```
 
-## 14. Cierre
-**Dictamen: APROBADA CON OBSERVACIONES.** No se avanza a la Fase 3. Para continuar se espera tu revisión y autorización expresa, y tus decisiones sobre O-2B-04, O-2B-06, O-2B-08 y O-2B-10 (Pyodide, unidad de carritos, cableado/flags y división del PR).
+## 14. Actualización posterior al dictamen: decisiones delegadas
+El usuario delegó la resolución de las observaciones abiertas; el registro completo está en `DECISIONES_DELEGADAS.md`.
+
+| Observación | Estado actual |
+|---|---|
+| O-2B-04 Pyodide | **Cerrada con evidencia**: resultados idénticos a CPython en los 4 escenarios (Pyodide 0.27.7, Python 3.12.7, ejecutado en Node; salvedad: no en el Web Worker del navegador) |
+| O-2B-06 unidad de carritos | **Decidida**: se mantiene «unidad no declarada» (es un hecho del usuario) |
+| O-2B-08 cableado, `gravedad`, AMB-1/5/7/9 | **Decididas**: no se cablea todavía; `gravedad` en `null`; AMB-1, 5, 7 y 9 cerradas sin cambios de código |
+| O-2B-10 PR | **Decidida**: se mantiene un solo PR #11 con descripción actualizada; sin fusionar |
+| O-2B-01, 02, 03, 07 | Aceptadas como observaciones documentales (DD-10, DD-11) |
+| O-2B-05, 09 | Siguen abiertas por diseño (funcionalidad de fases posteriores; sin datos reales, A-2) |
+
+El dictamen **APROBADA CON OBSERVACIONES** se mantiene: las pruebas T-06 a T-19 siguen omitidas porque verifican funcionalidad que no existe todavía.
+
+## 15. Cierre
+**Dictamen: APROBADA CON OBSERVACIONES.** No se avanza a la Fase 3. Para continuar se espera tu revisión y la autorización expresa para la Fase 3.

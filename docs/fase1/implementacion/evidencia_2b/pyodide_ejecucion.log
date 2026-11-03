@@ -1,0 +1,6 @@
+Python 3.12.7
+GLP1 mensual ok 19.6 s {'valid': 7, 'warning': 7, 'error': 0, 'not_verifiable': 6, 'not_applicable': 0}
+GLP1 trimestral ok 18.9 s {'valid': 7, 'warning': 7, 'error': 0, 'not_verifiable': 6, 'not_applicable': 0}
+AETOPS mensual ok 9.0 s {'valid': 3, 'warning': 11, 'error': 0, 'not_verifiable': 2, 'not_applicable': 2}
+AETOPS trimestral ok 9.4 s {'valid': 3, 'warning': 11, 'error': 0, 'not_verifiable': 2, 'not_applicable': 2}
+Pyodide 0.27.7 (Node v22.23.4), openpyxl 3.1.5, PyYAML 6.0.3 (paquete Python puro; la CDN de Pyodide no es accesible desde este entorno)
