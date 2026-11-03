@@ -79,3 +79,30 @@ def test_edited_text_is_flagged_when_number_unsupported(tmp_path):
     res = run_glp1_raw(mg.build(tmp_path / "g.xlsx"), P9)
     b = build_glp1(res, P9, TPL, tmp_path / "o", narrative={"conclusiones": ["Vendimos $999 M por una promoción"]})
     assert any("999" in x for x in b.fill.edited_unverified)
+
+
+def test_canal_pago_organico_from_source_medium():
+    from backend.app.raw.glp1 import clasificar_fuente as c
+    assert [c(x) for x in ("google / cpc", "Paid Social", "Cross-network", "Organic Search", "google / organic", "(direct) / (none)",
+                           "facebook / paid_social", "Referral", "Unassigned")] == ["Pago", "Pago", "Pago", "Orgánico", "Orgánico", "Orgánico",
+                                                                                   "Pago", "Orgánico", "Sin asignar"]
+
+
+def test_canal_subtable_matches_sum_of_sources(built):
+    res, b = built
+    can = {r.key: r for r in res.blocks["canal_resumen"].rows}
+    fu = res.blocks["fuentes"].rows
+    paid = sum(r.values["visitas"].v for r in fu if r.key.lower().startswith(("paid", "cross")))
+    assert can["Pago"].values["visitas"].v == paid
+    assert sum(r.values["visitas"].v for r in can.values()) == sum(r.values["visitas"].v for r in fu)
+
+
+def test_quarterly_uses_quarter_labels_and_passes_qa(tmp_path):
+    tq = ROOT / "templates/glp1-trimestral/1/template.pptx"
+    if not tq.exists():
+        pytest.skip("plantilla trimestral no disponible")
+    q3 = Period("GLP1", "trimestral", 2026, 3)
+    res = run_glp1_raw(mg.build(tmp_path / "g.xlsx", n_months=18), q3)
+    b = build_glp1(res, q3, tq, tmp_path / "o")
+    blob = "\n".join(texts(b.pptx))
+    assert b.qa.passed and b.pptx.name == "Resultados_GLP1_Q3_2026.pptx" and "vs Q2 2026" in blob and "septiembre" not in blob.lower()

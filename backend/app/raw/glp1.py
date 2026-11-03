@@ -27,6 +27,19 @@ SPECS = {
 TRAF_METRICS = {"visitas": "visitas", "usuarios": "usuarios", "usuarios_nuevos": "nuevos", "usuarios_recurrentes": "recurrentes",
                 "add_to_cart": "atc"}
 VISTAS = {"edad": "edad", "sexo": "sexo", "dispositivo": "dispositivo", "fuente": "fuentes", "estado": "trafico_estado"}
+PAID_RX = re.compile(r"cpc|ppc|paid|cpm|display|cross.?network|retarget|sponsor", re.I)
+UNASSIGNED_RX = re.compile(r"unassigned|not set|\(other\)|sin asignar", re.I)
+
+
+def clasificar_fuente(valor: str) -> str:
+    """Pago / Orgánico / Sin asignar a partir de la fuente/medio (ej. 'google / cpc', 'Paid Social', 'Organic Search')."""
+    if UNASSIGNED_RX.search(valor):
+        return "Sin asignar"
+    if re.search(r"organic", valor, re.I):
+        return "Orgánico"
+    return "Pago" if PAID_RX.search(valor) else "Orgánico"
+
+
 FUNNEL = [("ver producto", "vistas_producto"), ("agregar a carrito", "add_to_cart"), ("iniciar compra", "begin_checkout"),
           ("compra", "compras"), ("carritos abandonados", "carritos_abandonados")]
 
@@ -159,6 +172,8 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
         targets = []
         if not sku:
             targets.append((blk, valor, ""))
+            if blk == "fuentes":
+                targets.append(("canal_resumen", clasificar_fuente(valor), ""))
         elif blk == "edad":
             p = cat.get(sku)
             if p:
@@ -247,6 +262,14 @@ def build(path, period: Period) -> tuple[dict[str, GBlock], GBlock | None, list[
         for r in rows:
             r.share = ind.share(r.values["visitas"], tot, "visitas/total")
         blocks[b] = GBlock(b, "trafico", "agregado", rows, basis="traffic")
+
+    if "canal_resumen" in blocks:
+        order = {"Pago": 0, "Orgánico": 1, "Sin asignar": 2}
+        blocks["canal_resumen"].rows.sort(key=lambda r: order.get(r.key, 9))
+        n_src = len({k for (b, w, k, _d) in traf if b == "fuentes" and w == "cur"})
+        f.append(Finding("CANAL_CLASIFICADO", "info",
+                         f"Canal Pago/Orgánico: {n_src} fuente(s)/medio clasificados por su medio (pago = cpc, ppc, paid, cpm, display, cross-network, retargeting; "
+                         "orgánico = el resto; sin asignar aparte).", "trafico"))
 
     # negados (lista de productos sin stock)
     if "negados" in tabs:

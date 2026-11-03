@@ -17,7 +17,7 @@ from pptx import Presentation
 from ..build import ReportBlocked, build_aetops, build_glp1
 from ..deck.aetops_mensual import DataMissing, TemplateMismatch, fill_aetops_mensual
 from ..deck.aetops_trimestral import fill_aetops_trimestral
-from ..deck.glp1_mensual import fill_glp1_mensual
+from ..deck.glp1_mensual import fill_glp1
 from ..history import store as hist
 from ..models import Period
 from ..narrative import trends
@@ -196,12 +196,12 @@ def analyze(run_id: str) -> dict:
     if st["unit"] == "aetops":
         att = [{"nombre": a.name, "real": float(a.actual), "meta": float(a.target), "cumplimiento": float(a.pct),
                 "brecha": float(a.gap), "estado": a.status} for a in attainment(res, _targets(st))]
-    gen_ok = st["unit"] == "aetops" or (st["periodicity"] == "mensual" and _has_template(st))
+    gen_ok = _has_template(st)
     return {"run": public(st), "can_generate": res.can_generate and gen_ok, "findings": findings,
             "kpis": _kpis(res, st), "cumplimiento": att,
             "targets_required": st["unit"] == "aetops", "targets_lines": [],
             "generator_available": gen_ok,
-            "message": None if gen_ok else "GLP-1 trimestral: la validación está disponible; aún no hay plantilla ni generador trimestral."}
+            "message": None if gen_ok else "No hay plantilla para este formato: la validación está disponible, el generador no."}
 
 
 def _has_template(st: dict) -> bool:
@@ -227,10 +227,8 @@ def narrative(run_id: str) -> dict:
         raise ServiceError("Hay hallazgos bloqueantes: corrígelos antes de revisar la narrativa.", 409)
     per, tpl = period_of(st), template_path(st)
     if st["unit"] == "glp1":
-        if per.periodicity != "mensual":
-            raise ServiceError("GLP-1 trimestral aún no está disponible.", 501)
         try:
-            fill = fill_glp1_mensual(Presentation(tpl), res.blocks, res.funnel, per, None)
+            fill = fill_glp1(Presentation(tpl), res.blocks, res.funnel, per, None)
         except (DataMissing, TemplateMismatch) as e:
             raise ServiceError(f"Faltan datos para la plantilla de GLP-1: {e}", 409) from None
         sections = dict(fill.narrative)
@@ -294,8 +292,6 @@ OUT_FILES = {"pptx", "pdf"}
 
 def generate(run_id: str) -> dict:
     st = _load(run_id)
-    if st["unit"] == "glp1" and st["periodicity"] != "mensual":
-        raise ServiceError("GLP-1 trimestral aún no está disponible.", 501)
     res = _run_engine(run_id, st)
     out = _dir(run_id) / "out"
     shutil.rmtree(out, ignore_errors=True)

@@ -329,16 +329,26 @@ def fill_fuentes(fl: Filler, B, rep: FillReport):
     w = fl.table(10, "Tabla 2", rows=18, cols=7)
     clear_red(w.t)
     rows = B["fuentes"].rows[:12]
+    canal = B["canal_resumen"].rows if "canal_resumen" in B else []
+    if canal:
+        ops.resize_rows(w.t, 16, 18, 16, len(canal))               # sub-tabla Pago/Orgánico (de abajo hacia arriba)
     n = fill_region(w, 1, 13, 1, rows, TRAF_NOSHARE)
     w.put(0, 0, "Fuente de tráfico")
     rep.titles_fixed.append("Diap. 10: encabezado 'Categoría de dispositivo' (son fuentes de tráfico) → 'Fuente de tráfico'")
-    if "canal_resumen" not in B:
+    if canal:
+        hdr = n + 2                                                  # n = primera fila tras las fuentes; 2 separadoras y luego "Canal"
+        for i, row in enumerate(canal):
+            put_row(w, hdr + 1 + i, 0, TRAF_NOSHARE[:-1], row)
+            w.blank(hdr + 1 + i, 6)
+        for r in (n, n + 1):
+            for c in range(7):
+                w.blank(r, c)
+        w.check_stale()
+    else:
         w.skip_rows.update(range(n, len(w.t.rows)))
         w.check_stale()
         ops.delete_rows(w.t, n, len(w.t.rows))
         rep.notes.append("Diap. 10: sin datos de canal (Pago/Orgánico); se omite esa sub-tabla.")
-    else:
-        w.check_stale()
     ops.sync_frame_height(w.shape)
 
 
@@ -352,10 +362,9 @@ def assemble(paras: list[Para]) -> list[str]:
     return out
 
 
-def fill_glp1_mensual(prs, blocks: dict[str, GBlock], funnel: GBlock | None, period: Period,
-                      narrative: dict[str, list[str]] | None = None, fix_titles: bool = True, att=None) -> FillReport:
-    if period.periodicity != "mensual":
-        raise ValueError("La plantilla de GLP-1 disponible es mensual.")
+def fill_glp1(prs, blocks: dict[str, GBlock], funnel: GBlock | None, period: Period,
+              narrative: dict[str, list[str]] | None = None, fix_titles: bool = True, att=None) -> FillReport:
+    """Mensual y trimestral usan la misma estructura de láminas; cambian los periodos de comparación (mes/trimestre anterior)."""
     missing = [k for k in REQUIRED if k not in blocks]
     if missing or not any(k.startswith("edad_producto:") for k in blocks):
         raise DataMissing("Faltan bloques para rellenar la plantilla GLP-1: " + ", ".join(missing + ([] if any(k.startswith("edad_producto:") for k in blocks) else ["edad_producto"])))
@@ -391,3 +400,6 @@ def fill_glp1_mensual(prs, blocks: dict[str, GBlock], funnel: GBlock | None, per
         except KeyError:
             pass
     return rep
+
+
+fill_glp1_mensual = fill_glp1

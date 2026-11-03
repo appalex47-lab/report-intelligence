@@ -12,7 +12,7 @@ from pptx import Presentation
 from .deck.aetops_mensual import FillReport, fill_aetops_mensual
 from .deck.aetops_trimestral import fill_aetops_trimestral
 from .deck.extras import add_executive_slides
-from .deck.glp1_mensual import fill_glp1_mensual
+from .deck.glp1_mensual import fill_glp1
 from .history import store as hist
 from .narrative import trends
 from .narrative.executive import build_executive
@@ -162,8 +162,9 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
         raise ReportBlocked(blockers)
     out_dir.mkdir(parents=True, exist_ok=True)
     prs = Presentation(template)
-    fill = fill_glp1_mensual(prs, result.blocks, result.funnel, period, dict(narrative or {}))
-    pptx = out_dir / f"Resultados_GLP1_{period.month_name.capitalize()}_{period.year}.pptx"
+    fill = fill_glp1(prs, result.blocks, result.funnel, period, dict(narrative or {}))
+    stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
+    pptx = out_dir / f"Resultados_GLP1_{stem}_{period.year}.pptx"
     prs.save(pptx)
     pdf = convert_to_pdf(pptx, out_dir)
     pngs = pdf_to_pngs(pdf, out_dir / "png")
@@ -192,7 +193,7 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
             qa.add(f"DATA_{f.id}", "warn", None, f.message)
     if blockers:
         qa.add("GENERATED_WITH_BLOCKERS", "error", None, "Generado ignorando hallazgos bloqueantes (solo desarrollo): NO apto para descarga.")
-    manifest = {"periodo": f"{period.month_name} {period.year}", "plantilla": template.name, "plantilla_sha256": _sha(template),
+    manifest = {"periodo": period.label if period.periodicity == "trimestral" else f"{period.month_name} {period.year}", "plantilla": template.name, "plantilla_sha256": _sha(template),
                 "pptx_sha256": _sha(pptx), "pdf_sha256": _sha(pdf), "qa_passed": qa.passed,
                 "hallazgos_bloqueantes": [f.id for f in blockers], "fuente_render": "Carlito (sustituye Aptos Narrow solo en PDF/QA)"}
     (out_dir / "qa_report.json").write_text(json.dumps(qa.to_dict(), ensure_ascii=False, indent=1), encoding="utf-8")

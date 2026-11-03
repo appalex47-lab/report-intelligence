@@ -17,6 +17,16 @@ def pct2(d: Decimal | None) -> str:
     return ND if d is None else f"{quantize_half_up(d * 100, 2):,.2f}%"
 
 
+def cur_label(period: Period) -> str:
+    return period.month_name if period.periodicity == "mensual" else f"Q{period.index} {period.year}"
+
+
+def prev_label(period: Period) -> str:
+    if period.periodicity == "mensual":
+        return period.previous_month_name
+    return f"Q{period.index - 1} {period.year}" if period.index > 1 else f"Q4 {period.year - 1}"
+
+
 def sx(s: str) -> str:
     return SEX.get(s.lower(), s)
 
@@ -81,7 +91,7 @@ def s_quien(B: dict[str, GBlock], period: Period, rules: NarrativeRules) -> list
         other = [r for r in sxb if r is not ts]
         ps.append(para("hecho", lambda w: (
             f"**Sexo:**\n{w.b(sx(ts.key))} concentra el interés con {w.n(count(v(ts, 'visitas')))} visitas, {w.n(count(v(ts, 'usuarios')))} usuarios, "
-            f"{w.n(count(v(ts, 'atc')))} Add to Cart y {w.n(sh(ts))} de share ({w.n(pct_d(dl(ts)))} vs {w.t(period.previous_month_name)})"
+            f"{w.n(count(v(ts, 'atc')))} Add to Cart y {w.n(sh(ts))} de share ({w.n(pct_d(dl(ts)))} vs {w.t(prev_label(period))})"
             + (f"; {sx(other[0].key).lower()} {w.n(pct_d(dl(other[0])))}." if other else ".")), 2, evidence=["bloque sexo"]))
     td = top(dv, "visitas")
     if td:
@@ -93,7 +103,7 @@ def s_quien(B: dict[str, GBlock], period: Period, rules: NarrativeRules) -> list
             evidence=["bloque dispositivo"]))
     if t and ts and td:
         ps.append(para("interpretacion", lambda w: (
-            f"**Lectura:**\nEn {w.t(period.month_name)}, el usuario que más busca {w.t("GLP1")} es {w.b(sx(ts.key).lower())}, de {w.b(t.key)} años y desde "
+            f"**Lectura:**\nEn {w.t(cur_label(period))}, el usuario que más busca {w.t("GLP1")} es {w.b(sx(ts.key).lower())}, de {w.b(t.key)} años y desde "
             f"{w.b(td.key.lower())}."), 3, basis="mayor número de visitas en cada dimensión (edad, sexo, dispositivo)"))
     return ps
 
@@ -145,7 +155,7 @@ def s_region(B, period, rules) -> list[Para]:
         up, dn = move(reg[1:], rules)
         ps.append(para("hecho", lambda w: (
             f"**Región:**\n{w.b(t.key.capitalize())} concentra la mayor venta con {w.n(sh(t))} de share, {w.n(money(v(t, 'monto')))}, "
-            f"{w.n(count(v(t, 'pedidos')))} pedidos y {w.n(count(v(t, 'piezas')))} piezas ({w.n(pct_d(dl(t)))} vs {w.t(period.previous_month_name)})."), 1,
+            f"{w.n(count(v(t, 'pedidos')))} pedidos y {w.n(count(v(t, 'piezas')))} piezas ({w.n(pct_d(dl(t)))} vs {w.t(prev_label(period))})."), 1,
             evidence=["bloque region"]))
         if up or dn:
             def mv(w):
@@ -279,6 +289,12 @@ def s_fuentes(B, period, rules) -> list[Para]:
         if ta:
             ps.append(para("hecho", lambda w: (
                 f"En Add to Cart, {w.b(ta.key)} lidera con {w.n(count(v(ta, 'atc')))} ({w.n(pct_d(dl(ta)))} en visitas)."), 2, evidence=["bloque fuentes"]))
+        can = {r.key: r for r in B["canal_resumen"].rows} if "canal_resumen" in B else {}
+        if "Pago" in can and "Orgánico" in can:
+            pg, og = can["Pago"], can["Orgánico"]
+            ps.append(para("hecho", lambda w: (
+                f"Por canal, {w.b('Pago')} aporta {w.n(count(v(pg, 'visitas')))} visitas y {w.n(count(v(pg, 'atc')))} Add to Cart; "
+                f"{w.b('Orgánico')} aporta {w.n(count(v(og, 'visitas')))} visitas y {w.n(count(v(og, 'atc')))} Add to Cart."), 3, evidence=["bloque canal_resumen"]))
         ratio = [(r, (v(r, "atc") or 0) / v(r, "visitas")) for r in rows if v(r, "visitas") and v(r, "visitas") >= 500]
         if len(ratio) >= 2:
             best = max(ratio, key=lambda x: x[1])
@@ -295,7 +311,7 @@ def s_conclusiones(B, F, period, rules, sections: dict[str, list[Para]]) -> list
         t = prod[0]
         ps.append(para("hecho", lambda w: (
             f"**Venta**\n{w.b(short(t.key))} es la presentación con más venta ({w.n(money(v(t, 'monto')))}, {w.n(sh(t))} de share, {w.n(pct_d(dl(t)))} vs "
-            f"{w.t(period.previous_month_name)})."), 1, evidence=["bloque productos"]))
+            f"{w.t(prev_label(period))})."), 1, evidence=["bloque productos"]))
     reg, pago = B["region"].rows, B["pago"].rows
     if reg and pago:
         ps.append(para("hecho", lambda w: (
@@ -305,7 +321,7 @@ def s_conclusiones(B, F, period, rules, sections: dict[str, list[Para]]) -> list
     if ed and sxb and dv:
         te, ts, td = top(ed, "visitas"), top(sxb, "visitas"), top(dv, "visitas")
         ps.append(para("interpretacion", lambda w: (
-            f"**Insights:**\nEn {w.t(period.month_name)}, el interés se concentra en {w.b(sx(ts.key).lower())}, de {w.b(te.key)} años y en {w.b(td.key.lower())}."), 3,
+            f"**Insights:**\nEn {w.t(cur_label(period))}, el interés se concentra en {w.b(sx(ts.key).lower())}, de {w.b(te.key)} años y en {w.b(td.key.lower())}."), 3,
             basis="mayor número de visitas en cada dimensión (edad, sexo, dispositivo)"))
     if F:
         c = {r.key: r for r in F.rows}
