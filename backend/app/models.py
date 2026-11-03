@@ -29,12 +29,60 @@ class Value:
         return self.v is None
 
 
+# --- Evolución compatible del hallazgo (docs/MODELO_HALLAZGOS.md; spec Fase 1 §4.2-4.3) ---------------------------------
+# `severity` NO cambia: sigue siendo la única fuente que leen `has_blockers()`, la interfaz y el historial.
+SEVERITY_A_EFECTO = {"block": "bloquear", "warn": "advertir", "info": "informar"}
+EFECTO_A_SEVERITY = {v: k for k, v in SEVERITY_A_EFECTO.items()}
+TIPOS_HALLAZGO = ("integridad", "consistencia", "cobertura", "definicion", "conciliacion", "narrativa", "presentacion")
+GRAVEDADES = ("critica", "alta", "media", "baja")
+ESTADOS_VERIFICACION = ("verificado", "inconsistente", "no_verificable", "supuesto")
+EFECTOS_GENERACION = tuple(EFECTO_A_SEVERITY)
+MODELO_HALLAZGOS_VERSION = "1.0.0"
+
+
 @dataclass(frozen=True)
 class Finding:
+    """Hallazgo de validación. Firma histórica `(id, severity, message, evidence)`; los siete campos nuevos son
+    opcionales, solo por palabra clave, y quedan en `None` (o vacío) si no se aportan: nada se inventa."""
     id: str
     severity: Literal["block", "warn", "info"]
     message: str
     evidence: str = ""
+    tipo: str | None = field(default=None, kw_only=True)
+    gravedad: str | None = field(default=None, kw_only=True)
+    estado_verificacion: str | None = field(default=None, kw_only=True)
+    efecto_generacion: str | None = field(default=None, kw_only=True)
+    faltante: tuple = field(default=(), kw_only=True)
+    regla_id: str | None = field(default=None, kw_only=True)
+    regla_version: str | None = field(default=None, kw_only=True)
+
+    def __post_init__(self):
+        for name, allowed in (("tipo", TIPOS_HALLAZGO), ("gravedad", GRAVEDADES),
+                              ("estado_verificacion", ESTADOS_VERIFICACION), ("efecto_generacion", EFECTOS_GENERACION)):
+            val = getattr(self, name)
+            if val is not None and val not in allowed:
+                raise ValueError(f"Finding.{name}={val!r} no es válido; opciones: {allowed}")
+        derivado = SEVERITY_A_EFECTO.get(self.severity)
+        if self.efecto_generacion is None:
+            if derivado is not None:                  # solo severity: se deriva con la correspondencia documentada
+                object.__setattr__(self, "efecto_generacion", derivado)
+        elif derivado is not None and self.efecto_generacion != derivado:
+            raise ValueError(f"Finding {self.id!r}: severity={self.severity!r} es incoherente con "
+                             f"efecto_generacion={self.efecto_generacion!r} (esperado {derivado!r})")
+        if not isinstance(self.faltante, tuple):
+            object.__setattr__(self, "faltante", tuple(self.faltante or ()))
+        if self.estado_verificacion == "no_verificable" and not self.faltante:
+            raise ValueError(f"Finding {self.id!r}: estado_verificacion='no_verificable' exige `faltante` (qué dato falta)")
+
+    def to_dict(self) -> dict:
+        """Serialización JSON: conserva `severity`; los campos nuevos se incluyen solo si tienen valor."""
+        d = {"id": self.id, "severity": self.severity, "message": self.message, "evidence": self.evidence}
+        for name in ("tipo", "gravedad", "estado_verificacion", "efecto_generacion", "regla_id", "regla_version"):
+            if getattr(self, name) is not None:
+                d[name] = getattr(self, name)
+        if self.faltante:
+            d["faltante"] = [dict(x) if isinstance(x, dict) else x for x in self.faltante]
+        return d
 
 
 @dataclass

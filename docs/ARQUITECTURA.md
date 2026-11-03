@@ -405,3 +405,19 @@ La aplicación corre en el navegador (GitHub Pages), así que **la llamada a Coh
 | 5 | ~~GLP-1 trimestral~~ → **resuelto** (§15.1) | Basado en el mensual; confirmar con PPTX |
 | 6 | Gráfica `chartEx` | Editar su XML; si algún cliente no la abre, degradar a tabla |
 | 7 | Denominador de Share en GLP-1 | Total del periodo; confirmar |
+
+---
+
+## 17. Implementación de Fase 1 (modelo y línea base) — añadido
+
+Fuente de verdad: `docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md`. Este apartado solo registra lo que **ya existe en el código**; no cambia el diseño de §1–§16.
+
+| Pieza | Ubicación | Qué hace hoy |
+|---|---|---|
+| Hallazgo extendido | `backend/app/models.py` (`Finding`) | Siete campos opcionales por palabra clave; `severity` intacto (ver `docs/MODELO_HALLAZGOS.md`) |
+| Configuración como datos | `backend/app/config/` (4 JSON + cargador/validador) | Solo carga y valida estructura; **nada la consume todavía** (ver `docs/CONFIGURACION_FASE1.md`) |
+| Versiones | `backend/app/version.py` | Lee versión del modelo de hallazgos y de cada JSON; `app` y `motor` quedan en `None` |
+| Línea base | `tools/capture_baseline.py`, `tests/regression/` | Foto del motor y huellas del deck sobre los machotes sintéticos (ver `docs/LINEA_BASE_FASE1.md`) |
+| Fixtures sintéticas | `tools/make_fixtures_fase1.py`, `tests/fixtures/fase1/` | Deterministas, con manifiesto y `sintetico: true` |
+
+El patrón de configuración como dato ya existía (`profiles/*.yaml`, `importer/profile.py`); la configuración de Fase 1 lo sigue, en JSON, dentro de `backend/app/` para que `tools/build_site.py` la empaquete sin cambios. No se modificaron pipeline, reglas actuales, narrativa, plantillas ni importadores.

@@ -82,3 +82,11 @@ reporte publicado de septiembre antes de usarla.
 4. ~~GLP-1 edad/sexo~~: las hojas 1–3 del libro actual ya son de **analítica** (visitas, usuarios, add to cart, nuevos/recurrentes, rebote,
    tiempo de interacción), no de venta. Por tanto edad, sexo y dispositivo salen de `trafico` y **no** van en `ventas`. `trafico` debe
    admitir esas métricas (usuarios, usuarios_nuevos, usuarios_recurrentes, tasa_rebote, tiempo_interaccion).
+
+## Relación con la configuración de Fase 1 (nota, sin cambios al contrato)
+
+Este contrato **no cambió**. La configuración de Fase 1 (`backend/app/config/`, ver `docs/CONFIGURACION_FASE1.md`) lo respeta:
+- `mapeo_columnas.json` solo prevé **alias** de las columnas de este contrato (hoy vacío); los nombres canónicos siguen siendo los de aquí.
+  AETOPS no tiene hoja `trafico`. No se mapean identificadores de carrito, transacción ni sesión.
+- `definiciones.json` cita únicamente columnas que existen en las tablas de arriba.
+- Los estatus, cancelaciones y devoluciones siguen **sin contemplarse** (decisión ya tomada, arriba).

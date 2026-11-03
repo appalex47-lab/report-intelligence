@@ -1,0 +1,57 @@
+{
+  "esquema": "validacion_registro/1",
+  "version": "1.0.0",
+  "descripcion": "Registro de validación por regla. Las reglas aún no están implementadas (regla_version null). La validación sintética y la operacional se registran por separado; 'confirmada' exige extracto, fecha y confirmante.",
+  "reglas": [
+    {
+      "regla_id": "R-REL-PAC-PED",
+      "regla_version": null,
+      "validacion_sintetica": "pendiente",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "extracto_id": null,
+      "fecha": null,
+      "confirmado_por": null,
+      "parametros_confirmados": null
+    },
+    {
+      "regla_id": "R-CUADRE-DIM",
+      "regla_version": null,
+      "validacion_sintetica": "pendiente",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "extracto_id": null,
+      "fecha": null,
+      "confirmado_por": null,
+      "parametros_confirmados": null
+    },
+    {
+      "regla_id": "R-CONC-COMPRAS",
+      "regla_version": null,
+      "validacion_sintetica": "pendiente",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "extracto_id": null,
+      "fecha": null,
+      "confirmado_por": null,
+      "parametros_confirmados": null
+    },
+    {
+      "regla_id": "R-DENOM",
+      "regla_version": null,
+      "validacion_sintetica": "pendiente",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "extracto_id": null,
+      "fecha": null,
+      "confirmado_por": null,
+      "parametros_confirmados": null
+    },
+    {
+      "regla_id": "R-COBERTURA-ATC",
+      "regla_version": null,
+      "validacion_sintetica": "pendiente",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "extracto_id": null,
+      "fecha": null,
+      "confirmado_por": null,
+      "parametros_confirmados": null
+    }
+  ]
+}

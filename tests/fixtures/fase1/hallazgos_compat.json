@@ -1,0 +1,187 @@
+{
+ "descripcion": "Hallazgos sintéticos para las pruebas de compatibilidad del modelo",
+ "incoherentes": [
+  {
+   "efecto_generacion": "bloquear",
+   "evidence": "",
+   "id": "SINT_INCOHERENTE_01",
+   "message": "x",
+   "severity": "warn"
+  },
+  {
+   "efecto_generacion": "advertir",
+   "evidence": "",
+   "id": "SINT_INCOHERENTE_02",
+   "message": "x",
+   "severity": "info"
+  },
+  {
+   "efecto_generacion": "informar",
+   "evidence": "",
+   "id": "SINT_INCOHERENTE_03",
+   "message": "x",
+   "severity": "block"
+  }
+ ],
+ "invalidos": [
+  {
+   "evidence": "",
+   "id": "SINT_INVALIDO_01",
+   "message": "x",
+   "severity": "warn",
+   "tipo": "inventado"
+  },
+  {
+   "evidence": "",
+   "gravedad": "enorme",
+   "id": "SINT_INVALIDO_02",
+   "message": "x",
+   "severity": "warn"
+  },
+  {
+   "estado_verificacion": "quizas",
+   "evidence": "",
+   "id": "SINT_INVALIDO_03",
+   "message": "x",
+   "severity": "warn"
+  },
+  {
+   "estado_verificacion": "no_verificable",
+   "evidence": "",
+   "id": "SINT_INVALIDO_04",
+   "message": "x",
+   "severity": "info"
+  }
+ ],
+ "legado": [
+  {
+   "evidence": "hoja SINT-986",
+   "id": "SINT_LEGADO_01",
+   "message": "Hallazgo sintético 1",
+   "severity": "block"
+  },
+  {
+   "evidence": "hoja SINT-351",
+   "id": "SINT_LEGADO_02",
+   "message": "Hallazgo sintético 2",
+   "severity": "warn"
+  },
+  {
+   "evidence": "hoja SINT-243",
+   "id": "SINT_LEGADO_03",
+   "message": "Hallazgo sintético 3",
+   "severity": "info"
+  },
+  {
+   "evidence": "hoja SINT-941",
+   "id": "SINT_LEGADO_04",
+   "message": "Hallazgo sintético 4",
+   "severity": "block"
+  },
+  {
+   "evidence": "hoja SINT-720",
+   "id": "SINT_LEGADO_05",
+   "message": "Hallazgo sintético 5",
+   "severity": "warn"
+  },
+  {
+   "evidence": "hoja SINT-980",
+   "id": "SINT_LEGADO_06",
+   "message": "Hallazgo sintético 6",
+   "severity": "info"
+  },
+  {
+   "evidence": "hoja SINT-560",
+   "id": "SINT_LEGADO_07",
+   "message": "Hallazgo sintético 7",
+   "severity": "block"
+  },
+  {
+   "evidence": "hoja SINT-471",
+   "id": "SINT_LEGADO_08",
+   "message": "Hallazgo sintético 8",
+   "severity": "warn"
+  },
+  {
+   "evidence": "hoja SINT-417",
+   "id": "SINT_LEGADO_09",
+   "message": "Hallazgo sintético 9",
+   "severity": "info"
+  }
+ ],
+ "nuevos": [
+  {
+   "efecto_generacion": "bloquear",
+   "estado_verificacion": "verificado",
+   "evidence": "",
+   "gravedad": "alta",
+   "id": "SINT_NUEVO_01",
+   "message": "Hallazgo nuevo sintético 1",
+   "regla_id": "R-SINT",
+   "regla_version": "0.0.1",
+   "severity": "block",
+   "tipo": "integridad"
+  },
+  {
+   "efecto_generacion": "informar",
+   "estado_verificacion": "verificado",
+   "evidence": "",
+   "gravedad": "critica",
+   "id": "SINT_NUEVO_02",
+   "message": "Hallazgo nuevo sintético 2",
+   "regla_id": "R-SINT",
+   "regla_version": "0.0.1",
+   "severity": "info",
+   "tipo": "consistencia"
+  },
+  {
+   "efecto_generacion": "informar",
+   "estado_verificacion": "verificado",
+   "evidence": "",
+   "gravedad": "baja",
+   "id": "SINT_NUEVO_03",
+   "message": "Hallazgo nuevo sintético 3",
+   "regla_id": "R-SINT",
+   "regla_version": "0.0.1",
+   "severity": "info",
+   "tipo": "conciliacion"
+  },
+  {
+   "efecto_generacion": "advertir",
+   "estado_verificacion": "verificado",
+   "evidence": "",
+   "gravedad": "critica",
+   "id": "SINT_NUEVO_04",
+   "message": "Hallazgo nuevo sintético 4",
+   "regla_id": "R-SINT",
+   "regla_version": "0.0.1",
+   "severity": "warn",
+   "tipo": "conciliacion"
+  },
+  {
+   "efecto_generacion": "bloquear",
+   "estado_verificacion": "verificado",
+   "evidence": "",
+   "gravedad": "baja",
+   "id": "SINT_NUEVO_05",
+   "message": "Hallazgo nuevo sintético 5",
+   "regla_id": "R-SINT",
+   "regla_version": "0.0.1",
+   "severity": "block",
+   "tipo": "definicion"
+  },
+  {
+   "efecto_generacion": "informar",
+   "estado_verificacion": "verificado",
+   "evidence": "",
+   "gravedad": "media",
+   "id": "SINT_NUEVO_06",
+   "message": "Hallazgo nuevo sintético 6",
+   "regla_id": "R-SINT",
+   "regla_version": "0.0.1",
+   "severity": "info",
+   "tipo": "definicion"
+  }
+ ],
+ "sintetico": true
+}

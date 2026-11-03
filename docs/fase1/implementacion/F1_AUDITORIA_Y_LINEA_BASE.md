@@ -1,6 +1,6 @@
 # Fase 1 de implementación — Modelo y línea base
 
-**Estado:** auditoría del estado actual y línea base **completadas**. La parte de *modelo técnico y configuración* (sección 6 del encargo) **no se implementó**: el encargo recibido llega cortado en esa sección y se espera el texto restante (ver §9).
+**Estado:** auditoría del estado actual y línea base **completadas** (primer commit de la fase, `386099b`). El modelo técnico y la configuración se implementaron después: ver `docs/MODELO_HALLAZGOS.md`, `docs/CONFIGURACION_FASE1.md`, `docs/LINEA_BASE_FASE1.md` y `docs/fase1/implementacion/F1_INFORME_DE_FASE.md`. Este documento se conserva como registro de la auditoría inicial; §9 describe el estado **en ese momento**.
 
 Fuente de verdad: `docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md` e `INFORME_CIERRE_AUDITORIA_FASE1.md`.
 Alcance de este documento: solo hechos comprobados en el repositorio y resultados realmente ejecutados.

@@ -1,0 +1,111 @@
+{
+  "esquema": "reglas/1",
+  "version": "1.0.0",
+  "descripcion": "Parámetros de reglas y escenarios. Nada de esto lo consume todavía el motor (Fase 1, bloque de modelo y línea base). Valores no configurados = null.",
+  "flags": {
+    "validacion_fase1": false,
+    "relacion_pedidos_carritos": false,
+    "anexo_calidad": false,
+    "qa_pptx_exportado": false,
+    "escenarios_estrictos": false
+  },
+  "parametros": {
+    "e1_recuperacion_negados_medio": {
+      "valor": 0.25,
+      "origen": "heredado",
+      "referencia": "backend/app/narrative/rules.py:21",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "fuente_codigo": "backend.app.narrative.rules.RULES.recovery_scenario",
+      "nota": "Supuesto heredado, no validado."
+    },
+    "e1_recuperacion_negados_conservador": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.0",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "e1_recuperacion_negados_optimista": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.0",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "e2_recuperacion_abandono_medio": {
+      "valor": 0.1,
+      "origen": "heredado",
+      "referencia": "backend/app/narrative/rules.py:25",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "fuente_codigo": "backend.app.narrative.rules.RULES.cart_recovery_scenario",
+      "nota": "Supuesto heredado, no validado."
+    },
+    "e2_recuperacion_abandono_conservador": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.0",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "e2_recuperacion_abandono_optimista": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.0",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "umbral_conciliacion_compras": {
+      "valor": 0.2,
+      "origen": "heredado",
+      "referencia": "backend/app/raw/glp1.py:349",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "fuente_codigo": "raw.glp1:TRAFICO_PURCHASE_DIFFERS",
+      "nota": "Umbral del aviso vigente; parámetro, no verdad."
+    },
+    "max_pacientes_por_pedido": {
+      "valor": 1,
+      "origen": "nuevo",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 R-REL-PAC-PED",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "estatus_excluidos": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "cobertura_minima_paciente": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 (AMB-7)",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "tolerancia_conteo": {
+      "valor": 0,
+      "origen": "nuevo",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 R-CUADRE-DIM",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "tolerancia_monto_fraccion": {
+      "valor": 0.005,
+      "origen": "nuevo",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 R-CUADRE-DIM (AMB-7)",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "unidad_carritos": {
+      "valor": "no_declarada",
+      "origen": "nuevo",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 R-COBERTURA-ATC",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "fuente_pedidos": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.2 (AMB-1)",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "filtro_canal_relacion": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.2 (AMB-9)",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    }
+  },
+  "dimensiones": {}
+}
