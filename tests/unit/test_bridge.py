@@ -89,3 +89,47 @@ def test_full_flow_without_render_for_both_units(br, tmp_path):
         assert dl["status"] == 200 and Path(dl["file"]).stat().st_size > 50_000
     assert call(bridge, "GET", "/api/history/runs")["json"]
     assert call(bridge, "GET", "/api/history/export")["status"] == 200
+
+
+def test_missing_template_is_explained_and_unblocked_after_upload(br, tmp_path):
+    bridge, S, t = br
+    m = _mod("mrs3")
+    f = m.build_aetops(tmp_path / "a.xlsx")
+    rid = call(bridge, "POST", "/api/runs", {"unit": "aetops", "periodicity": "mensual", "year": 2026, "index": 9})["json"]["id"]
+    call(bridge, "POST", f"/api/runs/{rid}/file", up=f)
+    call(bridge, "PUT", f"/api/runs/{rid}/targets", {"total": "10000000"})
+    a = call(bridge, "GET", f"/api/runs/{rid}/analysis")["json"]
+    assert a["generator_available"] is False and a["template_key"] == "aetops-mensual"
+    assert "Falta la plantilla PPTX de AETOPS mensual" in a["message"] and "Plantillas" in a["message"]
+    assert call(bridge, "GET", f"/api/runs/{rid}/narrative")["status"] in (404, 409, 500)      # no hay plantilla: error legible, no un fallo mudo
+    if HAS_TPL:
+        call(bridge, "POST", "/api/templates/aetops-mensual", up=TPL_DIR / "aetops-mensual/1/template.pptx")
+        assert call(bridge, "GET", f"/api/runs/{rid}/analysis")["json"]["generator_available"] is True
+
+
+@pytest.mark.skipif(not HAS_TPL, reason="plantillas reales no disponibles")
+def test_wrong_template_is_rejected_with_a_clear_message(br):
+    bridge, S, t = br
+    ok = call(bridge, "POST", "/api/templates/aetops-mensual", up=TPL_DIR / "aetops-mensual/1/template.pptx")
+    assert ok["status"] == 200
+    # un PPTX de otro formato en la ranura equivocada
+    bad = call(bridge, "POST", "/api/templates/aetops-mensual", up=TPL_DIR / "glp1-mensual/1/template.pptx")
+    assert bad["status"] == 400 and "no corresponde a «AETOPS mensual»" in bad["error"]
+    bad2 = call(bridge, "POST", "/api/templates/glp1-mensual", up=TPL_DIR / "aetops-mensual/1/template.pptx")
+    assert bad2["status"] == 400 and "GLP-1 mensual" in bad2["error"]
+    assert call(bridge, "POST", "/api/templates/aetops-trimestral", up=TPL_DIR / "aetops-mensual/1/template.pptx")["status"] == 400
+    # la plantilla válida anterior sigue en su lugar
+    assert {x["key"]: x["available"] for x in call(bridge, "GET", "/api/templates")["json"]}["aetops-mensual"]
+
+
+def test_period_without_data_gives_a_clear_finding_not_a_crash(br, tmp_path):
+    bridge, S, t = br
+    m = _mod("mrs4")
+    f = m.build_aetops(tmp_path / "a.xlsx", until=(2026, 9))
+    for unit, build in (("aetops", m.build_aetops), ("glp1", m.build_glp1)):
+        rid = call(bridge, "POST", "/api/runs", {"unit": unit, "periodicity": "mensual", "year": 2026, "index": 12})["json"]["id"]
+        call(bridge, "POST", f"/api/runs/{rid}/file", up=build(tmp_path / f"{unit}.xlsx", until=(2026, 9)))
+        a = call(bridge, "GET", f"/api/runs/{rid}/analysis")
+        assert a["status"] == 200, a
+        ids = {x["id"] for x in a["json"]["findings"]}
+        assert "RAW_PERIOD_EMPTY" in ids and a["json"]["can_generate"] is False and a["json"]["kpis"] == []

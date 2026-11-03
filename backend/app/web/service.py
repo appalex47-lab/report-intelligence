@@ -45,7 +45,7 @@ SLIDE_TITLES = {
     "resumen_ejecutivo": "Resumen ejecutivo", "recomendaciones": "Recomendaciones", "panorama": "Panorama",
     "linea_yoy": "Líneas YoY", "linea_mom": "Líneas MoM", "canal_yoy": "Canales YoY", "canal_mom": "Canales MoM",
     "productos": "Productos", "movers": "Mayores alzas y bajas", "cat_yoy": "Categorías YoY", "cat_mom": "Categorías MoM",
-    "negados": "Negados", "conclusiones": "Conclusiones",
+    "negados": "Negados", "conclusiones": "Conclusiones", "crecimiento": "Productos: mayor crecimiento", "decrecimiento": "Productos: mayor decrecimiento",
     "quien": "¿Quién busca GLP1?", "producto_sexo": "Producto por sexo", "region": "Región", "pago": "Pago y entrega",
     "funnel": "Embudo y negados", "programas": "Programas", "fuentes": "Fuentes de tráfico",
 }
@@ -183,8 +183,8 @@ def _finding(f) -> dict:
 
 
 def _kpis(res, st) -> list[dict]:
-    if st["unit"] != "aetops":
-        return []
+    if st["unit"] != "aetops" or "aetops.panorama.yoy" not in res.tables or not res.tables["aetops.panorama.yoy"].groups:
+        return []                                   # periodo sin datos: ya hay un hallazgo que lo explica
     g = res.tables["aetops.panorama.yoy"].groups[0]
     out = []
     for k, label in (("monto", "Venta"), ("pacientes", "Pacientes"), ("ticket", "Ticket"), ("piezas", "Piezas")):
@@ -199,7 +199,7 @@ def analyze(run_id: str) -> dict:
     res = _run_engine(run_id, st)
     findings = [_finding(f) for f in res.findings]
     att = []
-    if st["unit"] == "aetops":
+    if st["unit"] == "aetops" and res.tables:
         att = [{"nombre": a.name, "real": float(a.actual), "meta": float(a.target), "cumplimiento": float(a.pct),
                 "brecha": float(a.gap), "estado": a.status} for a in attainment(res, _targets(st))]
     gen_ok = _has_template(st)
@@ -207,7 +207,9 @@ def analyze(run_id: str) -> dict:
             "kpis": _kpis(res, st), "cumplimiento": att,
             "targets_required": st["unit"] == "aetops", "targets_lines": [],
             "generator_available": gen_ok,
-            "message": None if gen_ok else "No hay plantilla para este formato: la validación está disponible, el generador no."}
+            "template_key": f"{st['unit']}-{st['periodicity']}", "template_label": TEMPLATE_KEYS.get(f"{st['unit']}-{st['periodicity']}", ""),
+            "message": None if gen_ok else (f"Falta la plantilla PPTX de {TEMPLATE_KEYS.get(st['unit'] + '-' + st['periodicity'], 'este formato')}: "
+                                            "cárgala en la pestaña «Plantillas» para poder revisar la narrativa y generar el reporte.")}
 
 
 def _has_template(st: dict) -> bool:
@@ -251,7 +253,10 @@ def narrative(run_id: str) -> dict:
                 "ediciones": st["edits"]}
     att = attainment(res, _targets(st))
     prs = Presentation(tpl)
-    fill = (fill_aetops_mensual if per.periodicity == "mensual" else fill_aetops_trimestral)(prs, res, per, None, True, att=att)
+    try:
+        fill = (fill_aetops_mensual if per.periodicity == "mensual" else fill_aetops_trimestral)(prs, res, per, None, True, att=att)
+    except (DataMissing, TemplateMismatch) as e:
+        raise ServiceError(f"La plantilla cargada no coincide con el formato ({e}). Vuelve a cargar el PPTX original en la pestaña «Plantillas».", 409) from None
     ex = build_executive(res, per, att=att)
     sections = dict(fill.narrative)
     ctx = [c for c in st["context"] if c.strip()]
@@ -393,7 +398,26 @@ def save_template(key: str, filename: str, data: bytes) -> list[dict]:
                 raise ServiceError("La plantilla contiene macros; no se admite.")
     except zipfile.BadZipFile:
         raise ServiceError("El archivo está dañado o no es .pptx.") from None
+    _check_template_matches(key, data)
     d = TEMPLATES_DIR / key / "1"
     d.mkdir(parents=True, exist_ok=True)
     (d / "template.pptx").write_bytes(data)
     return list_templates()
+
+
+def _check_template_matches(key: str, data: bytes) -> None:
+    """Rechaza un PPTX que no sea el original de ese formato (si no, fallaría después, al generar)."""
+    import io
+    from ..deck import aetops_mensual, aetops_trimestral, glp1_mensual
+    spec = {"aetops-mensual": (aetops_mensual.NARR, 11), "aetops-trimestral": (aetops_trimestral.NARR, 8),
+            "glp1-mensual": (glp1_mensual.NARR, 11), "glp1-trimestral": (glp1_mensual.NARR, 11)}[key]
+    narr, n_slides = spec
+    prs = Presentation(io.BytesIO(data))
+    label = TEMPLATE_KEYS[key]
+    if len(prs.slides) != n_slides:
+        raise ServiceError(f"Esta plantilla no corresponde a «{label}»: tiene {len(prs.slides)} diapositivas y el original tiene {n_slides}. "
+                           "Carga el PPTX original de ese formato (sin el resumen ejecutivo ni las recomendaciones añadidas).")
+    for _k, (slide, shape) in narr.items():
+        if shape not in [sh.name for sh in prs.slides[slide - 1].shapes]:
+            raise ServiceError(f"Esta plantilla no corresponde a «{label}»: en la diapositiva {slide} no existe «{shape}». "
+                               "Carga el PPTX original de ese formato.")

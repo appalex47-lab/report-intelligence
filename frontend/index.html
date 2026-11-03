@@ -85,6 +85,23 @@ svg.spark{width:100%;height:42px}
 .dlg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:grid;place-items:center;z-index:10;padding:16px}.dlg img{max-width:100%;max-height:100%}
 [hidden]{display:none!important}
 .boot{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:20;padding:16px}.boot .card{max-width:460px;display:grid;gap:8px}
+
+/* indicadores de avance */
+.topbar{position:fixed;left:0;right:0;top:0;height:3px;z-index:30;overflow:hidden;background:transparent}
+.topbar::before{content:"";position:absolute;inset:0;width:40%;background:var(--primary);animation:slide 1.1s ease-in-out infinite}
+@keyframes slide{0%{left:-40%}100%{left:100%}}
+.loader{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:30;display:flex;gap:10px;align-items:center;background:var(--surface);color:var(--ink);
+  border:1px solid var(--line-2);border-radius:99px;padding:10px 16px;box-shadow:var(--shadow);max-width:calc(100vw - 32px)}
+.spin{width:16px;height:16px;border:2px solid var(--line-2);border-top-color:var(--primary);border-radius:50%;animation:rot .8s linear infinite;flex:none}
+@keyframes rot{to{transform:rotate(360deg)}}
+body.busy .btn,body.busy .step,body.busy .tab,body.busy .ritem,body.busy .drop{pointer-events:none;opacity:.6}
+.skel{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--surface-2),var(--line),var(--surface-2));background-size:200% 100%;animation:sh 1.2s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+/* paneles plegables */
+details.rail>summary,details.insp>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:600;padding:8px}
+details.rail>summary::-webkit-details-marker,details.insp>summary::-webkit-details-marker{display:none}
+details>summary .chev{transition:transform .15s;color:var(--muted)}details[open]>summary .chev{transform:rotate(180deg)}
+@media(max-width:900px){.rail{position:static!important;max-height:none!important}}
 </style>
 </head>
 <body>
@@ -110,6 +127,8 @@ svg.spark{width:100%;height:42px}
   <section id="p-tpl" class="grid" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
+<div id="topbar" class="topbar" hidden></div>
+<div id="loader" class="loader" role="status" aria-live="polite" hidden><span class="spin"></span><span id="loader-msg"></span><span id="loader-t" class="sub"></span></div>
 
 <script>
 "use strict";
@@ -138,7 +157,30 @@ worker.onmessage = (e) => {
 };
 worker.onerror = (e) => { const o = $("#boot-msg"); if (o) o.textContent = "No se pudo iniciar el motor: " + (e.message || "error") + ". Recarga la página."; };
 function ask(msg, transfer = []) { return new Promise((res, rej) => { const id = ++seq; pending.set(id, { res, rej }); worker.postMessage({ id, ...msg }, transfer); }); }
+/* ---------------------------------------------------------------- indicador de avance (barra superior + mensaje con segundos) */
+const LOADER_LABELS = [[/\/file$/, "Leyendo y validando el libro de Excel…"], [/\/analysis$/, "Validando los datos…"], [/\/narrative$/, "Calculando la narrativa…"],
+  [/\/generate$/, "Generando la presentación…"], [/\/(targets|context)$/, "Guardando…"], [/^\/templates\/.+/, "Guardando la plantilla…"],
+  [/^\/history\//, "Cargando el historial…"], [/^\/machote/, "Preparando el machote…"], [/\/files\//, "Preparando la descarga…"], [/^\/templates$/, null]];
+let loaderN = 0, loaderT0 = 0, loaderTimer = null;
+function loaderStart(label){
+  loaderN++; $("#loader-msg").textContent = label;
+  if(loaderN === 1){
+    loaderT0 = Date.now(); $("#loader").hidden = false; $("#topbar").hidden = false; document.body.classList.add("busy");
+    loaderTimer = setInterval(() => { const s = Math.round((Date.now() - loaderT0) / 1000); $("#loader-t").textContent = s >= 3 ? s + " s" : ""; }, 500);
+  }
+}
+function loaderEnd(){
+  loaderN = Math.max(0, loaderN - 1);
+  if(!loaderN){ clearInterval(loaderTimer); $("#loader").hidden = true; $("#topbar").hidden = true; $("#loader-t").textContent = ""; document.body.classList.remove("busy"); }
+}
+const labelFor = path => { for(const [rx, l] of LOADER_LABELS) if(rx.test(path)) return l; return null; };
 async function api(path, opts = {}){
+  const label = labelFor(path.split("?")[0]);
+  if(!label) return apiRaw(path, opts);
+  loaderStart(label);
+  try{ return await apiRaw(path, opts) } finally { loaderEnd() }
+}
+async function apiRaw(path, opts = {}){
   const method = (opts.method || "GET").toUpperCase();
   let body = null, file = null, p = "/api" + path;
   const q = p.indexOf("?");
@@ -149,8 +191,10 @@ async function api(path, opts = {}){
   return r.json;
 }
 async function fetchFile(path, query = null){            // descarga: el archivo sale del sistema de archivos virtual del motor
-  const r = await ask({ method: "GET", path: "/api" + path, body: query });
-  return r.file;
+  const label = labelFor(path);
+  if(label) loaderStart(label);
+  try{ const r = await ask({ method: "GET", path: "/api" + path, body: query }); return r.file }
+  finally { if(label) loaderEnd() }
 }
 async function download(path, query = null){
   try{
@@ -159,6 +203,8 @@ async function download(path, query = null){
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }catch(e){ toast(e.message) }
 }
+const onlyTargetsMissing = a => { const b = a.findings.filter(f => f.severity === "block"); return b.length > 0 && b.every(f => f.id === "TARGETS_MISSING") };
+const isNarrow = () => window.matchMedia("(max-width:900px)").matches;
 const J = (method, data) => ({method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
 
 /* ---------------------------------------------------------------- estado de pasos */
@@ -256,7 +302,7 @@ async function upload(f){
 }
 
 function vValidate(box){
-  const a = S.analysis; if(!a){ box.innerHTML = `<div class="card">Cargando…</div>`; return }
+  const a = S.analysis; if(!a){ box.innerHTML = `<div class="card grid"><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div></div>`; return }
   const blocks = a.findings.filter(f=>f.severity==="block"), real = blocks.filter(f=>f.id!=="TARGETS_MISSING");
   const warns = a.findings.filter(f=>f.severity==="warn"), infos = a.findings.filter(f=>f.severity==="info");
   const banner = real.length ? `<div class="banner bad"><div><strong>${real.length} hallazgo(s) bloquean la generación</strong><span class="sub">Corrige el libro en Excel y vuelve a cargarlo. No se puede generar con bloqueos.</span></div><button class="btn" id="reload">Cargar otro archivo</button></div>`
@@ -269,7 +315,7 @@ function vValidate(box){
 }
 
 function vTargets(box){
-  const a = S.analysis, r = S.run; if(!a){ box.innerHTML = `<div class="card">Cargando…</div>`; return }
+  const a = S.analysis, r = S.run; if(!a){ box.innerHTML = `<div class="card grid"><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div></div>`; return }
   const T = r.targets || {}, lines = a.targets_lines, req = a.targets_required;
   const fld = (k, label) => `<label class="f">${label}<input type="text" inputmode="decimal" data-t="${k}" value="${esc(T[k]?Number(T[k]).toLocaleString("es-MX"):"")}" placeholder="${req?"obligatoria":"opcional"}"></label>`;
   const att = a.cumplimiento.length ? `<table><tr><th>Concepto</th><th>Real</th><th>Meta</th><th>Cumplimiento</th><th>Brecha</th></tr>${a.cumplimiento.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${fmtM(c.real)}</td><td>${fmtM(c.meta)}</td><td class="st ${c.estado}">${(c.cumplimiento*100).toFixed(1)} % · ${c.estado}</td><td>${fmtM(c.brecha)}</td></tr>`).join("")}</table>` : "";
@@ -282,11 +328,22 @@ function vTargets(box){
     <textarea id="ctx" rows="4" placeholder="Ej.: Campaña de ecommerce del 10 al 20 de septiembre.">${esc((r.context||[]).join("\n"))}</textarea>
     <div class="row"><span></span><button class="btn" id="saveC">Guardar contexto</button></div></div>
     <div class="row"><button class="btn" id="back">← Validar</button>
-    <button class="btn primary" id="nx" ${a.can_generate&&a.generator_available?"":"disabled"}>${a.generator_available?"Revisar narrativa →":"Generador no disponible"}</button></div>`;
+    <button class="btn primary" id="nx" ${a.generator_available&&(a.can_generate||onlyTargetsMissing(a))?"":"disabled"}>${a.generator_available?"Revisar narrativa →":"Falta la plantilla"}</button></div>`;
+  if(!a.generator_available){
+    const w = document.createElement("div"); w.className = "banner warn";
+    w.innerHTML = `<div><strong>Falta la plantilla PPTX: ${esc(a.template_label||"")}</strong><span class="sub">${esc(a.message||"")}</span></div><button class="btn primary" id="gotpl">Ir a Plantillas</button>`;
+    box.prepend(w); $("#gotpl").onclick = () => document.querySelector('[data-tab="tpl"]').click();
+  }
   const readT = () => { const o = {}; document.querySelectorAll("[data-t]").forEach(i=>{ if(i.value.trim()) o[i.dataset.t] = i.value.trim() }); return o };
   $("#saveT").onclick = async () => { try{ S.run = await api(`/runs/${r.id}/targets`, J("PUT", readT())); await refreshAnalysis(); S.narr=null; toast("Metas guardadas"); render() }catch(e){ $("#tmsg").textContent = e.message } };
   $("#saveC").onclick = async () => { try{ S.run = await api(`/runs/${r.id}/context`, J("PUT", {items:$("#ctx").value.split("\n")})); S.narr=null; toast("Contexto guardado") }catch(e){ toast(e.message) } };
-  $("#back").onclick = () => go(1); $("#nx").onclick = async () => { await saveBoth(); go(3) };
+  $("#back").onclick = () => go(1);
+  $("#nx").onclick = async () => {
+    await saveBoth();
+    try{ await refreshAnalysis() }catch(e){ toast(e.message); return }
+    if(!S.analysis.can_generate){ toast(onlyTargetsMissing(S.analysis) ? "Captura la meta general del periodo para continuar." : "Corrige los hallazgos bloqueantes primero."); render(); return }
+    go(3);
+  };
 }
 async function saveBoth(){
   try{
@@ -302,25 +359,25 @@ async function saveBoth(){
 const edited = k => S.edits[k] !== undefined;
 function curTexts(sec){ return S.edits[sec.clave] ?? sec.parrafos.filter(p=>p.visible).map(p=>p.texto) }
 function vNarr(box){
-  const n = S.narr; if(!n){ box.innerHTML = `<div class="card">Cargando…</div>`; return }
+  const n = S.narr; if(!n){ box.innerHTML = `<div class="card grid"><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div></div>`; return }
   const sec = n.secciones[S.sec], vis = sec.parrafos.filter(p=>p.visible), hid = sec.parrafos.filter(p=>!p.visible);
   const texts = curTexts(sec);
   const badge = k => edited(k) ? "edit" : "";
   box.innerHTML = `<div class="work">
-    <nav class="card rail" aria-label="Diapositivas"><div class="sub" style="padding:6px 8px">Diapositivas con texto</div>
-      ${n.secciones.map((s,i)=>`<button class="ritem" data-s="${i}" ${i===S.sec?'aria-current="true"':""}><span class="dot ${badge(s.clave)}"></span>${esc(s.titulo)}</button>`).join("")}</nav>
+    <details class="card rail" id="rail" ${isNarrow()?"":"open"}><summary><span>Diapositivas con texto <span class="sub">· ${S.sec+1} de ${n.secciones.length}: <b>${esc(sec.titulo)}</b></span></span><span class="chev">▾</span></summary>
+      <div class="grid" style="gap:2px">${n.secciones.map((s,i)=>`<button class="ritem" data-s="${i}" ${i===S.sec?'aria-current="true"':""}><span class="dot ${badge(s.clave)}"></span>${esc(s.titulo)}</button>`).join("")}</div></details>
     <div class="grid">
       <div class="card grid"><div class="row"><div><strong>${esc(sec.titulo)}</strong><div class="sub">Cada texto es un hecho, una interpretación con su regla, o una recomendación. Si cambias una cifra, se verifica contra los datos.</div></div>
         <button class="mini" id="reset" ${edited(sec.clave)?"":"hidden"}>Restaurar texto generado</button></div>
         <div id="paras" class="grid"></div>
         ${hid.length?`<div class="sub">${hid.length} nota(s) de calidad de datos no se imprimen en la diapositiva (quedan en narrative.json).</div>`:""}</div>
       <div class="row"><button class="btn" id="b3">← Metas</button><button class="btn primary" id="n5">Generar →</button></div></div>
-    <aside class="card grid" id="insp"><strong>Reglas del verificador</strong>
+    <details class="card insp" id="insp" ${isNarrow()?"":"open"}><summary><span>Reglas del verificador</span><span class="chev">▾</span></summary><div class="grid" style="padding:0 8px 8px">
       <div class="sub">• Toda cifra debe existir en los datos del periodo.<br>• Sin palabras de causa («debido a», «por culpa de»…): las causas las aporta el equipo en <em>Contexto</em>.<br>• Los textos editados se marcan y quedan en el historial.</div>
       <div class="kv"><span class="sub">Cifras válidas</span><b>${n.cifras_validas.length}</b></div>
       ${n.problemas.length?`<div class="warnline">${n.problemas.length} aviso(s) del verificador en el texto generado.</div>`:`<div class="okline">Texto generado sin avisos.</div>`}
-      <div class="sub">Tendencias del historial: pestaña «Historial y tendencias».</div></aside></div>`;
-  document.querySelectorAll(".ritem").forEach(b=>b.onclick=()=>{S.sec=+b.dataset.s;render()});
+      <div class="sub">Tendencias del historial: pestaña «Historial y tendencias».</div></div></details></div>`;
+  document.querySelectorAll(".ritem").forEach(b=>b.onclick=()=>{S.sec=+b.dataset.s;render(); if(isNarrow()) window.scrollTo({top:$("#rail").getBoundingClientRect().top+scrollY-8,behavior:"smooth"})});
   const host = $("#paras");
   texts.forEach((t, i) => {
     const meta = edited(sec.clave) ? null : vis[i];
@@ -365,7 +422,7 @@ function vGen(box){
     <div class="sub">Se rellena la plantilla original (tablas y textos editables)${S.info.render?", se convierte a PDF y":" y"} se aplica el QA: si el QA no aprueba, la descarga queda bloqueada.
     ${S.info.render?"":"<br><b>QA estructural:</b> esta versión corre 100 % en tu navegador, sin PDF ni vista previa. Revisa el PPTX en PowerPoint (Guardar como PDF) o usa el flujo opcional «PDF en GitHub» del README."}
     ${nEdits?`<br>Incluye ${nEdits} diapositiva(s) con texto editado a mano.`:""}</div>
-    <div class="row"><button class="btn" id="b4">← Narrativa</button><button class="btn primary" id="go" ${S.busy?"disabled":""}>${S.busy?"Generando… (≈15 s)":res?"Volver a generar":"Generar reporte"}</button></div></div><div id="out"></div>`;
+    <div class="row"><button class="btn" id="b4">← Narrativa</button><button class="btn primary" id="go" ${S.busy?"disabled":""}>${S.busy?'<span class="spin" style="display:inline-block;vertical-align:-3px;margin-right:6px"></span>Generando…':res?"Volver a generar":"Generar reporte"}</button></div></div><div id="out"></div>`;
   $("#b4").onclick = () => go(3);
   $("#go").onclick = async () => {
     S.busy = true; render();
@@ -400,7 +457,7 @@ function trendsHtml(ts){
     <div class="sub">${(t.puntos||[]).map(p=>esc(p.periodo)+(p.fuente==="derivado"?"*":"")).join(" · ")}</div></div>`).join("");
 }
 async function renderHist(){
-  const host = $("#p-hist"); host.innerHTML = `<div class="card">Cargando…</div>`;
+  const host = $("#p-hist"); host.innerHTML = `<div class="card grid"><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div></div>`;
   try{
     const [runs, tr] = await Promise.all([api("/history/runs"), api(`/history/trends?unit=aetops&periodicity=${S.run?.periodicity||"mensual"}`)]);
     host.innerHTML = `<div class="card"><strong>Tendencias (AETOPS ${esc(S.run?.periodicity||"mensual")})</strong>${trendsHtml(tr)}<div class="sub">* periodo derivado de un reporte posterior. Se exigen 2+ variaciones consecutivas fuera de ±5 % y 3 periodos contiguos.</div></div>
@@ -409,13 +466,13 @@ async function renderHist(){
       <div class="card"><strong>Reportes generados (inmutables, con versión)</strong>${runs.length?`<table><tr><th>Unidad</th><th>Periodo</th><th>Versión</th><th>Creado</th><th>QA</th></tr>${runs.map(r=>`<tr><td>${esc(r.unidad)}</td><td>${esc(r.periodicidad)} ${r.anio}-${r.indice}</td><td>v${r.version}</td><td>${esc(r.creado)}</td><td>${r.qa_ok?"✓":"✗"}</td></tr>`).join("")}</table>`:`<div class="sub">Sin reportes todavía.</div>`}</div>`;
     $("#hexp").onclick = () => download("/history/export");
     $("#himp").onchange = async (ev) => { const f = ev.target.files[0]; if(!f) return;
-      try{ await ask({op:"importHistory", buffer: await f.arrayBuffer()}); toast("Historial importado"); renderHist() }catch(e){ toast(e.message) } };
+      loaderStart("Importando el historial…"); try{ await ask({op:"importHistory", buffer: await f.arrayBuffer()}); toast("Historial importado"); renderHist() }catch(e){ toast(e.message) } finally { loaderEnd() } };
   }catch(e){ host.innerHTML = `<div class="banner bad">${esc(e.message)}</div>` }
 }
 
 /* ---------------------------------------------------------------- plantillas (se cargan una vez y quedan en este navegador) */
 async function renderTpl(){
-  const host = $("#p-tpl"); host.innerHTML = `<div class="card">Cargando…</div>`;
+  const host = $("#p-tpl"); host.innerHTML = `<div class="card grid"><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div></div>`;
   try{
     const list = await api("/templates"); S.tpls = list;
     host.innerHTML = `<div class="card grid"><strong>Plantillas PPTX</strong>
@@ -434,6 +491,7 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   $("#p-rep").hidden = t.dataset.tab!=="rep"; $("#p-hist").hidden = t.dataset.tab!=="hist"; $("#p-tpl").hidden = t.dataset.tab!=="tpl";
   if(t.dataset.tab==="hist") renderHist();
   if(t.dataset.tab==="tpl") renderTpl();
+  if(t.dataset.tab==="rep" && S.run && S.run.filename) go(S.step);              // al volver (p. ej. tras cargar una plantilla) se refresca el estado
 });
 $("#newRun").onclick = () => { S.run=null; S.analysis=null; S.narr=null; S.result=null; S.step=0; S.err=null; store.set("ri.run",""); render() };
 (async () => {
