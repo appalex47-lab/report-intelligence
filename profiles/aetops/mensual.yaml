@@ -1,0 +1,75 @@
+# Perfil de importación AETOPS (hoja Base). Es DATO, no código:
+# un cambio de estructura se resuelve aquí + una prueba, sin tocar el motor.
+profile: aetops-mensual
+version: 1
+sheet: Base
+label_col: B                 # columna de rótulos (periodos, anclas de grupo)
+section_markers: [yoy, mom]  # texto (normalizado) que abre una sección
+# Comparativos que exige este formato. Falta alguno -> MISSING_COMPARISON (bloquea).
+comparisons: [yoy, mom]
+
+# Cómo se reconoce el tipo de sección por su fila de encabezados
+kinds:
+  panorama:
+    header_b: [año]
+    header_c: [monto venta]
+  canal:
+    header_b: [canal]
+  linea:
+    header_b: [aetop]
+  categoria:
+    header_b: [año]
+    header_c: [categoria]
+    name_col: C              # el nombre del grupo está en esta columna (no hay fila ancla)
+
+# Clave canónica -> alias de encabezado aceptados (normalizados: sin acentos, minúsculas)
+metrics:
+  monto: [monto venta]
+  piezas: [piezas, piezas vendidas]
+  pacientes: [pacientes]
+  pedidos: [pedidos]
+  ticket: [ticket promedio]
+  productos: [producto vendidos, productos vendidos, producto]
+  share: [share]
+  size_b: [size b]
+  v_paciente: [v. paciente, v paciente]
+
+# De dónde sale el Ticket Promedio por tipo de sección:
+#   ratio  = Monto ÷ Pedidos (verificado en panorama y líneas)
+#   pasted = valor del Excel. En canales NO coincide con Monto ÷ Pedidos: la columna
+#            Pedidos por canal suma 2.1x el total, mientras que los tickets pegados sí
+#            cuadran con el total. Pendiente de validación con el dueño del reporte.
+ticket_source:
+  panorama: ratio
+  linea: ratio
+  canal: pasted
+  categoria: ratio
+
+# Secciones sin parser todavía (se reportan como info, no se ignoran en silencio)
+unsupported_kinds: []
+
+# --- Productos: hoja con bloques lado a lado (se detectan por el encabezado 'Sivec') ---
+products:
+  sheet: Tablas
+  key_header: sivec
+  # rol de cada bloque, ordenados por (columna, fila): izq = Top por venta; der arriba = crecimiento; der abajo = decrecimiento
+  roles: [top, growth, decline]
+  columns:
+    sivec: [sivec]
+    producto: [producto]
+    aetop: [aetop]
+    canales: [canales de venta]
+    actual: [venta mes actual]
+    anterior: [venta mes anterior]
+    delta: [delta]
+
+# --- Negados: bloques por producto y por 'Alta' (línea) ---
+negados:
+  sheet: Negados
+  columns:
+    producto: [nombre del producto]
+    alta: [alta]
+    pedidos: [pedidos]
+    cantidad: [cantidad negada]
+    monto: [monto negado]
+    share: [share]

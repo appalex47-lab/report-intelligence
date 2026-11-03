@@ -131,6 +131,33 @@ Problemas [V]:
 - `Tiempo de interacción` es texto `hh:mm:ss`.
 - Cabeceras con errores tipográficos de origen: `& de rebote`, `{`.
 
+### 4.3 Hallazgos adicionales (Fase 4a, detectados por el motor sobre el Excel real)
+
+- **Pedidos por canal sobrecontados:** Σ pedidos de los 4 canales = 2,998 vs 1,427 del panorama (≈2.1×). Los Tickets pegados por canal sí cuadran con el total (Monto ÷ ticket = 395 + 385 + 448 + 199 = 1,427). El PPTX publica esos pedidos inflados (p. ej. Llamadas Google +186 %). En líneas y panorama, Ticket = Monto ÷ Pedidos **sí** coincide. **[P]** Definir cómo se cuentan los pedidos por canal. Mientras tanto el motor usa el Ticket pegado en canales y lo marca (`TICKET_FORMULA_UNVERIFIED`).
+- **Grupo con periodo distinto en la misma tabla:** en canales MoM, WHATSAPP dice "Julio → Agosto" y los demás "Agosto → Septiembre" (`PERIOD_LABELS_INCONSISTENT`).
+- **Redondeo:** el PPTX usa mitad hacia arriba (0.625 → +63 %); `round()` de Python daría 62 %. El formato de presentación lo implementa explícitamente.
+- Share de canal y línea = Monto ÷ **total del panorama del mismo periodo** (verificado: APP FESA 2025 = 16.47 %). Resuelve la duda de denominador para AETOPS.
+
+### 4.4 Hallazgos del motor JS actual (detectados con el machote sintético)
+
+Con datos sintéticos coherentes, el motor web antiguo (`js/import-engine.js`) reproduce errores vistos en los archivos reales:
+- **"Conversiones (compra) = 0"** aunque el embudo trae Compra = 2,600 (lee la columna equivocada).
+- **16 "regiones"** en lugar de 8: mezcla la tabla de tráfico por estado (hoja 4) con la de ventas por región, y la **venta total** no coincide con la suma real.
+- Una fila "Total" mezclada con productos se cuenta como producto (el "Top producto" pasa a ser el total).
+
+Se corrigen al reemplazarlo por el importador por bloques (Fase 4c); no se parchea el motor antiguo.
+
+### 4.5 Hallazgos de GLP-1 (Fase 4c, sobre los libros reales)
+
+- **El libro no declara su periodo** (a diferencia de lo que sí hace el machote sintético): no hay forma de validar que todas las hojas sean del mismo mes. En el de Septiembre, la hoja 7 coincide con el PPTX de Agosto.
+- **%Δ pegado ≠ cambio de monto contra el bloque anterior:** CENTRO −3.5 % pegado vs −6.8 % recalculado; en pagos −2.0 % vs −28.6 %. Sospecha: el bloque anterior es el mes completo y el actual es parcial (o el %Δ usa otra métrica). **[P]** definir la base comparable. Se publica el pegado y se marca (`DELTA_METRIC_UNVERIFIED`).
+- **Ticket pegado ≠ Monto ÷ Pedidos** (CENTRO 5,467.53 vs 5,246.30), igual que en canales de AETOPS.
+- **Share en 0** en todas las tablas; `0.125441` suelto en una fila de negados y de productos (arrastre).
+- **Hueco real:** el bloque anterior de fuentes de tráfico (hoja 9, col. J) tiene filas en blanco en medio; leído tal cual, se pierden categorías.
+- **Errata:** "Carritos abadonados" (embudo) y `& de rebote`, en ambos libros.
+- Embudo: Compra = 3,912 vs Σ pedidos de región = 2,489 (eventos ≠ pedidos).
+- Σ pedidos de forma de pago (2,395) y de región (2,489) difieren ~4 %.
+
 ---
 
 ## 5. Brecha: app actual vs originales

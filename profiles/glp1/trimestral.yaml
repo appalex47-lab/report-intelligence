@@ -1,0 +1,145 @@
+# Perfil de importación GLP-1 (libro operativo: hojas 1–9). Es DATO, no código.
+profile: glp1-trimestral
+version: 1
+
+# Hojas donde el libro puede declarar su periodo ("Periodo declarado: Septiembre 2026" / "Q3 2026").
+# Los libros operativos reales NO lo declaran: se avisa (PERIOD_UNDECLARED) en lugar de asumir.
+period_sheets: [LEEME_SINTETICO, Parametros, 01_Parametros]
+
+# clave canónica -> alias de encabezado (normalizados: sin acentos, minúsculas)
+metrics:
+  visitas: [visitas]
+  usuarios: [total de usuarios]
+  atc: [add to cart]
+  recurrentes: [usuarios recurrentes]
+  nuevos: [usuarios nuevos]
+  share: [share]
+  delta: ["% Δ"]
+  rebote: ["% de rebote"]
+  tiempo: [tiempo de interaccion]
+  pedidos: [pedidos]
+  piezas: [piezas]
+  monto: [monto venta]
+  monto_negado: [monto negado]
+  pacientes: [pacientes]
+  ticket: [ticket promedio]
+
+# Erratas conocidas del original, aceptadas con aviso (nunca en silencio)
+typo_aliases:
+  rebote: ["& de rebote"]
+
+# Definiciones del negocio (confirmadas):
+#   Ticket Promedio = Monto Venta ÷ Pedidos  (se calcula; el valor pegado en el Excel solo se contrasta)
+#   %Δ = variación contra el periodo anterior (MoM) recalculada con el bloque "anterior" del libro; si una tabla no
+#        trae bloque anterior, se usa el %Δ del Excel y se avisa. El comparativo YoY necesita datos del año anterior
+#        (otro libro o el historial de reportes) y no está en este libro.
+ticket_source: ratio
+delta_source: engine
+
+# Base del Share (denominador = total del periodo = Σ del bloque)
+share_basis: {traffic: visitas, money: monto, negados: monto_negado}
+
+blocks:
+  edad:
+    sheet: "1"
+    header: [[edad]]
+    basis: traffic
+    cols: {required: [visitas], optional: [usuarios, atc, recurrentes, nuevos, share, delta]}
+  sexo:
+    sheet: "1"
+    header: [[sexo]]
+    basis: traffic
+    cols: {required: [visitas], optional: [usuarios, atc, recurrentes, nuevos, share, delta]}
+  dispositivo:
+    sheet: "1"
+    header: [[categoria de dispositivo]]
+    basis: traffic
+    cols: {required: [visitas], optional: [usuarios, atc, recurrentes, nuevos, share, delta]}
+  edad_producto:                       # varios bloques: "Edad / Mounjaro", "Edad Wegovy"…
+    sheet: "2"
+    pattern: '^edad\s*/?\s*(.+)$'
+    basis: traffic
+    cols: {required: [visitas], optional: [usuarios, atc, recurrentes, nuevos, rebote, delta]}
+  producto_sexo:
+    sheet: "3"
+    header: [[producto], [sexo]]
+    dim2: true
+    blank: skip                        # filas en blanco separan productos
+    basis: traffic
+    cols: {required: [visitas], optional: [usuarios, atc, recurrentes, nuevos, tiempo, rebote, delta]}
+  region:
+    sheet: "4"
+    header: [[region], [pedidos]]
+    basis: money
+    prior: {block: region_anterior, metric: monto}
+    cols: {required: [pedidos, monto], optional: [piezas, pacientes, ticket, share, delta]}
+  region_anterior:
+    sheet: "4"
+    header: [[region], [monto venta]]
+    role: prior
+    cols: {required: [monto], optional: [share]}
+  trafico_estado:
+    sheet: "4"
+    header: [[region], [visitas]]
+    basis: traffic
+    optional_block: true
+    cols: {required: [visitas], optional: [usuarios, atc, recurrentes, nuevos, delta]}
+  pago:
+    sheet: "5"
+    header: [[forma de pago], [pedidos]]
+    basis: money
+    prior: {block: pago_anterior, metric: monto}
+    cols: {required: [pedidos, monto], optional: [piezas, pacientes, ticket, share, delta]}
+  pago_anterior:
+    sheet: "5"
+    header: [[forma de pago], [monto venta]]
+    role: prior
+    cols: {required: [monto], optional: [share]}
+  entrega:
+    sheet: "5"
+    header: [[modo de entrega]]
+    basis: money
+    cols: {required: [pedidos, monto], optional: [piezas, pacientes, ticket, share, delta]}
+  negados:
+    sheet: "6"
+    header: [[nombre del producto]]
+    basis: negados
+    cols: {required: [pedidos, monto_negado], optional: [piezas, pacientes, ticket, share, delta]}
+  productos:
+    sheet: "7"
+    header: [[producto], [pedidos]]
+    basis: money
+    cols: {required: [pedidos, monto], optional: [piezas, pacientes, ticket, share, delta]}
+  programas:
+    sheet: "8"
+    header: [[programa de lealtad]]
+    basis: money
+    cols: {required: [pedidos, monto], optional: [piezas, pacientes, ticket, share, delta]}
+  fuentes:
+    sheet: "9"
+    header: [[categoria de dispositivo], [visitas]]
+    occurrence: 1
+    basis: traffic
+    prior: {block: fuentes_anterior, metric: visitas}
+    cols: {required: [visitas], optional: [usuarios, atc, recurrentes, nuevos, delta]}
+  fuentes_anterior:
+    sheet: "9"
+    header: [[categoria de dispositivo], [visitas]]
+    occurrence: 2
+    role: prior
+    cols: {required: [visitas], optional: [usuarios, atc, recurrentes, nuevos]}
+  canal_resumen:
+    sheet: "9"
+    header: [[canal]]
+    basis: traffic
+    optional_block: true
+    cols: {required: [visitas], optional: [usuarios, atc, recurrentes, nuevos]}
+
+# Embudo: sin encabezado; filas espaciadas; tasa en la col B y conteo en la col E
+funnel:
+  sheet: "5"
+  stages: [ver producto, agregar a carrito, iniciar compra, compra, carritos abandonados]
+  typo_stages:                       # errata real del libro: 'Carritos abadonados'
+    carritos abadonados: carritos abandonados
+  rate_col: B
+  count_col: E

@@ -1,0 +1,9 @@
+# Uso local o en servidor interno. Las plantillas (PPTX originales) NO viajan en la imagen: se montan.
+services:
+  report:
+    build: .
+    ports: ["127.0.0.1:8000:8000"]      # solo local; publica detrás de un proxy interno con autenticación si hace falta
+    volumes:
+      - ./data_runtime:/data            # corridas e historial inmutable
+      - ./templates:/templates:ro       # templates/<unidad>-<periodicidad>/1/template.pptx
+    restart: unless-stopped

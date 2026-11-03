@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report Intelligence</title>
+<style>
+:root{
+  --bg:#F2F5F9;--surface:#fff;--surface-2:#F7F9FC;--ink:#152036;--muted:#586379;--line:#DCE2EC;--line-2:#C9D1DF;
+  --primary:#0A62B5;--primary-ink:#fff;--primary-soft:#E4F0FB;--ok:#1C7A4B;--ok-soft:#E1F3E9;--warn:#9A5B00;--warn-soft:#FFF1D6;
+  --bad:#B3261E;--bad-soft:#FBE4E2;--k-hecho:#2F5E8E;--k-hecho-soft:#E6EEF7;--k-int:#6A4BA3;--k-int-soft:#EEE8F7;
+  --k-rec:#B4511A;--k-rec-soft:#FCEBDD;--k-ctx:#0E7C80;--k-ctx-soft:#DDF3F3;--k-info:#6B7280;--k-info-soft:#EDEFF3;
+  --shadow:0 1px 2px rgba(16,28,52,.06),0 4px 16px rgba(16,28,52,.06);
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D1422;--surface:#151E31;--surface-2:#1A2539;--ink:#E7ECF5;--muted:#9AA6BD;--line:#26324A;--line-2:#33425F;
+  --primary:#5AA6F0;--primary-ink:#06223F;--primary-soft:#14304F;--ok:#5FD39A;--ok-soft:#123525;--warn:#F2B552;--warn-soft:#3A2B0E;
+  --bad:#FF8F86;--bad-soft:#3F1B19;--k-hecho:#8DB8E8;--k-hecho-soft:#182B44;--k-int:#B9A2EA;--k-int-soft:#2A2145;
+  --k-rec:#FFA877;--k-rec-soft:#3A2417;--k-ctx:#63D1D5;--k-ctx-soft:#0F3436;--k-info:#A7B0C0;--k-info-soft:#212B3F;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);padding:0 max(16px,env(safe-area-inset-left)) 0 max(16px,env(safe-area-inset-right))}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 0 48px;display:grid;gap:14px}
+header.top{display:flex;gap:12px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap}
+h1{font-size:22px;margin:0;font-weight:650}
+.sub{color:var(--muted);font-size:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:16px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;cursor:pointer;color:var(--muted);font-weight:500}
+.tab[aria-selected=true]{color:var(--ink);border-color:var(--primary)}
+.steps{display:flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.step{flex:1 1 150px;display:flex;gap:8px;align-items:center;padding:10px 14px;border:0;border-right:1px solid var(--line);background:none;cursor:pointer;color:var(--muted);text-align:left}
+.step:last-child{border-right:0}
+.step i{font-style:normal;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);font-size:12px;font-weight:600;flex:none}
+.step.done i{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.step.bad i{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.step.now{color:var(--ink);font-weight:600;background:var(--primary-soft)}
+.step.now i{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.step[disabled]{opacity:.5;cursor:not-allowed}
+.btn{border:1px solid var(--line-2);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:500;text-decoration:none;color:var(--ink);display:inline-block}
+.btn:hover{border-color:var(--primary)}
+.btn.primary{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.btn[disabled],.btn[aria-disabled=true]{opacity:.45;cursor:not-allowed;pointer-events:none}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+label.f{display:grid;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+input[type=text],input[type=number],select,textarea{border:1px solid var(--line-2);border-radius:8px;padding:8px 10px;background:var(--surface);width:100%}
+.drop{border:2px dashed var(--line-2);border-radius:12px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;background:var(--surface-2)}
+.drop.over{border-color:var(--primary);background:var(--primary-soft)}
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-radius:10px;padding:12px 14px;border:1px solid}
+.banner .sub{display:block}
+.banner.bad{background:var(--bad-soft);border-color:var(--bad)}.banner.ok{background:var(--ok-soft);border-color:var(--ok)}.banner.warn{background:var(--warn-soft);border-color:var(--warn)}
+.find{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding:8px 0;border-top:1px solid var(--line)}
+.sev{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:99px;height:fit-content}
+.sev.block{background:var(--bad-soft);color:var(--bad)}.sev.warn{background:var(--warn-soft);color:var(--warn)}.sev.info{background:var(--k-info-soft);color:var(--k-info)}
+code{font-family:var(--mono);font-size:11.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+table{border-collapse:collapse;width:100%}th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.st{font-weight:700}.st.cumple{color:var(--ok)}.st.cerca{color:var(--warn)}.st.debajo{color:var(--bad)}
+.work{display:grid;grid-template-columns:210px minmax(0,1fr) 290px;gap:14px;align-items:start}
+@media(max-width:900px){.work{grid-template-columns:1fr}}
+.rail{padding:8px;display:grid;gap:2px;position:sticky;top:8px;max-height:calc(100vh - 24px);overflow:auto}
+.ritem{display:flex;gap:8px;align-items:center;border:0;background:none;border-radius:8px;padding:8px;cursor:pointer;text-align:left;width:100%}
+.ritem:hover{background:var(--surface-2)}.ritem[aria-current=true]{background:var(--primary-soft);font-weight:600}
+.ritem .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}.ritem .dot.warn{background:var(--warn)}.ritem .dot.edit{background:var(--primary)}
+.chip{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:99px}
+.chip.hecho{background:var(--k-hecho-soft);color:var(--k-hecho)}.chip.interpretacion{background:var(--k-int-soft);color:var(--k-int)}
+.chip.recomendacion{background:var(--k-rec-soft);color:var(--k-rec)}.chip.contexto{background:var(--k-ctx-soft);color:var(--k-ctx)}.chip.info_insuficiente{background:var(--k-info-soft);color:var(--k-info)}
+.para{border:1px solid var(--line);border-left:4px solid var(--kc,var(--line-2));border-radius:10px;background:var(--surface-2);padding:10px 12px;display:grid;gap:8px}
+.para[data-k=hecho]{--kc:var(--k-hecho)}.para[data-k=interpretacion]{--kc:var(--k-int)}.para[data-k=recomendacion]{--kc:var(--k-rec)}.para[data-k=contexto]{--kc:var(--k-ctx)}
+.para textarea{resize:none;overflow:hidden;line-height:1.5}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.warnline{font-size:12px;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:4px 8px}
+.okline{font-size:12px;color:var(--ok)}
+.mini{border:0;background:none;color:var(--primary);cursor:pointer;font-size:12px;padding:2px 4px}
+.mini:hover{text-decoration:underline}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.thumbs img{width:100%;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:zoom-in}
+.kv{display:flex;justify-content:space-between;gap:10px}
+.trend{display:grid;gap:4px;padding:10px 0;border-top:1px solid var(--line)}
+svg.spark{width:100%;height:42px}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;z-index:9}
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:grid;place-items:center;z-index:10;padding:16px}.dlg img{max-width:100%;max-height:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div><h1>Report Intelligence</h1><div class="sub">Excel → reporte ejecutivo verificado · el motor calcula, la narrativa se revisa, la presentación sale de la plantilla</div></div>
+    <button class="btn" id="newRun">Nuevo reporte</button>
+  </header>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="rep">Reporte</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="hist">Historial y tendencias</button>
+  </div>
+
+  <section id="p-rep" class="grid">
+    <div class="steps" id="steps"></div>
+    <div id="view"></div>
+  </section>
+
+  <section id="p-hist" class="grid" hidden></section>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const STEPS = ["Cargar", "Validar", "Metas y contexto", "Revisar narrativa", "Generar"];
+const KIND = {hecho:"Hecho", interpretacion:"Interpretación", recomendacion:"Recomendación", contexto:"Contexto del equipo", info_insuficiente:"Información insuficiente"};
+const fmtM = v => v == null ? "—" : Math.abs(v) >= 1e6 ? `$${(v/1e6).toFixed(2)} M` : `$${Math.round(v).toLocaleString("es-MX")}`;
+const fmtP = v => v == null ? "—" : `${v>=0?"+":""}${(v*100).toFixed(1)} %`;
+
+const S = {run:null, step:0, analysis:null, narr:null, edits:{}, sec:0, result:null, busy:false, err:null};
+const store = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{localStorage.setItem(k,v)}catch{}}};
+
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3500)}
+async function api(path, opts = {}){
+  const r = await fetch("/api"+path, opts);
+  let body = null; try{ body = await r.json() }catch{}
+  if(!r.ok) throw new Error((body && (body.error||body.detail)) || `Error ${r.status}`);
+  return body;
+}
+const J = (method, data) => ({method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
+
+/* ---------------------------------------------------------------- estado de pasos */
+function stepState(){
+  const a = S.analysis, r = S.run;
+  const blocks = a ? a.findings.filter(f=>f.severity==="block") : [];
+  const targetsOnly = a && blocks.length && blocks.every(f=>f.id==="TARGETS_MISSING");
+  return [
+    {done:!!(r && r.filename), ok:!!r},
+    {done:!!a && !blocks.length, bad:!!a && blocks.some(f=>f.id!=="TARGETS_MISSING"), ok:!!(r && r.filename)},
+    {done:!!a && !!a.can_generate, bad:targetsOnly, ok:!!a},
+    {done:!!S.narr, ok:!!(a && a.can_generate && a.generator_available)},
+    {done:!!S.result, bad:S.result && !S.result.qa_passed, ok:!!(a && a.can_generate && a.generator_available)},
+  ];
+}
+function renderSteps(){
+  const st = stepState();
+  $("#steps").innerHTML = STEPS.map((t,i)=>`<button class="step ${i===S.step?"now":st[i].done?"done":st[i].bad?"bad":""}" data-i="${i}" ${st[i].ok?"":"disabled"}><i>${st[i].done&&i!==S.step?"✓":i+1}</i>${t}</button>`).join("");
+  document.querySelectorAll(".step").forEach(b=>b.onclick=()=>go(+b.dataset.i));
+}
+async function go(i){
+  S.step = i; S.err = null;
+  try{
+    if(i===1 || i===2) await refreshAnalysis();
+    if(i===3 && !S.narr) await loadNarrative();
+  }catch(e){ S.err = e.message }
+  render();
+}
+async function refreshAnalysis(){ S.analysis = await api(`/runs/${S.run.id}/analysis`) }
+async function loadNarrative(){
+  S.narr = await api(`/runs/${S.run.id}/narrative`);
+  S.edits = JSON.parse(JSON.stringify(S.run.edits || {}));
+  S.sec = 0;
+}
+
+/* ---------------------------------------------------------------- vistas */
+function render(){
+  renderSteps();
+  const v = $("#view");
+  if(S.err) { v.innerHTML = `<div class="banner bad"><div><strong>No se pudo continuar</strong><span class="sub">${esc(S.err)}</span></div></div>` + (S.step===0 ? "" : ""); }
+  else v.innerHTML = "";
+  const box = document.createElement("div"); box.className="grid"; v.appendChild(box);
+  [vLoad, vValidate, vTargets, vNarr, vGen][S.step](box);
+}
+
+function vLoad(box){
+  const r = S.run, now = new Date();
+  const unit = r?.unit || "aetops", per = r?.periodicity || "mensual", year = r?.year || now.getFullYear(), idx = r?.index || (now.getMonth()||12);
+  const lock = r && r.filename;
+  box.innerHTML = `<div class="card grid">
+    <div class="grid g2">
+      <label class="f">Unidad<select id="u" ${lock?"disabled":""}><option value="aetops" ${unit==="aetops"?"selected":""}>AETOPS</option><option value="glp1" ${unit==="glp1"?"selected":""}>GLP-1</option></select></label>
+      <label class="f">Periodicidad<select id="p" ${lock?"disabled":""}><option value="mensual" ${per==="mensual"?"selected":""}>Mensual</option><option value="trimestral" ${per==="trimestral"?"selected":""}>Trimestral</option></select></label>
+      <label class="f">Año<input id="y" type="number" value="${year}" min="2000" max="2100" ${lock?"disabled":""}></label>
+      <label class="f" id="iw">${per==="mensual"?"Mes":"Trimestre"}<select id="i" ${lock?"disabled":""}></select></label>
+    </div>
+    <div class="row"><span class="sub">¿Aún no tienes el archivo? Descarga el machote de captura del periodo.</span>
+      <a class="btn" id="mach" href="#">Descargar machote (.xlsx)</a></div>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Cargar libro de Excel">
+      ${r?.filename?`<strong>${esc(r.filename)}</strong><div class="sub">Haz clic o suelta otro archivo para reemplazarlo</div>`:`<strong>Suelta aquí el libro .xlsx</strong><div class="sub">o haz clic para elegirlo · hasta 25 MB · sin macros</div>`}
+      <input id="file" type="file" accept=".xlsx" hidden>
+    </div>
+    <div class="row"><span class="sub">Los datos se validan antes de cualquier narrativa; nada se envía a servicios externos.</span>
+      <button class="btn primary" id="next" ${r?.filename?"":"disabled"}>Validar →</button></div>
+  </div>`;
+  const fillIdx = () => {
+    const p = $("#p").value; $("#iw").firstChild.textContent = p==="mensual"?"Mes":"Trimestre";
+    const sel = $("#i"), cur = +(r?.index || idx);
+    sel.innerHTML = (p==="mensual"?MONTHS:["Q1","Q2","Q3","Q4"]).map((m,k)=>`<option value="${k+1}" ${k+1===cur?"selected":""}>${m}</option>`).join("");
+    if(cur > sel.options.length) sel.value = "1";
+  };
+  fillIdx(); $("#p").onchange = fillIdx;
+  const setMach = () => { $("#mach").href = `/api/machote?unit=${$("#u").value}&periodicity=${$("#p").value}&year=${$("#y").value}&index=${$("#i").value}` };
+  setMach(); ["u","p","y","i"].forEach(k=>$("#"+k).addEventListener("change",setMach));
+  const drop = $("#drop"), file = $("#file");
+  drop.onclick = () => file.click();
+  drop.onkeydown = e => { if(e.key==="Enter"||e.key===" ") file.click() };
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add("over") };
+  drop.ondragleave = () => drop.classList.remove("over");
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); if(e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]) };
+  file.onchange = () => file.files[0] && upload(file.files[0]);
+  $("#next").onclick = () => go(1);
+}
+async function upload(f){
+  try{
+    if(!S.run){
+      S.run = await api("/runs", J("POST", {unit:$("#u").value, periodicity:$("#p").value, year:+$("#y").value, index:+$("#i").value}));
+      store.set("ri.run", S.run.id);
+    }
+    const fd = new FormData(); fd.append("file", f);
+    S.run = await api(`/runs/${S.run.id}/file`, {method:"POST", body:fd});
+    S.analysis = null; S.narr = null; S.result = null; S.err = null;
+    toast("Libro cargado"); render();
+  }catch(e){ toast(e.message) }
+}
+
+function vValidate(box){
+  const a = S.analysis; if(!a){ box.innerHTML = `<div class="card">Cargando…</div>`; return }
+  const blocks = a.findings.filter(f=>f.severity==="block"), real = blocks.filter(f=>f.id!=="TARGETS_MISSING");
+  const warns = a.findings.filter(f=>f.severity==="warn"), infos = a.findings.filter(f=>f.severity==="info");
+  const banner = real.length ? `<div class="banner bad"><div><strong>${real.length} hallazgo(s) bloquean la generación</strong><span class="sub">Corrige el libro en Excel y vuelve a cargarlo. No se puede generar con bloqueos.</span></div><button class="btn" id="reload">Cargar otro archivo</button></div>`
+    : blocks.length ? `<div class="banner warn"><div><strong>Datos válidos · faltan las metas</strong><span class="sub">En AETOPS las metas del periodo son obligatorias.</span></div><button class="btn primary" id="tg">Capturar metas →</button></div>`
+    : `<div class="banner ok"><div><strong>Datos válidos</strong><span class="sub">${warns.length} advertencia(s) para tu revisión.</span></div><button class="btn primary" id="tg">Continuar →</button></div>`;
+  const list = (arr, title) => arr.length ? `<div class="card"><strong>${title} (${arr.length})</strong>${arr.map(f=>`<div class="find"><span class="sev ${f.severity}">${f.severity.toUpperCase()}</span><div><code>${esc(f.id)}</code> ${esc(f.message)}<div class="sub">${esc(f.evidence||"")}</div></div></div>`).join("")}</div>` : "";
+  const kp = a.kpis.length ? `<div class="card"><strong>Lectura rápida del motor</strong><table><tr><th>Métrica</th><th>Valor</th><th>Δ YoY</th></tr>${a.kpis.map(k=>`<tr><td>${k.metrica}</td><td>${k.metrica==="Venta"||k.metrica==="Ticket"?fmtM(k.valor):Math.round(k.valor).toLocaleString("es-MX")}</td><td>${fmtP(k.delta)}</td></tr>`).join("")}</table></div>` : "";
+  box.innerHTML = banner + (a.message?`<div class="banner warn"><div>${esc(a.message)}</div></div>`:"") + kp + list(real,"Bloqueos") + list(warns,"Advertencias") + list(infos,"Información");
+  $("#reload")?.addEventListener("click",()=>{S.step=0;render()}); $("#tg")?.addEventListener("click",()=>go(2));
+}
+
+function vTargets(box){
+  const a = S.analysis, r = S.run; if(!a){ box.innerHTML = `<div class="card">Cargando…</div>`; return }
+  const T = r.targets || {}, lines = a.targets_lines, req = a.targets_required;
+  const fld = (k, label) => `<label class="f">${label}<input type="text" inputmode="decimal" data-t="${k}" value="${esc(T[k]?Number(T[k]).toLocaleString("es-MX"):"")}" placeholder="${req?"obligatoria":"opcional"}"></label>`;
+  const att = a.cumplimiento.length ? `<table><tr><th>Concepto</th><th>Real</th><th>Meta</th><th>Cumplimiento</th><th>Brecha</th></tr>${a.cumplimiento.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${fmtM(c.real)}</td><td>${fmtM(c.meta)}</td><td class="st ${c.estado}">${(c.cumplimiento*100).toFixed(1)} % · ${c.estado}</td><td>${fmtM(c.brecha)}</td></tr>`).join("")}</table>` : "";
+  box.innerHTML = `<div class="card grid"><strong>Meta general del periodo ${req?"(obligatoria)":"(opcional)"}</strong>
+    <div class="sub">Monto de venta en pesos. Se guardan con el reporte para medir el cumplimiento en el tiempo.</div>
+    <div class="grid g2">${fld("total","Meta de venta del periodo")}${lines.map(l=>fld(l,"Meta "+l)).join("")}</div>
+    <div class="row"><span class="sub" id="tmsg"></span><button class="btn" id="saveT">Guardar metas</button></div>${att}</div>
+    <div class="card grid"><strong>Contexto del periodo (opcional)</strong>
+    <div class="sub">Causas o hechos que conoce el equipo (campañas, abasto, eventos). Sale en el resumen ejecutivo como <em>contexto aportado, no verificado</em>. Una idea por línea (máx. 6).</div>
+    <textarea id="ctx" rows="4" placeholder="Ej.: Campaña de ecommerce del 10 al 20 de septiembre.">${esc((r.context||[]).join("\n"))}</textarea>
+    <div class="row"><span></span><button class="btn" id="saveC">Guardar contexto</button></div></div>
+    <div class="row"><button class="btn" id="back">← Validar</button>
+    <button class="btn primary" id="nx" ${a.can_generate&&a.generator_available?"":"disabled"}>${a.generator_available?"Revisar narrativa →":"Generador no disponible"}</button></div>`;
+  const readT = () => { const o = {}; document.querySelectorAll("[data-t]").forEach(i=>{ if(i.value.trim()) o[i.dataset.t] = i.value.trim() }); return o };
+  $("#saveT").onclick = async () => { try{ S.run = await api(`/runs/${r.id}/targets`, J("PUT", readT())); await refreshAnalysis(); S.narr=null; toast("Metas guardadas"); render() }catch(e){ $("#tmsg").textContent = e.message } };
+  $("#saveC").onclick = async () => { try{ S.run = await api(`/runs/${r.id}/context`, J("PUT", {items:$("#ctx").value.split("\n")})); S.narr=null; toast("Contexto guardado") }catch(e){ toast(e.message) } };
+  $("#back").onclick = () => go(1); $("#nx").onclick = async () => { await saveBoth(); go(3) };
+}
+async function saveBoth(){
+  try{
+    const o = {}; document.querySelectorAll("[data-t]").forEach(i=>{ if(i.value.trim()) o[i.dataset.t] = i.value.trim() });
+    if(JSON.stringify(Object.keys(o).sort().map(k=>[k,o[k].replace(/[$,\s]/g,"")])) !== JSON.stringify(Object.keys(S.run.targets||{}).sort().map(k=>[k,String(Number(S.run.targets[k]))])))
+      S.run = await api(`/runs/${S.run.id}/targets`, J("PUT", o));
+    const c = $("#ctx"); if(c) S.run = await api(`/runs/${S.run.id}/context`, J("PUT", {items:c.value.split("\n")}));
+    S.narr = null;
+  }catch(e){ toast(e.message) }
+}
+
+/* ---- revisión de narrativa */
+const edited = k => S.edits[k] !== undefined;
+function curTexts(sec){ return S.edits[sec.clave] ?? sec.parrafos.filter(p=>p.visible).map(p=>p.texto) }
+function vNarr(box){
+  const n = S.narr; if(!n){ box.innerHTML = `<div class="card">Cargando…</div>`; return }
+  const sec = n.secciones[S.sec], vis = sec.parrafos.filter(p=>p.visible), hid = sec.parrafos.filter(p=>!p.visible);
+  const texts = curTexts(sec);
+  const badge = k => edited(k) ? "edit" : "";
+  box.innerHTML = `<div class="work">
+    <nav class="card rail" aria-label="Diapositivas"><div class="sub" style="padding:6px 8px">Diapositivas con texto</div>
+      ${n.secciones.map((s,i)=>`<button class="ritem" data-s="${i}" ${i===S.sec?'aria-current="true"':""}><span class="dot ${badge(s.clave)}"></span>${esc(s.titulo)}</button>`).join("")}</nav>
+    <div class="grid">
+      <div class="card grid"><div class="row"><div><strong>${esc(sec.titulo)}</strong><div class="sub">Cada texto es un hecho, una interpretación con su regla, o una recomendación. Si cambias una cifra, se verifica contra los datos.</div></div>
+        <button class="mini" id="reset" ${edited(sec.clave)?"":"hidden"}>Restaurar texto generado</button></div>
+        <div id="paras" class="grid"></div>
+        ${hid.length?`<div class="sub">${hid.length} nota(s) de calidad de datos no se imprimen en la diapositiva (quedan en narrative.json).</div>`:""}</div>
+      <div class="row"><button class="btn" id="b3">← Metas</button><button class="btn primary" id="n5">Generar →</button></div></div>
+    <aside class="card grid" id="insp"><strong>Reglas del verificador</strong>
+      <div class="sub">• Toda cifra debe existir en los datos del periodo.<br>• Sin palabras de causa («debido a», «por culpa de»…): las causas las aporta el equipo en <em>Contexto</em>.<br>• Los textos editados se marcan y quedan en el historial.</div>
+      <div class="kv"><span class="sub">Cifras válidas</span><b>${n.cifras_validas.length}</b></div>
+      ${n.problemas.length?`<div class="warnline">${n.problemas.length} aviso(s) del verificador en el texto generado.</div>`:`<div class="okline">Texto generado sin avisos.</div>`}
+      <div class="sub">Tendencias del historial: pestaña «Historial y tendencias».</div></aside></div>`;
+  document.querySelectorAll(".ritem").forEach(b=>b.onclick=()=>{S.sec=+b.dataset.s;render()});
+  const host = $("#paras");
+  texts.forEach((t, i) => {
+    const meta = edited(sec.clave) ? null : vis[i];
+    const kind = meta ? meta.tipo : "hecho";
+    const d = document.createElement("div"); d.className = "para"; d.dataset.k = kind;
+    d.innerHTML = `<div class="row"><span class="chip ${kind}">${KIND[kind]||kind}</span><span class="sub">${meta&&meta.regla?"Regla: "+esc(meta.regla):""}</span></div>
+      <textarea rows="2" aria-label="Texto ${i+1}">${esc(t)}</textarea><div class="msg"></div>
+      <div class="row"><span class="sub">${meta&&meta.cifras.length?"Cifras: "+meta.cifras.map(c=>`<code>${esc(c)}</code>`).join(" "):""}</span><button class="mini del">Quitar párrafo</button></div>`;
+    host.appendChild(d);
+    const ta = d.querySelector("textarea"), msg = d.querySelector(".msg");
+    const grow = () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + 2 + "px" }; grow();
+    let timer;
+    ta.oninput = () => { grow(); const arr = [...host.querySelectorAll("textarea")].map(x=>x.value); S.edits[sec.clave] = arr; $("#reset").hidden = false; clearTimeout(timer); timer = setTimeout(()=>verifyText(ta.value, msg), 350) };
+    ta.onchange = persistEdits;
+    d.querySelector(".del").onclick = () => { const arr = [...host.querySelectorAll("textarea")].map(x=>x.value); arr.splice(i,1); S.edits[sec.clave] = arr; persistEdits(); render() };
+    if(edited(sec.clave)) verifyText(t, msg);
+  });
+  $("#reset")?.addEventListener("click", async () => { delete S.edits[sec.clave]; await persistEdits(); render() });
+  $("#b3").onclick = () => go(2); $("#n5").onclick = async () => { await persistEdits(); go(4) };
+}
+async function verifyText(text, msgEl){
+  if(!text.trim()){ msgEl.innerHTML = ""; return }
+  try{
+    const r = await api(`/runs/${S.run.id}/verify`, J("POST", {texts:[text], allowed:S.narr.cifras_validas}));
+    const p = r[0].problemas;
+    msgEl.innerHTML = p.length ? p.map(x=>`<div class="warnline">⚠ ${esc(x)}</div>`).join("") : `<div class="okline">✓ cifras respaldadas</div>`;
+  }catch{ msgEl.innerHTML = "" }
+}
+async function persistEdits(){
+  try{
+    const out = {};
+    for(const [k,v] of Object.entries(S.edits)) out[k] = v.filter(t=>t.trim()!=="");
+    S.run = await api(`/runs/${S.run.id}/edits`, J("PUT", out));
+  }catch(e){ toast(e.message) }
+}
+
+/* ---- generar */
+function vGen(box){
+  const res = S.result, a = S.analysis;
+  const nEdits = Object.keys(S.run.edits||{}).length;
+  box.innerHTML = `<div class="card grid"><strong>Generar presentación y PDF</strong>
+    <div class="sub">Se rellena la plantilla original (tablas y textos editables), se convierte a PDF y se aplica el QA: si el QA no aprueba, la descarga queda bloqueada.
+    ${nEdits?`<br>Incluye ${nEdits} diapositiva(s) con texto editado a mano.`:""}</div>
+    <div class="row"><button class="btn" id="b4">← Narrativa</button><button class="btn primary" id="go" ${S.busy?"disabled":""}>${S.busy?"Generando… (≈15 s)":res?"Volver a generar":"Generar reporte"}</button></div></div><div id="out"></div>`;
+  $("#b4").onclick = () => go(3);
+  $("#go").onclick = async () => {
+    S.busy = true; render();
+    try{ S.result = await api(`/runs/${S.run.id}/generate`, {method:"POST"}); S.err = null }catch(e){ S.err = e.message; S.result = null }
+    S.busy = false; render();
+  };
+  if(res) outView($("#out"), res);
+}
+function outView(host, r){
+  const id = S.run.id, issues = r.qa.issues.filter(i=>i.severity!=="info"), infos = r.qa.issues.length - issues.length;
+  const dl = (name, label) => name ? `<a class="btn ${r.downloadable?"primary":""}" href="/api/runs/${id}/files/${encodeURIComponent(name)}" ${r.downloadable?"":'aria-disabled="true"'}>${label}</a>` : "";
+  host.innerHTML = `<div class="card grid"><div class="banner ${r.qa_passed?"ok":"bad"}"><div><strong>QA ${r.qa_passed?"aprobado":"rechazado"} · descarga ${r.downloadable?"habilitada":"bloqueada"}</strong><span class="sub">${issues.length} observación(es) · ${infos} nota(s) informativa(s)</span></div>
+      <div class="row">${dl(r.pptx,"Descargar PPTX")}${dl(r.pdf,"Descargar PDF")}</div></div>
+    ${issues.length?issues.map(i=>`<div class="find"><span class="sev ${i.severity==="error"?"block":"warn"}">${esc(i.severity.toUpperCase())}</span><div><code>${esc(i.id)}</code> ${esc(i.message)}${i.slide?` <span class="sub">(diap. ${i.slide})</span>`:""}</div></div>`).join(""):""}
+    <div class="row"><a class="mini" href="/api/runs/${id}/files/narrative.json">narrative.json</a><a class="mini" href="/api/runs/${id}/files/qa_report.json">qa_report.json</a><a class="mini" href="/api/runs/${id}/files/manifest.json">manifest.json</a></div></div>
+    <div class="card grid"><strong>Diapositivas generadas</strong><div class="thumbs">${r.slides.map(n=>`<img loading="lazy" src="/api/runs/${id}/files/${encodeURIComponent(n)}" alt="${esc(n)}">`).join("")}</div></div>
+    <div class="card"><strong>Tendencias del historial</strong>${trendsHtml(r.trends)}</div>`;
+  host.querySelectorAll(".thumbs img").forEach(im=>im.onclick=()=>{ const d=document.createElement("div"); d.className="dlg"; d.innerHTML=`<img src="${im.src}" alt="">`; d.onclick=()=>d.remove(); document.body.appendChild(d) });
+}
+
+/* ---------------------------------------------------------------- historial */
+function spark(points){
+  if(points.length < 2) return "";
+  const vs = points.map(p=>p.valor), lo = Math.min(...vs), hi = Math.max(...vs), w = 300, h = 40;
+  const xy = points.map((p,i)=>[4 + i*(w-8)/(points.length-1), h-4-((p.valor-lo)/((hi-lo)||1))*(h-8)]);
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" role="img" aria-label="Serie histórica"><polyline fill="none" stroke="var(--primary)" stroke-width="2" points="${xy.map(p=>p.join(",")).join(" ")}"/>${xy.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="var(--primary)"/>`).join("")}</svg>`;
+}
+function trendsHtml(ts){
+  if(!ts || !ts.length) return `<div class="sub">Aún no hay historial para este formato.</div>`;
+  return ts.map(t=>`<div class="trend"><div class="row"><b>${esc({monto:"Venta",pacientes:"Pacientes",ticket:"Ticket"}[t.metrica]||t.metrica)}</b><span class="chip ${t.tipo||"info_insuficiente"}">${esc(t.tendencia)}</span></div>
+    <div>${esc(t.texto||"Información insuficiente: se necesitan al menos 3 periodos consecutivos.")}</div>${spark(t.puntos||[])}
+    <div class="sub">${(t.puntos||[]).map(p=>esc(p.periodo)+(p.fuente==="derivado"?"*":"")).join(" · ")}</div></div>`).join("");
+}
+async function renderHist(){
+  const host = $("#p-hist"); host.innerHTML = `<div class="card">Cargando…</div>`;
+  try{
+    const [runs, tr] = await Promise.all([api("/history/runs"), api(`/history/trends?unit=aetops&periodicity=${S.run?.periodicity||"mensual"}`)]);
+    host.innerHTML = `<div class="card"><strong>Tendencias (AETOPS ${esc(S.run?.periodicity||"mensual")})</strong>${trendsHtml(tr)}<div class="sub">* periodo derivado de un reporte posterior. Se exigen 2+ variaciones consecutivas fuera de ±5 % y 3 periodos contiguos.</div></div>
+      <div class="card"><strong>Reportes generados (inmutables, con versión)</strong>${runs.length?`<table><tr><th>Unidad</th><th>Periodo</th><th>Versión</th><th>Creado</th><th>QA</th></tr>${runs.map(r=>`<tr><td>${esc(r.unidad)}</td><td>${esc(r.periodicidad)} ${r.anio}-${r.indice}</td><td>v${r.version}</td><td>${esc(r.creado)}</td><td>${r.qa_ok?"✓":"✗"}</td></tr>`).join("")}</table>`:`<div class="sub">Sin reportes todavía.</div>`}</div>`;
+  }catch(e){ host.innerHTML = `<div class="banner bad">${esc(e.message)}</div>` }
+}
+
+/* ---------------------------------------------------------------- arranque */
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));
+  $("#p-rep").hidden = t.dataset.tab!=="rep"; $("#p-hist").hidden = t.dataset.tab!=="hist";
+  if(t.dataset.tab==="hist") renderHist();
+});
+$("#newRun").onclick = () => { S.run=null; S.analysis=null; S.narr=null; S.result=null; S.step=0; S.err=null; store.set("ri.run",""); render() };
+(async () => {
+  const id = store.get("ri.run");
+  if(id){ try{ S.run = await api(`/runs/${id}`); if(S.run.filename){ S.step = 1; await refreshAnalysis(); if(S.run.generated) S.result = await api(`/runs/${id}/result`).catch(()=>null) } }catch{ S.run = null; S.step = 0 } }
+  render();
+})();
+</script>
+</body>
+</html>

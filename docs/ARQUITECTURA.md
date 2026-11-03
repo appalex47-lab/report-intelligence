@@ -367,14 +367,32 @@ La app web estática actual se **conserva** (no se sobrescribe) mientras `fronte
 
 ---
 
+## 15.1 Decisiones confirmadas (2026-11-02)
+
+| # | Tema | Decisión |
+|---|---|---|
+| 1 | Despliegue del backend | **Docker local o en un servidor interno.** GitHub Pages (estático) no puede ejecutar Python: seguirá sirviendo solo la versión estática actual hasta que el backend esté disponible. |
+| 2 | Fuente Aptos Narrow | **Aprobado:** fuente de métrica equivalente solo para PDF y revisión visual; el PPTX conserva Aptos Narrow. |
+| 3 | IA externa | **Proveedor: Cohere**, siempre **opt-in por reporte**, con modo determinista como valor por defecto (ver §8.1). |
+| 4 | GLP-1 trimestral | **Aprobado:** basarlo en el formato mensual con comparativo trimestral; se confirma cuando exista un PPTX de referencia. |
+
+### 8.1 Narrativa con Cohere (diseño)
+
+- **Clave de API** solo por variable de entorno (`COHERE_API_KEY`) o secreto del servidor; nunca en el repositorio, en el navegador ni en logs.
+- **Qué sale del entorno:** únicamente los agregados ya calculados y validados que el usuario aprueba enviar (p. ej. "Ventas +67 % YoY"), mostrados en pantalla **antes** de enviarlos; nunca el Excel, ni filas de pacientes o pedidos. Se guarda en el historial exactamente qué se envió.
+- El **modelo es configurable** (`config/rules.yaml`); no se fija en el código.
+- La respuesta se pide en formato estructurado `{texto, tipo, evidencia[]}` y el verificador descarta cualquier frase con una cifra que no esté en la evidencia (§8).
+- Antes de activarlo con información confidencial real, **revisar los términos de retención y uso de datos de Cohere** y la política interna de la empresa.
+- Sin clave o sin autorización del usuario, la herramienta funciona completa con las frases deterministas.
+
 ## 16. Riesgos y decisiones pendientes del usuario
 
 | # | Tema | Recomendación |
 |---|---|---|
-| 1 | **Despliegue del backend** (local con Docker, servidor interno o nube) | Local/servidor interno vía Docker; Pages solo para la versión estática |
-| 2 | **Fuente Aptos Narrow** (§9.5) | Opción (b): métrica equivalente en PDF/QA y Aptos en el PPTX |
+| 1 | ~~Despliegue del backend~~ → **resuelto** (§15.1) | Docker local/servidor interno |
+| 2 | ~~Fuente Aptos Narrow~~ → **resuelto** (§15.1) | Métrica equivalente en PDF/QA |
 | 3 | **Autenticación** | Fuera del MVP; esquema listo para añadirla |
-| 4 | **IA externa permitida** y proveedor (¿se puede enviar agregados a un servicio externo?) | Opt-in por reporte; modo determinista por defecto |
-| 5 | **GLP-1 trimestral** sin plantilla de referencia | Diseñar con el formato mensual + comparativo trimestral; confirmar cuando exista PPTX |
+| 4 | ~~IA externa~~ → **resuelto**: Cohere, opt-in (§8.1) | Revisar términos de datos antes de usar con información real |
+| 5 | ~~GLP-1 trimestral~~ → **resuelto** (§15.1) | Basado en el mensual; confirmar con PPTX |
 | 6 | Gráfica `chartEx` | Editar su XML; si algún cliente no la abre, degradar a tabla |
 | 7 | Denominador de Share en GLP-1 | Total del periodo; confirmar |

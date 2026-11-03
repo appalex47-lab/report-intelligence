@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Plantillas con logos/marca y salidas con datos comerciales: no se versionan
+templates/**/*.pptx
+salida/
+build_out/
+salida_revision/
+historial/
+runs/
+data_runtime/
