@@ -2,7 +2,7 @@
  "esquema": "hash_resultado_base/1",
  "contrato": "resultado_canonico/1",
  "algoritmo": "sha256",
- "nota": "Hash canónico de los 4 escenarios de la línea base (libro de ejemplo, sin narrativa de plantilla). Se actualiza solo con un cambio legítimo del motor (spec Fase 3A §4.1) o del contrato (spec §6).",
+ "nota": "Hash canónico de los 4 escenarios de la línea base (libro de ejemplo, sin narrativa de plantilla). Se actualiza solo con un cambio legítimo del motor (spec Fase 3A §4.1) o del contrato (spec §6). `con_narrativa_compuesta` añade la narrativa que componen los generadores con cajas de capacidad fija (sin plantilla).",
  "escenarios": {
   "aetops_mensual_2026-09": {
    "hash": "c69ca5c4cb69f1a200bb9cfa919d0c201373972e80bc4a00e5075ab0dd1c1908",
@@ -47,6 +47,52 @@
     "narrativa": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
    },
    "bytes": 208924
+  }
+ },
+ "con_narrativa_compuesta": {
+  "aetops_mensual_2026-09": {
+   "hash": "ecb091fcebd1f40aec815773149808f8a167e0811c3538e4dd64ce17430651df",
+   "bloques": {
+    "periodo": "17f44b822efc7035234376b6ea3ddba2a5a3703ff623d13322e753fc05ffcb79",
+    "fuentes": "826b030cb10e9e943c27ca66ed0fb8baa6f56d82d3a2e5b7c28f0dbf72a5236b",
+    "valores": "9e10ba79dc7833b83981e1489058b6d1544d68a4ee8eb4ed69fd5938ead6a5ea",
+    "hallazgos": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "narrativa": "58e66d292b920d98228224aa2ecfb38c63f33e74f82fd969bf9d8614cf5d35bc"
+   },
+   "bytes": 190274
+  },
+  "aetops_trimestral_2026-Q3": {
+   "hash": "78ecdfa6e0e6cfa4d8715fce7b58508c07005ab812a7d75f7d65d10871b7fab6",
+   "bloques": {
+    "periodo": "f4a27f98a7bb9c8df68ea5d22162bf003b659bf259a0394509b2f95db5cf466f",
+    "fuentes": "826b030cb10e9e943c27ca66ed0fb8baa6f56d82d3a2e5b7c28f0dbf72a5236b",
+    "valores": "fb22952c93a86d5a48a61de67bff407eb4571de7d3b8d3d1f68aa841d322f9bb",
+    "hallazgos": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "narrativa": "533bda56857c7169c673983f9b313c13cc63b13eba15c7a6008a0ac079885984"
+   },
+   "bytes": 109543
+  },
+  "glp1_mensual_2026-09": {
+   "hash": "7747e848d68a809e96c9a421a604190fcea7b6406ff418b5000631ef9d2abdba",
+   "bloques": {
+    "periodo": "a8c48cde823bff89767565061c49f9144f1876afdff87214459c81823bd5a492",
+    "fuentes": "ba59617532b48f08dc9404d3af01e28d421ded28040bf86b2595bd0d7b1e1198",
+    "valores": "2ab0a4ebdf505119509df314e9a71485e4fb0f11a86f7c0339ad8ad40463305e",
+    "hallazgos": "795421e74295f85d639159bb917bf5a43bd13c37f1812c87e6c5f8def5cecb53",
+    "narrativa": "d4e88a5fdebd8ab197a278a246597f04e6ea0dbc384b00d754f25e4ff55467a5"
+   },
+   "bytes": 217459
+  },
+  "glp1_trimestral_2026-Q3": {
+   "hash": "f7b1bf6a7237d4f35f4ec43a035ed7843b781bd12d4682a27ae677e354ddab85",
+   "bloques": {
+    "periodo": "c536f5ff56dc54a1e750f99a2605866df152e16b2f1e2754f45ee5636cd4815b",
+    "fuentes": "ba59617532b48f08dc9404d3af01e28d421ded28040bf86b2595bd0d7b1e1198",
+    "valores": "e914bf195cc51153776d2318aa1d7378f32b2a0f5b17598647445cf271cfdaaf",
+    "hallazgos": "795421e74295f85d639159bb917bf5a43bd13c37f1812c87e6c5f8def5cecb53",
+    "narrativa": "65af992a1a548a2c4f1abcf64ee476e5c09932d4c2e928582c0f238fae4b6118"
+   },
+   "bytes": 218328
   }
  }
 }

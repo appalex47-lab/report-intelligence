@@ -19,3 +19,13 @@ jobs:
         run: python -m pytest tests/unit -q
       - name: Regresión contra la línea base (motor y hallazgos; la capa del PPTX se omite sin plantillas)
         run: python -m pytest tests/regression -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Pyodide 0.27.7 (solo el núcleo; versión fija, sin CDN ni paquetes extra)
+        run: npm install --prefix "$RUNNER_TEMP/pyodide-work" pyodide@0.27.7 --no-audit --no-fund --fetch-retries=5 --loglevel=error
+      - name: Hash canónico dentro de Pyodide = CPython (Fase 3A-2; falla si no puede ejecutarse)
+        env:
+          REPORT_PYODIDE_WORK: ${{ runner.temp }}/pyodide-work
+          REPORT_PYODIDE_REQUIRED: "1"
+        run: python -m pytest tests/e2e/test_hash_pyodide.py -q

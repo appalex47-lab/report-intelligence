@@ -36,6 +36,15 @@ for n, (u, t, y, i, f) in ESC.items():
     sha = hashlib.sha256(open(path, "rb").read()).hexdigest()
     c = pv.canonico(per, [{"nombre": path, "sha256": sha}], r)
     res["escenarios"][n] = {"hash": pv.hash_resultado(c)["valor"], "bloques": pv.huellas_por_bloque(c), "bytes": len(pv.serializar(c))}
+# La narrativa se compone con módulos que necesitan python-pptx/lxml (no están en el núcleo de Pyodide), así que aquí se verifica la parte
+# de la narrativa que SÍ es de provenance.py: la canonicalización de los párrafos (negritas, NFC/NFD, no visibles, editados).
+from backend.app.narrative.writer import Para
+import unicodedata
+muestra = {"conclusiones": [Para("Ventas **+26%** y piezas +16%, año 2026.", "hecho"),
+                            Para(unicodedata.normalize("NFD", "Pacientes: ñandú café."), "hecho", edited=True),
+                            Para("Nota de calidad solo para narrative.json", "calidad", visible=False)],
+           "recomendaciones": [Para("1. [MEDIA] Proteger **AE-A**.", "recomendacion")]}
+res["narrativa_muestra"] = pv.sha256_hex(pv.serializar({"narrativa": pv._narrativa(muestra)}))
 json.dumps(res, sort_keys=True)
 `);
 fs.writeFileSync(outFile, out);

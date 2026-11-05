@@ -475,3 +475,51 @@ def test_un_historial_anterior_sin_objetos_de_resultado_no_se_puede_hashear_y_no
         pv.canonico(P, fuentes(), legado, {})
     with pytest.raises(pv.ErrorProcedencia):
         pv.canonico(P, fuentes(), resultado(findings=[{"id": "X", "severity": "warn", "message": "m"}]), {})
+
+
+# ----------------------------------------------------------------------------------------------------------------- revisión integral (ronda de endurecimiento)
+@pytest.mark.parametrize("malo", [[], "texto", 5, [("s", [])], object()])
+def test_la_narrativa_debe_ser_un_diccionario(malo):
+    with pytest.raises(pv.ErrorProcedencia):
+        pv.canonico(P, fuentes(), resultado(), malo)
+
+
+@pytest.mark.parametrize("malo", [None, [], "x", 5])
+def test_serializar_y_huellas_exigen_un_resultado_canonico_dict(malo):
+    with pytest.raises(pv.ErrorProcedencia):
+        pv.serializar(malo)
+    with pytest.raises(pv.ErrorProcedencia):
+        pv.huellas_por_bloque(malo)
+
+
+def test_la_normalizacion_de_rutas_se_limita_a_lo_que_indica_la_especificacion():
+    """Spec §6.4: rutas absolutas solo en `message`/`evidence` de hallazgos (y `Lineage.file`). No se amplía a otros textos."""
+    assert h(resultado(note="ver /tmp/a/b.xlsx")) != h(resultado(note="ver /tmp/z/b.xlsx"))            # Value.note: texto exacto
+    assert h(resultado(cells="Base!C3")) != h(resultado(cells="Base!C4"))
+    assert h(resultado(findings=[Finding("X", "warn", "/tmp/a/b.xlsx")])) == h(resultado(findings=[Finding("X", "warn", "/otro/dir/b.xlsx")]))
+
+
+def test_los_cinco_bloques_son_exactamente_los_de_la_especificacion():
+    c = pv.canonico(P, fuentes(), resultado(), narr("a"))
+    assert sorted(c) == sorted(["periodo", "fuentes", "valores", "hallazgos", "narrativa"]) == sorted(pv.BLOQUES)
+    assert sorted(c["periodo"]) == ["index", "periodicity", "unit", "year"]
+    assert sorted(c["fuentes"][0]) == ["id", "sha256"]
+    assert sorted(c["narrativa"]["conclusiones"][0]) == ["editado", "texto", "tipo"]
+    assert pv.CAMPOS_HALLAZGO == ("id", "severity", "message", "evidence", "tipo", "gravedad", "estado_verificacion", "efecto_generacion",
+                                  "faltante", "regla_id", "regla_version")
+    c2 = pv.canonico(P, fuentes(), resultado(findings=[Finding("X", "warn", "m")]), {})
+    assert sorted(c2["hallazgos"][0]) == sorted(pv.CAMPOS_HALLAZGO)
+
+
+def test_el_tiempo_de_la_normalizacion_de_rutas_es_lineal_con_entradas_hostiles():
+    for t in ("a/" * 50000, "/a" * 50000, "/" + "a/" * 50000 + " ", "C:\\" + "a\\" * 50000, "x" * 200000):
+        t0 = time.time()
+        pv.rutas_a_nombre_base(t)
+        assert time.time() - t0 < 5
+
+
+def test_no_hay_estado_global_entre_llamadas():
+    """Dos llamadas con entradas distintas no se contaminan (el mapa de fuentes es local a cada llamada)."""
+    a = h(resultado(archivo="a.xlsx"), fuentes("a.xlsx", SHA_A))
+    h(resultado(archivo="b.xlsx"), fuentes("b.xlsx", SHA_B))
+    assert h(resultado(archivo="a.xlsx"), fuentes("a.xlsx", SHA_A)) == a

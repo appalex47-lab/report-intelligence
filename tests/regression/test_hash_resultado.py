@@ -61,6 +61,52 @@ def calcular_todo() -> dict:
     return {n: hash_escenario(n) for n in ESCENARIOS}
 
 
+# --- narrativa compuesta SIN plantilla -----------------------------------------------------------------------------------------------
+# La narrativa final de un reporte sale de `fill_*`, que necesita la plantilla real (gitignorada, con marca) para saber cuánto texto cabe en
+# cada cuadro. Los compositores (`compose_aetops_*`, `compose_glp1`, `build_executive*`) en cambio solo necesitan esa CAPACIDAD, que aquí se
+# fija en una constante: así la narrativa generada es reproducible en CI sin archivos de la plantilla. Lo que depende de la plantilla (el
+# ajuste final a la lámina) se prueba en local con las plantillas reales (pruebas de flujo real de más abajo).
+CAJA = (160, 40)                                      # caracteres por línea, líneas: capacidad fija de cada cuadro de texto
+
+
+def narrativa_compuesta(nombre: str) -> dict:
+    """`{sección: [Para]}` que componen los generadores para el escenario, con cajas de capacidad fija y sin ajustar a ninguna lámina."""
+    from backend.app.narrative.aetops import Box, compose_aetops_mensual, compose_aetops_trimestral
+    unidad, periodicidad, anio, indice, archivo, _ = cb.SCENARIOS[nombre]
+    periodo = Period(unidad, periodicidad, anio, indice)
+    res = _correr(unidad, cb.DATA / archivo, periodo)
+    if unidad == "AETOPS":
+        from backend.app.narrative.executive import build_executive
+        if periodicidad == "mensual":
+            from backend.app.deck import aetops_mensual as dm
+            a, b, _ = dm.pick_categories_yoy(res.tables["aetops.categoria.yoy"].groups)
+            up, down, _ = dm.pick_categories_mom(res.tables["aetops.categoria.mom"].groups)
+            narr = compose_aetops_mensual(res, periodo, {k: Box(*CAJA) for k in dm.NARR}, a + b, up + down)
+        else:
+            from backend.app.deck import aetops_trimestral as dt
+            up, down, _ = dt.pick_categories(res.tables["aetops.categoria.yoy"].groups)
+            narr = compose_aetops_trimestral(res, periodo, {k: Box(*CAJA) for k in dt.NARR}, up + down)
+        ex = build_executive(res, periodo)
+    else:
+        from backend.app.deck import glp1_mensual as dg
+        from backend.app.narrative.glp1 import compose_glp1
+        from backend.app.narrative.glp1_exec import build_executive_glp1
+        narr = compose_glp1(res.blocks, res.funnel, periodo, {k: Box(*CAJA) for k in dg.NARR})
+        ex = build_executive_glp1(res.blocks, res.funnel, periodo)
+    narr = dict(narr)
+    narr["resumen_ejecutivo"], narr["recomendaciones"] = ex.resumen, ex.recomendaciones
+    narr["descubrimientos"] = [p for _, p in ex.descubrimientos]
+    return narr
+
+
+def hash_con_narrativa(nombre: str, narrativa=None) -> dict:
+    return hash_escenario(nombre, narrativa=narrativa_compuesta(nombre) if narrativa is None else narrativa)
+
+
+def calcular_todo_con_narrativa() -> dict:
+    return {n: hash_con_narrativa(n) for n in ESCENARIOS}
+
+
 def cargar() -> dict:
     return json.loads(REGISTRO.read_text(encoding="utf-8"))
 
@@ -68,7 +114,9 @@ def cargar() -> dict:
 def actualizar() -> str:
     d = {"esquema": "hash_resultado_base/1", "contrato": pv.CONTRATO, "algoritmo": pv.ALGORITMO,
          "nota": "Hash canónico de los 4 escenarios de la línea base (libro de ejemplo, sin narrativa de plantilla). Se actualiza solo con un cambio "
-                 "legítimo del motor (spec Fase 3A §4.1) o del contrato (spec §6).", "escenarios": calcular_todo()}
+                 "legítimo del motor (spec Fase 3A §4.1) o del contrato (spec §6). `con_narrativa_compuesta` añade la narrativa que componen los "
+                 "generadores con cajas de capacidad fija (sin plantilla).", "escenarios": calcular_todo(),
+         "con_narrativa_compuesta": calcular_todo_con_narrativa()}
     REGISTRO.write_text(json.dumps(d, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return "actualizado"
 
@@ -160,6 +208,129 @@ def test_editar_un_parrafo_cambia_el_hash_y_lo_invisible_no():
     assert hash_escenario(nombre, narrativa={"conclusiones": [Para("Las ventas subieron +26%", "hecho", edited=True)]})["hash"] != base
     assert hash_escenario(nombre, narrativa={"conclusiones": [Para("Las ventas subieron +26%.", "hecho"),
                                                               Para("solo narrative.json", "calidad", visible=False)]})["hash"] == base
+
+
+# --------------------------------------------------------------------------------------------------- narrativa compuesta (reproducible en CI, sin plantilla)
+def _primera_seccion_con_texto(narr):
+    return next(k for k in sorted(narr) if any(p.visible for p in narr[k]))
+
+
+@pytest.mark.parametrize("nombre", ESCENARIOS)
+def test_la_narrativa_compuesta_cubre_cuerpo_resumen_y_recomendaciones(nombre):
+    narr = narrativa_compuesta(nombre)
+    assert {"resumen_ejecutivo", "recomendaciones", "descubrimientos"} <= set(narr)
+    visibles = {k: [p for p in v if p.visible] for k, v in narr.items()}
+    assert sum(len(v) for v in visibles.values()) >= 40                                    # texto real, no secciones vacías
+    assert visibles["resumen_ejecutivo"] and visibles["recomendaciones"]
+    assert sum("**" in p.text for v in visibles.values() for p in v) > 20                  # hay negritas: la exclusión de formato se prueba de verdad
+
+
+def test_el_hash_con_narrativa_compuesta_es_el_congelado():
+    d = cargar()["con_narrativa_compuesta"]
+    assert sorted(d) == sorted(ESCENARIOS)
+    for nombre in ESCENARIOS:
+        actual = hash_con_narrativa(nombre)
+        assert actual["bloques"] == d[nombre]["bloques"], (
+            f"{nombre}: cambió el bloque {[b for b in pv.BLOQUES if actual['bloques'][b] != d[nombre]['bloques'][b]]}. Si es legítimo, sube "
+            "ENGINE_VERSION (spec §4.1) y ejecuta `python tests/regression/test_hash_resultado.py --actualizar`.")
+        assert actual["hash"] == d[nombre]["hash"] and actual["bytes"] == d[nombre]["bytes"], nombre
+
+
+@pytest.mark.parametrize("nombre", ESCENARIOS)
+def test_la_narrativa_solo_agrega_su_bloque(nombre):
+    sin, con = hash_escenario(nombre), hash_con_narrativa(nombre)
+    assert [b for b in pv.BLOQUES if sin["bloques"][b] != con["bloques"][b]] == ["narrativa"]
+    assert sin["hash"] != con["hash"]
+
+
+@pytest.mark.parametrize("nombre", ESCENARIOS)
+def test_los_cambios_de_texto_modifican_el_hash_y_solo_el_bloque_narrativa(nombre):
+    import copy
+    base = hash_con_narrativa(nombre)
+    narr = narrativa_compuesta(nombre)
+    sec = _primera_seccion_con_texto(narr)
+
+    def variante(f):
+        n = copy.deepcopy(narr)
+        f(n)
+        return hash_con_narrativa(nombre, n)
+
+    def idx(n):
+        return next(i for i, p in enumerate(n[sec]) if p.visible)
+    cambios = {
+        "una coma": lambda n: setattr(n[sec][idx(n)], "text", n[sec][idx(n)].text + ","),
+        "una letra": lambda n: setattr(n[sec][idx(n)], "text", n[sec][idx(n)].text[:-1] + "x"),
+        "marcada como editada": lambda n: setattr(n[sec][idx(n)], "edited", True),
+        "otro tipo": lambda n: setattr(n[sec][idx(n)], "kind", n[sec][idx(n)].kind + "_x"),
+        "párrafo eliminado": lambda n: n[sec].pop(idx(n)),
+        "párrafo agregado": lambda n: n[sec].append(type(n[sec][0])("Nuevo párrafo.", "hecho")),
+        "orden de párrafos": lambda n: n[sec].reverse(),
+        "otro nombre de sección": lambda n: n.__setitem__(sec + "_otra", n.pop(sec)),
+        "sección eliminada": lambda n: n.pop(sec),
+    }
+    vistos = {base["hash"]}
+    for nombre_cambio, f in cambios.items():
+        otro = variante(f)
+        assert otro["hash"] != base["hash"], nombre_cambio
+        assert [b for b in pv.BLOQUES if otro["bloques"][b] != base["bloques"][b]] == ["narrativa"], nombre_cambio
+        vistos.add(otro["hash"])
+    assert len(vistos) == len(cambios) + 1                                                  # cada cambio da un hash propio
+
+
+@pytest.mark.parametrize("nombre", ESCENARIOS)
+def test_las_diferencias_de_formato_y_lo_no_visible_no_cambian_el_hash(nombre):
+    import copy
+    base = hash_con_narrativa(nombre)["hash"]
+    narr = narrativa_compuesta(nombre)
+    # 1. quitar TODAS las marcas de negrita
+    sin_negritas = copy.deepcopy(narr)
+    for v in sin_negritas.values():
+        for p in v:
+            p.text = p.text.replace("**", "")
+    assert hash_con_narrativa(nombre, sin_negritas)["hash"] == base
+    # 2. poner negritas distintas (envolver la primera palabra)
+    otras = copy.deepcopy(narr)
+    for v in otras.values():
+        for p in v:
+            plano = p.text.replace("**", "")
+            p.text = "**" + plano.split(" ", 1)[0] + "** " + plano.split(" ", 1)[1] if " " in plano else plano
+    assert hash_con_narrativa(nombre, otras)["hash"] == base
+    # 3. campos de apoyo del párrafo (prioridad, regla, evidencia, cifras) y párrafos no visibles
+    apoyo = copy.deepcopy(narr)
+    for v in apoyo.values():
+        for p in v:
+            p.priority, p.basis, p.evidence, p.nums = 0, "otra regla", ["otra evidencia"], {"1"}
+        v.append(type(v[0])("Nota de calidad de datos solo para narrative.json", "calidad", visible=False)) if v else None
+    assert hash_con_narrativa(nombre, apoyo)["hash"] == base
+    # 4. el orden de las secciones del diccionario no cuenta
+    assert hash_con_narrativa(nombre, dict(reversed(list(narr.items()))))["hash"] == base
+    # 5. normalización Unicode: el mismo texto en NFD
+    import unicodedata
+    nfd = copy.deepcopy(narr)
+    for v in nfd.values():
+        for p in v:
+            p.text = unicodedata.normalize("NFD", p.text)
+    assert hash_con_narrativa(nombre, nfd)["hash"] == base
+
+
+@pytest.mark.parametrize("nombre", ESCENARIOS)
+def test_la_narrativa_compuesta_no_depende_del_directorio_ni_del_nombre_del_archivo(nombre, tmp_path):
+    archivo = cb.SCENARIOS[nombre][4]
+    otro = tmp_path / "otra carpeta" / "copia ñ.xlsx"
+    otro.parent.mkdir()
+    shutil.copy(cb.DATA / archivo, otro)
+    assert hash_escenario(nombre, otro, narrativa_compuesta(nombre))["hash"] == hash_con_narrativa(nombre)["hash"]
+
+
+def test_la_narrativa_compuesta_es_igual_en_otro_proceso_con_otra_semilla_de_hash():
+    esperado = {n: cargar()["con_narrativa_compuesta"][n]["hash"] for n in ESCENARIOS}
+    codigo = ("import json; from tests.regression.test_hash_resultado import calcular_todo_con_narrativa; "
+              "print(json.dumps({n: v['hash'] for n, v in calcular_todo_con_narrativa().items()}))")
+    for semilla in ("3", "random"):
+        env = {**os.environ, "PYTHONHASHSEED": semilla, "PYTHONPATH": str(ROOT)}
+        r = subprocess.run([sys.executable, "-c", codigo], capture_output=True, text=True, cwd=ROOT, env=env, timeout=900)
+        assert r.returncode == 0, r.stderr[-800:]
+        assert json.loads(r.stdout.strip().splitlines()[-1]) == esperado, f"semilla {semilla}"
 
 
 # --------------------------------------------------------------------------------------------------- no adelanta otras subfases

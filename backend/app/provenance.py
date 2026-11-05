@@ -118,8 +118,9 @@ def _clave(k) -> str:
 
 def _canon(obj, ctx: _Ctx, depth: int = 0, rutas: bool = False):
     """Estructura JSON determinista. Misma semántica que `tools/capture_baseline.py::canon` salvo lo que la spec §6 cambia a propósito:
-    texto en NFC, `Lineage.file` por `id` de fuente y rutas absolutas por su nombre base; y un tipo no previsto, una profundidad
-    excesiva o una colisión de claves son un ERROR (no un marcador que oculte el problema)."""
+    texto en NFC, `Lineage.file` por `id` de fuente y rutas absolutas por su nombre base (solo en `message` y `evidence` de los hallazgos,
+    que es donde la spec §6.4 lo indica); y un tipo no previsto, una profundidad excesiva o una colisión de claves son un ERROR
+    (no un marcador que oculte el problema)."""
     if depth > MAX_PROFUNDIDAD:
         raise ErrorProcedencia(f"estructura demasiado profunda (más de {MAX_PROFUNDIDAD} niveles) o con ciclos")
     if obj is None or isinstance(obj, (bool, int)):
@@ -133,15 +134,10 @@ def _canon(obj, ctx: _Ctx, depth: int = 0, rutas: bool = False):
     if isinstance(obj, Enum):
         return _canon(obj.value, ctx, depth + 1, rutas)
     if isinstance(obj, Lineage):
-        return {"file": _linaje_archivo(obj.file, ctx), "sheet": _canon(obj.sheet, ctx, depth + 1, True),
-                "cells": _canon(obj.cells, ctx, depth + 1, True), "transform": _canon(obj.transform, ctx, depth + 1, True)}
+        return {"file": _linaje_archivo(obj.file, ctx), "sheet": _canon(obj.sheet, ctx, depth + 1),
+                "cells": _canon(obj.cells, ctx, depth + 1), "transform": _canon(obj.transform, ctx, depth + 1)}
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
-        out = {}
-        for f in dataclasses.fields(obj):
-            v = getattr(obj, f.name)
-            # `Value.note` puede citar archivos del equipo: se normaliza como los demás textos de la spec §6.4
-            out[_clave(f.name)] = _canon(v, ctx, depth + 1, rutas or (f.name == "note" and type(obj).__name__ == "Value"))
-        return out
+        return {_clave(f.name): _canon(getattr(obj, f.name), ctx, depth + 1, rutas) for f in dataclasses.fields(obj)}
     if isinstance(obj, dict):
         out: dict = {}
         for k, v in obj.items():
@@ -229,6 +225,8 @@ def _parrafo(p, seccion: str, i: int):
 
 def _narrativa(narrativa) -> dict:
     out = {}
+    if narrativa is not None and not isinstance(narrativa, dict):
+        raise ErrorProcedencia("narrativa: debe ser un diccionario {sección: [párrafos]}")
     for seccion, parrafos in (narrativa or {}).items():
         if not isinstance(seccion, str):
             raise ErrorProcedencia("narrativa: las secciones deben tener nombre de texto")
@@ -260,6 +258,8 @@ def canonico(periodo, fuentes, resultado, narrativa=None) -> dict:
 
 def serializar(canon: dict) -> bytes:
     """Bytes que se entregan a SHA-256: JSON con claves ordenadas, sin espacios, `ensure_ascii=False`, UTF-8 (spec §6.3)."""
+    if not isinstance(canon, dict):
+        raise ErrorProcedencia("el resultado canónico debe ser un diccionario")
     try:
         return _texto_json_estricto(canon).encode("utf-8")
     except (UnicodeEncodeError, ValueError, TypeError) as e:
@@ -286,6 +286,8 @@ def calcular(periodo, fuentes, resultado, narrativa=None) -> dict:
 
 def huellas_por_bloque(canon: dict) -> dict:
     """SHA-256 de cada bloque por separado. Es una AYUDA DE AUDITORÍA (qué bloque cambió); no forma parte del contrato ni del hash."""
+    if not isinstance(canon, dict):
+        raise ErrorProcedencia("el resultado canónico debe ser un diccionario")
     faltan = [b for b in BLOQUES if b not in canon]
     if faltan:
         raise ErrorProcedencia(f"resultado canónico incompleto: faltan {faltan}")
