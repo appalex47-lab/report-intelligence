@@ -31,7 +31,7 @@ def test_versiones_identificadas():
     v = config.versiones()
     assert set(v) == set(config.ARCHIVOS) and all(config.SEMVER.match(x) for x in v.values())
     assert versiones()["configuracion"] == v
-    assert versiones()["app"] is None and versiones()["motor"] is None     # no definidos todavía: no se inventan
+    assert versiones()["app"] == "1.0.0" and versiones()["motor"] == "1.0.0"   # Fase 3A-1: primera versión formalmente identificada
 
 
 def test_catalogo_real_campos_obligatorios_y_ids_unicos():

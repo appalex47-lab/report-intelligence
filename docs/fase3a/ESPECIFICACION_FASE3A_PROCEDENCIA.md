@@ -167,7 +167,7 @@ Consecuencias:
 
 | Incremento | Cuándo |
 |---|---|
-| MAJOR | Cambia un valor numérico existente o la definición o fórmula de una métrica. Exige una entrada en `CAMBIOS_JUSTIFICADOS.md` (regla, valor antes, valor después, aprobación) |
+| MAJOR | Cambia un valor numérico existente o la definición o fórmula de una métrica. Exige justificar el cambio por escrito (regla, valor antes, valor después, aprobación) en la descripción del cambio y en esta documentación; ver la nota de abajo sobre `CAMBIOS_JUSTIFICADOS.md` |
 | MINOR | Se agregan salidas, campos o hallazgos **sin** cambiar ningún valor existente |
 | PATCH | Cambia redacción determinista o formato sin tocar cifras (p. ej. el patrón de «Conclusiones Clave»), o una corrección que no altera ningún valor |
 
@@ -179,23 +179,71 @@ Consecuencias:
 | MINOR | Funcionalidad nueva compatible |
 | PATCH | Correcciones sin funcionalidad nueva |
 
+> **Nota sobre `CAMBIOS_JUSTIFICADOS.md`.** Los documentos de la Fase 1 lo citan como registro de cambios que alteran un resultado, pero **el archivo no existe** y la subfase 3A-1 **no lo crea** (decisión del usuario, X-2). Mientras no exista, la justificación de un cambio de `ENGINE_VERSION` se documenta en la descripción del PR y en la especificación o documentación existente. Crear ese archivo es una decisión pendiente, fuera de 3A-1.
+
 **Identidad completa del código:** `APP_VERSION` + SHA del commit (`version_codigo`). Dos compilaciones con el mismo `APP_VERSION` y distinto SHA son código distinto: el estado de reproducibilidad lo detecta (C5).
 
 ### 4.2 Origen del SHA
 
 | Contexto | SHA |
 |---|---|
-| GitHub Actions (`pages.yml`) | `GITHUB_SHA`, estampado por `build_site.py` en `backend/app/_build_info.json` dentro de `app.zip` |
-| Compilación local | `git rev-parse HEAD`; si hay cambios sin confirmar, el valor lleva el sufijo `+dirty` |
+| GitHub Actions (`pages.yml`) | `GITHUB_SHA`, estampado por `build_site.py` en `backend/app/_build_info.json` **dentro de `app.zip`** (no es un archivo del repositorio) |
+| Compilación local | `git rev-parse HEAD`; si hay cambios sin confirmar en lo que se empaqueta, el valor lleva el sufijo `+dirty` |
 | Sin información (p. ej. pruebas sin git) | `"desconocido"` (nunca se inventa) |
+
+**`_build_info.json`** contiene únicamente `{"esquema": "build_info/1", "commit": "<sha>"}`. **No lleva fecha de compilación ni ningún otro valor variable** (decisión X-1: la especificación de Fase 1 §8.1 hablaba de «SHA y fecha de compilación»; la fecha se omite).
+
+### 4.2.1 Estados de la identidad del commit
+
+| `compilacion.estado` | Significado | Valor de `commit` |
+|---|---|---|
+| `limpia` | Commit identificado y árbol sin cambios al compilar | `<40 hex>` |
+| `dirty` | Commit identificado, pero el árbol tenía cambios en lo empaquetado | `<40 hex>+dirty` |
+| `desconocida` | No hay información suficiente (falta `_build_info.json`, está dañado o su SHA no es válido). No es un error | `desconocido` |
+
+Una compilación `dirty` **no** se presenta como una compilación reproducible del commit limpio: el commit identifica el punto de partida, no el contenido real. `version.py` solo **lee** el archivo; no ejecuta git en tiempo de ejecución. En CI de un *pull request*, `GITHUB_SHA` es el commit de la fusión simulada, no el de la rama.
 
 ### 4.3 Línea base actual
 
-- **Estado actual:** `version.versiones()` devuelve `app: None` y `motor: None`. Todo reporte generado hasta ahora es `no_reproducible (legado)`.
-- **Decisión aprobada (D-C):** al implementar 3A-1, `APP_VERSION = 1.0.0` y `ENGINE_VERSION = 1.0.0`. **`1.0.0` es la primera versión formalmente identificada bajo este esquema; no marca el inicio histórico del proyecto.** El código anterior ya existía y evolucionó sin versión estampada; no se le asigna ninguna versión retroactiva ni se infiere una historia de versiones.
-- **Qué identifica `ENGINE_VERSION = 1.0.0`:** el motor de cálculo tal como lo congela la línea base `tests/regression/base/engine/` (4 escenarios; commit `386099b`), con SHA-256 de los cuatro archivos concatenados `73c840b368935f6757c7984eb77066b2e8950969ba36df43c63d507eb879d3a8`. Ese hash se guardará en `tests/regression/engine_version.json`.
-- **Acoplamiento con la regresión:** una prueba nueva compara el SHA-256 actual de la línea base del motor contra el registrado. Si difiere y `ENGINE_VERSION` no cambió (o falta la entrada en `CAMBIOS_JUSTIFICADOS.md`), la prueba falla. Así no se puede cambiar un resultado numérico sin cambiar la versión.
+- **Estado antes de 3A-1:** `version.versiones()` devolvía `app: None` y `motor: None`. Todo reporte generado hasta entonces es `no_reproducible (legado)`.
+- **Decisión aprobada (D-C), implementada en 3A-1:** `APP_VERSION = 1.0.0` y `ENGINE_VERSION = 1.0.0`. **`1.0.0` es la primera versión formalmente identificada bajo este esquema; no marca el inicio histórico del proyecto.** El código anterior ya existía y evolucionó sin versión estampada; no se le asigna ninguna versión retroactiva ni se infiere una historia de versiones.
+- **Qué identifica `ENGINE_VERSION = 1.0.0`:** los resultados de referencia del motor en `tests/regression/base/engine/` (4 escenarios; commit `386099b`), identificados por el digest de §4.4. La referencia vive en `tests/regression/engine_version.json`.
+- **Acoplamiento con la regresión (alcance exacto):** `tests/regression/test_engine_version.py` exige que el digest actual de esa línea base coincida con el último registrado y que la versión registrada sea la de `ENGINE_VERSION`. Si los resultados de referencia cambian, la prueba falla hasta que se registre una `ENGINE_VERSION` nueva. **No es un detector automático de cambios en el código del motor** (ver §4.4).
 - Las huellas de láminas (`tests/regression/base/deck/`) **no** acoplan `ENGINE_VERSION`: dependen de la plantilla local y no son reproducibles en CI. Un cambio de redacción se versiona por PATCH de forma manual y revisada.
+
+### 4.4 Digest de la línea base del motor: algoritmo exacto y alcance
+
+**Algoritmo `RI-ENGINE-BASELINE/1`.** El digest es el SHA-256 del siguiente flujo de bytes:
+
+```
+b"RI-ENGINE-BASELINE/1\n"
+por cada archivo *.json de tests/regression/base/engine/, en orden ascendente del nombre codificado en UTF-8:
+    b"file " + <nombre del archivo> + b"\n"
+    b"len "  + <largo del contenido en bytes, en ASCII decimal> + b"\n"
+    <contenido>      (bytes del archivo; los saltos CRLF se convierten a LF)
+    b"\n"
+```
+
+| Pregunta | Respuesta |
+|---|---|
+| Orden de los archivos | Ascendente por nombre (bytes UTF-8) |
+| ¿Se incluyen los nombres? | Sí (`file <nombre>`), así que renombrar un archivo cambia el digest |
+| Separación de contenidos | Cada contenido va precedido de su nombre y de su largo (`len N`) y seguido de `\n`: no hay concatenación ambigua (mover texto de un archivo a otro cambia el digest) |
+| Codificación | Nombres en UTF-8; el contenido se usa tal como está guardado (los snapshots ya son UTF-8). CRLF → LF para que el digest no dependa del sistema de archivos |
+| Cómo se recalcula | `python tests/regression/test_engine_version.py` imprime el digest actual |
+| Cómo se actualiza la referencia | (1) justificar el cambio de resultados y regenerar la línea base con `tools/capture_baseline.py --write`; (2) subir `ENGINE_VERSION` en `backend/app/version.py` según §4.1; (3) `python tests/regression/test_engine_version.py --actualizar`, que agrega una entrada al `historial` de `engine_version.json` y **se niega** a registrar una huella nueva con una versión ya registrada o menor que la última |
+
+Valor de referencia de `ENGINE_VERSION = 1.0.0`: `f80a6024f4ccbf47be48307ff76d2c1ccc30547eef29cf304cabdd052a285d3a`. (Un cálculo previo de esta especificación, por concatenación simple de los archivos, queda sustituido por este algoritmo, porque aquella concatenación era ambigua.)
+
+**Tres cosas distintas, que no se confunden:**
+
+| Concepto | Qué es | ¿Lo detecta la prueba? |
+|---|---|---|
+| Cambio en los **resultados de referencia** | Los 4 snapshots de `base/engine/` cambian de contenido | **Sí**: cambia el digest |
+| Cambio en el **código del motor** | Se modifica código de cálculo, agregación, reglas, etc. | **No** directamente. Solo se nota si altera alguno de los 4 escenarios de referencia; un cambio que no altere esos resultados pasa inadvertido |
+| **Incremento de `ENGINE_VERSION`** | Decisión humana, regida por §4.1 | La prueba solo exige coherencia entre la huella y la versión; no decide cuándo subirla |
+
+La prueba de snapshots **no** es un detector automático de todos los cambios posibles en el código del motor. Solo garantiza que *esos resultados de referencia* y `ENGINE_VERSION` no se desacoplen; las historias de versiones del historial no se pueden repetir con otra huella, pero un historial editado a mano sigue siendo una decisión humana revisable en el PR.
 
 ---
 
@@ -337,9 +385,9 @@ CREATE TRIGGER IF NOT EXISTS procedencia_no_delete BEFORE DELETE ON procedencia 
 
 | Módulo | Responsabilidad |
 |---|---|
-| `backend/app/version.py` (existente) | `APP_VERSION`, `ENGINE_VERSION`, lectura de `_build_info.json`; `versiones()` deja de devolver `None` |
+| `backend/app/version.py` (existente) | `APP_VERSION`, `ENGINE_VERSION`, lectura de `_build_info.json` (`commit()`, `compilacion()`); `versiones()` devuelve las versiones y la identidad del commit y conserva los demás campos |
 | `backend/app/provenance.py` (nuevo) | Funciones **puras**: `canonico(...)`, `hash_resultado(...)`, `construir_manifiesto(...)`, `serializar(...)`, `comparar(...)`. Sin red, sin escritura, sin llamar al motor de reglas |
-| `tools/build_site.py` (existente) | Escribe `backend/app/_build_info.json` en `app.zip` (SHA y fecha de compilación) |
+| `tools/build_site.py` (existente) | Escribe `backend/app/_build_info.json` **dentro de `app.zip`** con el SHA del commit (sin fecha; X-1) |
 | `backend/app/build.py` (existente) | Una llamada aditiva, después de guardar el PPTX y antes de cerrar |
 | `backend/app/history/store.py` (existente) | Tabla `procedencia` y funciones de lectura y escritura |
 
@@ -406,8 +454,9 @@ Cada subfase requiere tu autorización antes de empezar. Ninguna está autorizad
 Detalle de cada subfase:
 
 **3A-1**
-- Implementación esperada: constantes `APP_VERSION` y `ENGINE_VERSION`; `build_site.py` escribe `_build_info.json`; `version.versiones()` devuelve los valores; `engine_version.json` con el SHA de la línea base.
-- Pruebas: T-16; `app.zip` contiene `_build_info.json` y los módulos; la prueba de acoplamiento falla si cambia la línea base sin cambiar `ENGINE_VERSION`.
+- Implementación esperada: constantes `APP_VERSION` y `ENGINE_VERSION`; `build_site.py` escribe `_build_info.json` (solo SHA) dentro de `app.zip`; `version.versiones()` devuelve las versiones y el commit; `tests/regression/engine_version.json` con el digest de §4.4 y su prueba.
+- Pruebas: T-16; `app.zip` contiene `_build_info.json` y los módulos; PR-7 (alcance acotado de §4.4); lectura de versiones con y sin información de compilación; estados `limpia`, `dirty` y `desconocida`.
+- Actualizaciones autorizadas fuera del código nuevo: la afirmación de `None` en `tests/unit/test_config_fase1.py` y la fila desactualizada de `docs/CONFIGURACION_FASE1.md` (X-3).
 - Aceptación: versión y SHA legibles desde `app.zip`; 0 cambios en reportes, huellas y línea base.
 
 **3A-2**
@@ -447,7 +496,7 @@ Detalle de cada subfase:
 | PR-9 (nueva) | `procedencia_error.json` se escribe con el esquema definido y la identificación del reporte (unidad, periodo, PPTX, `run_id` si existe); sin rutas absolutas ni contenido de archivos; un reporte con error y sin manifiesto válido se clasifica `no_reproducible`, nunca `parcial` ni `exacta` (E-2, E-4, E-5) | 3A-3 y 3A-4 |
 | PR-10 (nueva) | Tres igualdades: con el mismo resultado canónico y PPTX con bytes distintos, la comparación devuelve `exacta` sin afirmar igualdad binaria ni visual; una diferencia de `entorno` se informa como nota y no cambia el estado (§3.4, §3.5) | 3A-4 |
 | PR-11 (nueva) | `exacta` no se asigna sin regeneración real: con C1 a C6 en verde y sin regenerar, el resultado nunca es `exacta` (§3.5) | 3A-4 |
-| PR-7 (nueva) | Acoplamiento `ENGINE_VERSION` ↔ línea base del motor | 3A-1 |
+| PR-7 (nueva) | Acoplamiento `ENGINE_VERSION` ↔ digest de la línea base del motor (§4.4). Cubre los **resultados de referencia**; no detecta por sí sola cambios en el código del motor | 3A-1 |
 
 | Criterio | Redacción |
 |---|---|
@@ -517,7 +566,7 @@ Cada autorización se registra con `tools/archivos_protegidos.py --write --autor
 | Precisión: errores de procedencia | **Incorporada** (§8.4, PR-6, PR-8, PR-9, AC-13A) |
 | `1.0.0` = primera versión formalmente identificada, no inicio histórico | **Incorporada** (§1.3, §4.3) |
 | Fusión del PR #15 | **Pendiente** (solo documentación; la decide el usuario) |
-| Subfase **3A-1** | **No autorizada.** Requiere autorización expresa |
+| Subfase **3A-1** | **Autorizada e implementada; en revisión (PR exclusivo).** No fusionada |
 | Subfases 3A-2 a 3A-4 | No autorizadas; cada una requiere su propia autorización |
 | 3A-5 (`release.yml`, etiquetas) | Diferida: A-5 sin autorización |
 | Fase 3B, Fase 4, Fase 5, interfaz, conexión del motor de reglas | Fuera de alcance |

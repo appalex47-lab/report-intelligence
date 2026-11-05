@@ -60,7 +60,7 @@ Una entrada por regla (`R-REL-PAC-PED`, `R-CUADRE-DIM`, `R-CONC-COMPRAS`, `R-DEN
 |---|---|
 | Ya existía | `Profile.version` (perfiles), carpeta de versión de plantillas (`templates/<formato>/<n>/`), `runs.version` en el historial |
 | Preparado en esta fase | `MODELO_HALLAZGOS_VERSION` (`models.py`); versión de cada JSON (`config.versiones()`); `version.versiones()` que las reúne |
-| **No** preparado (a propósito) | `APP_VERSION` y `ENGINE_VERSION`: la especificación los estampa al compilar el sitio (`tools/build_site.py`, fase 3). `version.versiones()` devuelve `None` para ambos. No se tocaron workflows ni la compilación, ni se publicaron releases |
+| Definido después (Fase 3A-1) | `APP_VERSION` y `ENGINE_VERSION` (`1.0.0`, primera versión formalmente identificada bajo este esquema, no el inicio histórico del proyecto) y el SHA del commit de la compilación, estampado por `tools/build_site.py` en `_build_info.json` dentro de `app.zip`. `version.versiones()` ya no devuelve `None` para `app` y `motor` y añade `commit` y `compilacion`. Ver `docs/fase3a/ESPECIFICACION_FASE3A_PROCEDENCIA.md` §4. Esta fase (Fase 1) no los definió: no tocó workflows ni la compilación ni publicó releases |
 
 ## 5. Fixtures sintéticas
 `tools/make_fixtures_fase1.py` → `tests/fixtures/fase1/`: `hallazgos_compat.json`, cinco catálogos (uno válido y cuatro inválidos) y `manifest.json`.
