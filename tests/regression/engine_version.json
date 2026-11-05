@@ -1,0 +1,16 @@
+{
+ "esquema": "engine_version/1",
+ "algoritmo": "RI-ENGINE-BASELINE/1",
+ "archivos": [
+  "aetops_mensual_2026-09.json",
+  "aetops_trimestral_2026-Q3.json",
+  "glp1_mensual_2026-09.json",
+  "glp1_trimestral_2026-Q3.json"
+ ],
+ "historial": [
+  {
+   "engine_version": "1.0.0",
+   "digest": "f80a6024f4ccbf47be48307ff76d2c1ccc30547eef29cf304cabdd052a285d3a"
+  }
+ ]
+}

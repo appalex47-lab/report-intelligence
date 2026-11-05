@@ -61,7 +61,6 @@
   "profiles/glp1/trimestral.yaml": "6811ae59dd461c0c1154e51a1434d54ffee910d51c241a4aaabede7c46ea59c6",
   "templates/README.md": "3458df1a3bc9232454b7ce5eb721b24aa229524fa2da02370afc6103991c33f9",
   "tools/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "tools/build_site.py": "1f831859595c4eacfa3519d7cbaa78ad3e03bd62d917af75a3e0274aa4579ff4",
   "tools/make_glp1_synthetic.py": "859084fbee12d53ebc9345c038c8a5f3853b37a85ce563cfa809d5bbaf154f3e",
   "tools/make_machotes.py": "9afe434594bda0152d0f70b804d6d5b808246da9236cabed0bb97d10650510ac",
   "tools/make_raw_glp1_synthetic.py": "9664f46bbe9578335ee6ab9b9916638f22bd42bd502249bb6dd45af8fdc1fb45",
@@ -96,6 +95,10 @@
   "frontend/worker.js": {
    "motivo": "Cambio del usuario (commit 67fd179): nombre de archivo de respaldo",
    "sha256": "cc2f689e28bf8d270cc6d3aa3d63921f77f95a08f56ff53a90f0220c39960f17"
+  },
+  "tools/build_site.py": {
+   "motivo": "Fase 3A-1: estampado del SHA del commit en backend/app/_build_info.json dentro de app.zip (commit_info, BUILD_INFO) y detección de +dirty sobre todas las rutas que alteran el artefacto (PACKAGED: incluye build_site.py, pages.yml y legacy/); FRONTEND y LEGACY como constantes; sin fechas ni otros cambios en la compilación",
+   "sha256": "094ae332f456364dd76e96fb6c97a5ec4da059ca9e061e2f19d958ce32b8190f"
   }
  },
  "base": "6e1104d",
