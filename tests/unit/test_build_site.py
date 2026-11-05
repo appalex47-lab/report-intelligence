@@ -44,7 +44,12 @@ def test_browser_modules_do_not_need_render_libs():
 # --- Fase 3A-1: SHA del commit estampado en app.zip (spec Fase 3A §4.2) -------------------------------------------------------
 import os  # noqa: E402
 import re  # noqa: E402
+import shutil  # noqa: E402
 import types  # noqa: E402
+
+import pytest  # noqa: E402
+
+requiere_git = pytest.mark.skipif(shutil.which("git") is None, reason="git no está disponible en el PATH")
 
 SHA40 = "0123456789abcdef0123456789abcdef01234567"
 
@@ -65,6 +70,7 @@ def _build(tmp_path, env_extra=None):
     return out
 
 
+@requiere_git
 def test_app_zip_lleva_build_info_solo_con_el_sha_sin_fechas(tmp_path):
     out = _build(tmp_path, {"GITHUB_SHA": SHA40})
     with zipfile.ZipFile(out / "app.zip") as z:
@@ -76,6 +82,7 @@ def test_app_zip_lleva_build_info_solo_con_el_sha_sin_fechas(tmp_path):
     assert info["commit"].startswith(SHA40)                            # GITHUB_SHA tiene prioridad (CI)
 
 
+@requiere_git
 def test_sin_github_sha_se_usa_git_y_el_sha_es_el_de_head(tmp_path):
     r = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True)
     if r.returncode != 0:
@@ -135,6 +142,7 @@ def test_commit_info_sin_informacion_es_desconocido_y_nunca_inventa_un_sha():
     assert build_site.commit_info(env={"GITHUB_SHA": "corto"}, run=sin_git) == "desconocido"      # un SHA de entorno inválido no se acepta
 
 
+@requiere_git
 def test_las_versiones_se_leen_dentro_del_paquete_con_y_sin_informacion_de_compilacion(tmp_path):
     """El paquete compilado (zip descomprimido, como en Pyodide) lee el SHA; el repositorio sin compilar da «desconocido»."""
     out = _build(tmp_path, {"GITHUB_SHA": SHA40})

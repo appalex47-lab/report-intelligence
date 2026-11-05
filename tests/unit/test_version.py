@@ -3,6 +3,7 @@
 No cambia ningún resultado de reportes: estas pruebas solo cubren la lectura de versiones y del SHA estampado en la compilación.
 """
 import json
+import shutil
 
 import pytest
 
@@ -69,6 +70,7 @@ def test_versiones_conserva_los_campos_que_ya_devolvia(tmp_path, monkeypatch):
     assert v["modelo_hallazgos"] == version.MODELO_HALLAZGOS_VERSION
 
 
+@pytest.mark.skipif(shutil.which("git") is None, reason="git no está disponible en el PATH")
 def test_en_el_repositorio_no_hay_un_build_info_versionado():
     """`_build_info.json` solo existe dentro de app.zip: no es un archivo generado del repositorio."""
     import subprocess
