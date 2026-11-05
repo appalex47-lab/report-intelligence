@@ -349,12 +349,12 @@ def test_la_narrativa_compuesta_es_igual_en_otro_proceso_con_otra_semilla_de_has
 
 
 # --------------------------------------------------------------------------------------------------- no adelanta otras subfases
-def test_no_se_toca_el_historial_ni_la_tabla_runs():
+def test_no_se_toca_el_contrato_de_la_tabla_runs():
     from backend.app.history import store
     con = sqlite3.connect(":memory:")
     con.executescript(store.SCHEMA)
     tablas = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    assert "procedencia" not in tablas
+    assert "procedencia" in tablas                      # 3A-3: tabla aparte; el contrato de `runs` no cambia
     columnas = [r[1] for r in con.execute("PRAGMA table_info(runs)")]
     assert columnas == ["id", "unit", "periodicity", "year", "idx", "version", "created_at", "profile", "template", "template_sha", "pptx_sha",
                         "pdf_sha", "qa_passed", "downloadable", "findings", "narrative", "context"]
