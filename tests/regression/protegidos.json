@@ -82,8 +82,8 @@
    "sha256": "33aff3f2d5c56adee56653ab29489b14679a511fb273cffbb8275c988ea51349"
   },
   "backend/app/narrative/writer.py": {
-   "motivo": "to_paragraphs_conclusiones (patrón del original)",
-   "sha256": "99b5e820bf783c04064023179f02808a7bb77a60bba15ddf15ed996db4a9c227"
+   "motivo": "to_paragraphs_conclusiones (patrón del original; encabezado con o sin negritas)",
+   "sha256": "747d2462605a54cf1bd335a4693a3828868c53a950edfe3b74558e4bd8d908fb"
   },
   "backend/app/qa/checks.py": {
    "motivo": "row_min_heights y row_content_floors (misma corrección)",
