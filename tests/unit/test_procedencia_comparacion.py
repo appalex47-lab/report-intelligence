@@ -39,13 +39,14 @@ def pasa(r, *ids):
 def test_todo_igual_y_regeneracion_real_con_el_mismo_hash_es_exacta():
     r = cmp()
     assert r["estado"] == "exacta" and r["causa"] == pv.IGUALDAD_CANONICA and r["diferencias"] == [] and r["alertas"] == []
-    assert pasa(r, *pv.COMPROBACIONES) and r["regeneracion"] == {"ejecutada": True, "hash_registrado": HASH, "hash_regenerado": HASH, "error": None}
+    assert pasa(r, *pv.COMPROBACIONES) and r["regeneracion"] == {"estado": "completada", "ejecutada": True, "hash_registrado": HASH, "hash_regenerado": HASH, "error": None}
     assert "canónico" in r["causa"] and "binaria ni visual" in r["causa"]
 
 
 def test_pr11_sin_regeneracion_nunca_es_exacta():
     r = cmp(regeneracion=None)
-    assert r["estado"] == "no_evaluada" and r["estado"] != "exacta" and r["comprobaciones"]["C7"]["resultado"] == "no_evaluada"
+    assert r["estado"] is None and r["comprobaciones"]["C7"]["resultado"] == "no_evaluada"
+    assert r["evaluacion"]["estado"] == "no_ejecutada" and r["regeneracion"]["estado"] == "no_solicitada"
     assert pasa(r, "C1", "C2", "C3a", "C3b", "C4", "C5", "C6")
 
 
@@ -214,7 +215,8 @@ def test_a08_un_contrato_de_hash_distinto_al_actual_se_rechaza_como_manifiesto_i
 @pytest.mark.parametrize("regen", [{"error": "ValueError: boom"}, {"hash_resultado": "no es un hash"}, {"hash_resultado": None}, {}, "texto", 5, []])
 def test_a09_una_regeneracion_fallida_o_invalida_nunca_es_exito(regen):
     r = cmp(regeneracion=regen)
-    assert r["estado"] == "no_evaluada" and r["comprobaciones"]["C7"]["resultado"] == "error" and r["regeneracion"]["error"]
+    assert r["estado"] is None and r["comprobaciones"]["C7"]["resultado"] == "error" and r["regeneracion"]["error"]
+    assert r["evaluacion"]["estado"] == "fallida" and r["regeneracion"]["estado"] == "fallida" and r["regeneracion"]["ejecutada"] is True
     assert r["regeneracion"]["hash_regenerado"] is None
 
 
@@ -253,7 +255,7 @@ def test_a02_la_comparacion_es_determinista_y_serializable():
 
 def test_a10_la_evidencia_conserva_lo_necesario_para_auditar():
     r = cmp(actual={**igual(), "version_motor": {"engine": "1.1.0"}})
-    assert set(r) == {"esquema", "estado", "causa", "comprobaciones", "diferencias", "notas", "alertas", "regeneracion", "evidencia"}
+    assert set(r) == {"esquema", "estado", "causa", "comprobaciones", "diferencias", "notas", "alertas", "evaluacion", "regeneracion", "evidencia"}
     assert set(r["comprobaciones"]) == set(pv.COMPROBACIONES)
     assert r["evidencia"] == {"run_id": 1, "manifiesto_sha256": "c" * 64, "integridad": "verificada", "copia": "integra"}
     assert r["diferencias"][0] == {"componente": "version_motor.engine", "registrado": "1.0.0", "actual": "1.1.0", "motivo": "difiere"}

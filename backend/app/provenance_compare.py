@@ -48,18 +48,24 @@ def estado_actual(period: Period | None, template=None, targets=None, context=No
     }
 
 
-def fuentes_aportadas(rutas) -> tuple[list[dict], list[str]]:
-    """(`[{"nombre", "sha256"}]`, avisos). Una ruta que no es un archivo legible NO se cuenta como aportada (y se avisa)."""
+def _leer_fuentes(rutas) -> tuple[list[tuple[Path, dict]], list[str]]:
+    """([(ruta, {"nombre", "sha256"})], avisos). Una ruta que no es un archivo legible NO se cuenta como aportada (y se avisa)."""
     out, avisos = [], []
     for r in rutas or []:
         p = Path(r)
         try:
             if not p.is_file():
                 raise OSError("no es un archivo")
-            out.append({"nombre": cap._nombre_seguro(p.name), "sha256": hist.sha256(p)})
+            out.append((p, {"nombre": cap._nombre_seguro(p.name), "sha256": hist.sha256(p)}))
         except OSError as e:
             avisos.append(f"la fuente «{cap._nombre_seguro(p.name)}» no se pudo leer ({type(e).__name__}); no se cuenta como aportada")
     return out, avisos
+
+
+def fuentes_aportadas(rutas) -> tuple[list[dict], list[str]]:
+    """(`[{"nombre", "sha256"}]`, avisos) de los archivos aportados (ver `_leer_fuentes`)."""
+    leidas, avisos = _leer_fuentes(rutas)
+    return [d for _p, d in leidas], avisos
 
 
 def _abrir(origen):
@@ -105,47 +111,61 @@ def _manifiesto_y_periodo(origen, run_id: int, carpeta, verif: dict) -> tuple[di
 def evaluar(origen, run_id: int, *, carpeta=None, fuentes=None, template=None, targets=None, context=None, ia=None, regenerar=None) -> dict:
     """Evalúa la reproducibilidad de la corrida `run_id` (spec §3). `origen`: conexión o ruta del historial; `carpeta`: carpeta del reporte;
     `fuentes`: rutas de los libros aportados de nuevo; `template`, `targets`, `context`, `ia`: la plantilla y la configuración ACTUALES;
-    `regenerar`: `None` (no regenerar) o un callable sin argumentos que realiza la regeneración real y devuelve el `hash_resultado` obtenido
-    (cualquier excepción cuenta como regeneración fallida, nunca como éxito). Devuelve el resultado de `provenance.comparar` más `avisos`."""
+    `regenerar`: `None` (no se solicita regeneración) o un callable `regenerar(fuentes_verificadas, shas)` que realiza la regeneración real y
+    devuelve el `hash_resultado` obtenido. Solo recibe las fuentes cuyo SHA-256 coincide con el registrado (nunca las no verificadas) y se
+    ejecuta únicamente si C1 a C6 pasan; cualquier excepción cuenta como regeneración fallida, nunca como éxito.
+
+    Devuelve el resultado de `provenance.comparar` (reproducibilidad / evaluación / regeneración por separado) más `avisos`. Solo lectura."""
     avisos: list[str] = []
     try:
         verif = ver.verificar(origen, run_id, carpeta)
         manifiesto, periodo = _manifiesto_y_periodo(origen, run_id, carpeta, verif)
-        aportadas, avisos = fuentes_aportadas(fuentes) if fuentes is not None else (None, [])
+        leidas, avisos = _leer_fuentes(fuentes) if fuentes is not None else ([], [])
+        aportadas = [d for _p, d in leidas] if fuentes is not None else None
         actual = estado_actual(periodo, template, targets, context, ia)
-        previo = pv.comparar(verificacion=verif, registrado=manifiesto, actual=actual, fuentes_aportadas=aportadas, regeneracion=None)
-        resultado = previo
-        # Solo se regenera si hay algo equivalente que regenerar: C1 a C6 en verde (el estado previo es «no_evaluada»). Nunca antes.
-        if regenerar is not None and previo["estado"] == "no_evaluada" and previo["comprobaciones"]["C7"]["resultado"] == "no_evaluada":
-            try:
-                regen = {"hash_resultado": regenerar()}
-            except Exception as e:                                          # noqa: BLE001 - la regeneración fallida NO es un éxito
-                regen = {"error": f"{type(e).__name__}: {e}"}
+        resultado = pv.comparar(verificacion=verif, registrado=manifiesto, actual=actual, fuentes_aportadas=aportadas, regeneracion=None)
+        if regenerar is not None:
+            # Solo se regenera si hay algo equivalente que regenerar: C1 a C6 en verde (sin clasificar y sin regeneración pendiente). Nunca antes.
+            if resultado["estado"] is None and resultado["evaluacion"]["estado"] == "no_ejecutada":
+                registradas = sorted({f["sha256"] for f in manifiesto["archivos_fuente"]})
+                verificadas, vistos = [], set()
+                for ruta, d in leidas:
+                    if d["sha256"] in registradas and d["sha256"] not in vistos:
+                        vistos.add(d["sha256"])
+                        verificadas.append(ruta)
+                try:
+                    regen = {"hash_resultado": regenerar(verificadas, registradas)}
+                except Exception as e:                                      # noqa: BLE001 - la regeneración fallida NO es un éxito
+                    regen = {"error": f"{type(e).__name__}: {e}"}
+            else:
+                regen = {"no_ejecutada": "C1 a C6 no pasan: no hay un resultado equivalente que regenerar"}
+                avisos.append("no se regeneró: C1 a C6 no pasan, así que no hay un resultado equivalente que comparar")
             resultado = pv.comparar(verificacion=verif, registrado=manifiesto, actual=actual, fuentes_aportadas=aportadas, regeneracion=regen)
-        elif regenerar is not None:
-            avisos.append("no se regeneró: C1 a C6 no pasan, así que no hay un resultado equivalente que comparar")
     except Exception as e:                                                  # noqa: BLE001 - jamás un fallo interno como éxito
-        return {"esquema": pv.ESQUEMA_COMPARACION, "estado": "no_evaluada", "causa": f"error al comparar: {pv.nfc(pv.rutas_a_nombre_base(str(e)))[:300]}",
-                "comprobaciones": {}, "diferencias": [], "notas": [], "alertas": [], "regeneracion": {"ejecutada": False, "hash_registrado": None,
-                                                                                                    "hash_regenerado": None, "error": None},
+        causa = f"error al comparar: {pv.nfc(pv.rutas_a_nombre_base(str(e)))[:300]}"
+        vacio = {k: {"resultado": "no_evaluada", "detalle": []} for k in pv.COMPROBACIONES}
+        return {"esquema": pv.ESQUEMA_COMPARACION, "estado": None, "causa": causa, "comprobaciones": vacio, "diferencias": [], "notas": [], "alertas": [],
+                "evaluacion": {"estado": "fallida", "motivo": causa},
+                "regeneracion": {"estado": "no_ejecutada", "ejecutada": False, "hash_registrado": None, "hash_regenerado": None, "error": causa},
                 "evidencia": {"run_id": run_id, "manifiesto_sha256": None, "integridad": None, "copia": None}, "avisos": avisos}
     resultado["avisos"] = avisos
     return resultado
 
 
-def regenerador(*, period: Period, fuentes, template, targets=None, context=None, edits=None, discovery=None, ia=None):
-    """Devuelve el callable que `evaluar` ejecuta para REGENERAR de verdad: corre el motor sobre las fuentes aportadas y construye el reporte
-    completo (con la plantilla actual) en una carpeta temporal, SIN historial, y devuelve el `hash_resultado` que calcula la captura de
-    procedencia de esa construcción (el mismo código y el mismo contrato 3A-2 que el reporte original). No toca nada fuera de la carpeta
-    temporal, que se borra al terminar. Si algo falla lanza (no devuelve un hash de relleno)."""
-    fuentes = [Path(f) for f in fuentes]
-
-    def correr() -> str:
+def regenerador(*, period: Period, template, targets=None, context=None, edits=None, discovery=None, ia=None):
+    """Devuelve el callable `regenerar(fuentes_verificadas, shas)` que `evaluar` ejecuta para REGENERAR de verdad: corre el motor sobre las
+    fuentes que `evaluar` ya verificó y construye el reporte completo (con la plantilla actual) en una carpeta temporal, SIN historial, y
+    devuelve el `hash_resultado` que calcula la captura de procedencia de esa construcción (mismo código y contrato 3A-2 que el reporte
+    original). Antes de devolverlo comprueba que el manifiesto producido lista EXACTAMENTE las fuentes verificadas (ningún archivo distinto
+    puede haberse colado ni cambiado entre la verificación y la regeneración). No toca nada fuera de la carpeta temporal, que se borra al
+    terminar. Si algo falla lanza (nunca devuelve un hash de relleno)."""
+    def correr(fuentes, shas) -> str:
         from .build import build_aetops, build_glp1
         from .pipeline import run_aetops, run_aetops_raw, run_glp1, run_glp1_raw
         from .raw.aetops import is_raw_workbook
+        fuentes = [Path(f) for f in fuentes]
         if len(fuentes) != 1:
-            raise cap.ErrorCaptura("entradas", "la regeneración necesita exactamente un libro de entrada")
+            raise cap.ErrorCaptura("entradas", "la regeneración necesita exactamente un libro de entrada verificado")
         p = fuentes[0]
         with tempfile.TemporaryDirectory(prefix="regeneracion_") as td:
             if period.unit == "GLP1":
@@ -160,5 +180,12 @@ def regenerador(*, period: Period, fuentes, template, targets=None, context=None
             proc = b.procedencia or {}
             if proc.get("estado") != "copia_sin_registro" or not proc.get("hash_resultado"):
                 raise RuntimeError(f"la regeneración no produjo un hash_resultado (estado {proc.get('estado')!r}, etapa {proc.get('etapa')!r})")
+            m, errs = pv.leer_manifiesto((Path(td) / "out" / cap.ARCHIVO_COPIA).read_bytes())
+            if m is None:
+                raise RuntimeError("la regeneración produjo un manifiesto inválido: " + "; ".join(errs[:2]))
+            if sorted({f["sha256"] for f in m["archivos_fuente"]}) != sorted(set(shas)):
+                raise RuntimeError("las fuentes usadas en la regeneración no son las verificadas")
+            if m["hash_resultado"]["valor"] != proc["hash_resultado"]:
+                raise RuntimeError("el manifiesto regenerado y el resultado de la captura no coinciden")
             return proc["hash_resultado"]
     return correr

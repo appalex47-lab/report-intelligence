@@ -557,7 +557,7 @@ def leer_manifiesto(datos) -> tuple[dict | None, list[str]]:
 # real) y la clasifica. Regla transversal: la ausencia de evidencia NUNCA cuenta como coincidencia.
 # ======================================================================================================================================
 ESQUEMA_COMPARACION = "comparacion/1"
-ESTADOS = ("exacta", "parcial", "no_reproducible", "no_evaluada")
+ESTADOS = ("exacta", "parcial", "no_reproducible")          # estados de reproducibilidad de la spec; «sin clasificar» es `None`
 COMPROBACIONES = ("C1", "C2", "C3a", "C3b", "C4", "C5", "C6", "C7")
 ACTUAL_CAMPOS = ("version_codigo", "version_motor", "version_definiciones", "version_reglas", "version_plantillas", "configuracion", "entorno")
 IGUALDAD_CANONICA = ("El resultado canónico es idéntico (hash_resultado). Esto NO implica igualdad binaria ni visual del PPTX (spec §3.5).")
@@ -710,12 +710,22 @@ def _c6(registrado: dict, actual: dict) -> tuple[dict, list[dict]]:
     return _comprobacion("falla" if detalle else "pasa", *detalle), difs
 
 
+def _regen_info(registrado, estado: str, **kw) -> dict:
+    return {"estado": estado, "ejecutada": estado in ("completada", "fallida"),
+            "hash_registrado": registrado["hash_resultado"]["valor"] if registrado else None, "hash_regenerado": None, "error": None, **kw}
+
+
 def _c7(registrado: dict, regeneracion) -> tuple[dict, list[dict], dict]:
+    """(C7, diferencias, información técnica de la regeneración). `regeneracion`: `None` = no solicitada; `{"no_ejecutada": motivo}` = se pidió
+    pero no se ejecutó; `{"hash_resultado"}` = completada; `{"error"}` o cualquier otra cosa = fallida (nunca éxito)."""
     reg_hash = registrado["hash_resultado"]
-    info = {"ejecutada": False, "hash_registrado": reg_hash["valor"], "hash_regenerado": None, "error": None}
     if regeneracion is None:
-        return _comprobacion("no_evaluada", "no se regeneró: sin regeneración real no existe «exacta» (§3.5)"), [], info
-    info["ejecutada"] = True
+        return (_comprobacion("no_evaluada", "no se solicitó regeneración: sin regeneración real no existe «exacta» (§3.5)"), [],
+                _regen_info(registrado, "no_solicitada"))
+    if isinstance(regeneracion, dict) and set(regeneracion) == {"no_ejecutada"}:
+        motivo = nfc(str(regeneracion["no_ejecutada"]))[:300]
+        return _comprobacion("no_evaluada", "se solicitó regeneración pero no se ejecutó: " + motivo), [], _regen_info(registrado, "no_ejecutada", error=motivo)
+    info = _regen_info(registrado, "fallida")
     if not isinstance(regeneracion, dict):
         info["error"] = "evidencia de regeneración inválida"
         return _comprobacion("error", info["error"]), [], info
@@ -724,9 +734,9 @@ def _c7(registrado: dict, regeneracion) -> tuple[dict, list[dict], dict]:
         return _comprobacion("error", "la regeneración falló: " + info["error"]), [], info
     valor = regeneracion.get("hash_resultado")
     if not isinstance(valor, str) or not _SHA_MIN.match(valor):
-        info["error"] = "la regeneración no devolvió un hash_resultado válido"
+        info["error"] = "la regeneración no devolvió un hash_resultado válido (resultado incompleto)"
         return _comprobacion("error", info["error"]), [], info
-    info["hash_regenerado"] = valor
+    info["estado"], info["hash_regenerado"] = "completada", valor
     if valor != reg_hash["valor"]:
         return _comprobacion("falla", "el hash_resultado de la regeneración difiere del registrado"), [
             {"componente": "hash_resultado.valor", "registrado": reg_hash["valor"], "actual": valor, "motivo": "difiere"}], info
@@ -734,15 +744,22 @@ def _c7(registrado: dict, regeneracion) -> tuple[dict, list[dict], dict]:
 
 
 def comparar(*, verificacion: dict, registrado, actual: dict | None, fuentes_aportadas, regeneracion=None) -> dict:
-    """Clasifica la reproducibilidad (spec §3.2). El primer criterio que se cumple gana, en este orden:
+    """Clasifica la reproducibilidad (spec §3.2). Se separan TRES conceptos que no deben mezclarse:
 
+    * `estado` — estado de REPRODUCIBILIDAD, solo los de la spec: `exacta`, `parcial`, `no_reproducible`, o `None` cuando la evidencia no
+      permite clasificar (no es un cuarto estado: significa «sin clasificar», y nunca equivale a coincidencia).
+    * `evaluacion` — si la evaluación llegó a su fin: `completada` (hay estado), `no_ejecutada` (falta una regeneración que no se solicitó o no
+      se ejecutó) o `fallida` (la regeneración falló).
+    * `regeneracion` — resultado técnico de la regeneración: `no_solicitada`, `no_ejecutada`, `completada` o `fallida`.
+
+    Orden de evaluación (el primer criterio que se cumple gana):
     1. `no_reproducible`: C1 falla (sin manifiesto, legado, esquema desconocido) o C2 falla (alterado) o C3b falla (una fuente aportada difiere).
     2. `parcial`: C3a, C4, C5 o C6 fallan, o no hay registro para verificar C2 (D-B), o C1 a C6 pasan y C7 falla (anomalía de determinismo).
-    3. `exacta`: C1 a C7 pasan; C7 exige una regeneración real.
-    4. `no_evaluada` (no es un estado de la spec): C1 a C6 pasan pero no hay regeneración, o la regeneración falló. Nunca se presenta como `exacta`.
+    3. `exacta`: C1 a C7 pasan; C7 exige una regeneración real completada con el mismo `hash_resultado`.
+    4. `estado = None`: C1 a C6 pasan pero no hay regeneración completada (no solicitada, no ejecutada o fallida).
 
     `verificacion` es el resultado de `provenance_verify.verificar`; `registrado` el manifiesto ya validado (o `None`); `actual` el estado actual
-    (claves de `ACTUAL_CAMPOS`); `fuentes_aportadas` lista de `{"nombre", "sha256"}` o `None`; `regeneracion` `None`, `{"hash_resultado"}` o `{"error"}`.
+    (claves de `ACTUAL_CAMPOS`); `fuentes_aportadas` lista de `{"nombre", "sha256"}` o `None`; `regeneracion` ver `_c7`.
     Determinista y sin efectos: el mismo argumento da siempre el mismo resultado."""
     if not isinstance(verificacion, dict) or "registro" not in verificacion or "copia" not in verificacion:
         raise ErrorProcedencia("verificacion no es un resultado de provenance_verify.verificar")
@@ -753,16 +770,22 @@ def comparar(*, verificacion: dict, registrado, actual: dict | None, fuentes_apo
     c1, c2, causa_no_repr = _c1_c2(verificacion)
     comps = {k: _comprobacion("no_evaluada", "no se evaluó: no hay un manifiesto válido") for k in COMPROBACIONES}
     comps["C1"], comps["C2"] = c1, c2
+    valido = registrado is not None and not validar_manifiesto(registrado)
+    sin_uso = ("no_solicitada" if regeneracion is None else "no_ejecutada")
     out = {"esquema": ESQUEMA_COMPARACION, "estado": "no_reproducible", "causa": causa_no_repr, "comprobaciones": comps, "diferencias": [],
-           "notas": [], "alertas": [], "regeneracion": {"ejecutada": False, "hash_registrado": None, "hash_regenerado": None, "error": None},
+           "notas": [], "alertas": [],
+           "evaluacion": {"estado": "completada", "motivo": None},
+           "regeneracion": _regen_info(registrado if valido else None, sin_uso,
+                                       **({"error": "no se evalúa: la evidencia no es válida"} if sin_uso == "no_ejecutada" else {})),
            "evidencia": {"run_id": verificacion.get("run_id"), "manifiesto_sha256": verificacion["registro"].get("manifiesto_sha256"),
                          "integridad": verificacion.get("integridad"), "copia": verificacion["copia"]["estado"]}}
     if c1["resultado"] == "falla" or c2["resultado"] == "falla":
         return out
-    if registrado is None or validar_manifiesto(registrado):
+    if not valido:
         out["causa"] = "no hay un manifiesto válido que comparar"
         comps["C1"] = _comprobacion("falla", "no se entregó un manifiesto válido")
         return out
+    out["regeneracion"] = _regen_info(registrado, sin_uso, **({"error": "no se evalúa: la evidencia no es válida"} if sin_uso == "no_ejecutada" else {}))
     difs: list[dict] = []
     comps["C3a"], comps["C3b"], d3 = _c3(registrado, fuentes_aportadas)
     comps["C4"], d4 = _c4(registrado, actual)
@@ -778,16 +801,13 @@ def comparar(*, verificacion: dict, registrado, actual: dict | None, fuentes_apo
         return out
     sin_c2 = c2["resultado"] != "pasa"
     fallas = [k for k in ("C3a", "C4", "C5", "C6") if comps[k]["resultado"] == "falla"]
+    comps["C7"], d7, out["regeneracion"] = _c7(registrado, regeneracion)
     if fallas or sin_c2:
         out["estado"] = "parcial"
         causas = [f"{k} falla" for k in fallas] + (["integridad no verificable: no hay registro autoritativo (D-B)"] if sin_c2 else [])
         out["causa"] = "; ".join(causas)
-        out["diferencias"] = difs
-        # la regeneración, si la hubo, se registra para auditoría pero no puede elevar el estado
-        comps["C7"], d7, out["regeneracion"] = _c7(registrado, regeneracion)
-        out["diferencias"] += d7
+        out["diferencias"] = difs + d7                      # una regeneración, si la hubo, se conserva como evidencia pero no eleva el estado
         return out
-    comps["C7"], d7, out["regeneracion"] = _c7(registrado, regeneracion)
     out["diferencias"] = difs + d7
     r = comps["C7"]["resultado"]
     if r == "pasa":
@@ -799,17 +819,116 @@ def comparar(*, verificacion: dict, registrado, actual: dict | None, fuentes_apo
         out["causa"] = "anomalía de determinismo: C1 a C6 pasan y el hash_resultado regenerado difiere"
         out["alertas"].append("anomalía de determinismo: mismos insumos y versiones, distinto hash_resultado. Es un defecto del sistema o una entrada "
                               "no registrada (p. ej. texto editado a mano); primera sospecha: " + ("diferencia de entorno" if out["notas"] else "entradas no registradas"))
-    else:
-        out["estado"] = "no_evaluada"
-        out["causa"] = ("la regeneración falló; no hay evidencia de reproducibilidad" if r == "error"
-                        else "C1 a C6 pasan pero no se regeneró: sin regeneración real no existe «exacta»")
+    else:                                                   # C7 no evaluada o con error: la spec no define un estado → sin clasificar
+        out["estado"] = None
+        fallida = r == "error"
+        out["causa"] = ("la regeneración falló: no hay evidencia para clasificar" if fallida else
+                        "C1 a C6 pasan pero no hay regeneración completada: sin regeneración real no existe «exacta»")
+        out["evaluacion"] = {"estado": "fallida" if fallida else "no_ejecutada", "motivo": out["causa"]}
     return out
 
 
+_ESTADOS_REGEN = ("no_solicitada", "no_ejecutada", "completada", "fallida")
+_ESTADOS_EVAL = ("completada", "no_ejecutada", "fallida")
+_RESULTADOS_C = ("pasa", "falla", "no_evaluada", "error")
+
+
+def validar_comparacion(r) -> list[str]:
+    """Errores de estructura o de COHERENCIA de un resultado de `comparar` (lista vacía = válido). Permite verificar después, sin volver a
+    regenerar, que un resultado guardado no fue alterado hasta contradecirse (p. ej. `exacta` sin regeneración completada e igual)."""
+    claves = {"esquema", "estado", "causa", "comprobaciones", "diferencias", "notas", "alertas", "evaluacion", "regeneracion", "evidencia"}
+    if not isinstance(r, dict):
+        return ["la comparación debe ser un objeto"]
+    errs: list[str] = []
+    if not claves <= set(r) or set(r) - claves - {"avisos"}:                 # `avisos` es opcional: lo agrega la orquestación (provenance_compare)
+        return [f"campos de primer nivel inválidos: faltan {sorted(claves - set(r))}, sobran {sorted(set(r) - claves - {'avisos'})}"]
+    if "avisos" in r and not (isinstance(r["avisos"], list) and all(isinstance(x, str) for x in r["avisos"])):
+        errs.append("avisos debe ser una lista de textos")
+    if r["esquema"] != ESQUEMA_COMPARACION:
+        errs.append(f"esquema desconocido: {r['esquema']!r}")
+    if r["estado"] not in ("exacta", "parcial", "no_reproducible", None):
+        errs.append(f"estado de reproducibilidad inválido: {r['estado']!r}")
+    comps = r["comprobaciones"]
+    if not isinstance(comps, dict) or set(comps) != set(COMPROBACIONES):
+        return errs + ["comprobaciones incompletas o con claves desconocidas"]
+    for k, c in comps.items():
+        if not (isinstance(c, dict) and set(c) == {"resultado", "detalle"} and c["resultado"] in _RESULTADOS_C
+                and isinstance(c["detalle"], list) and all(isinstance(x, str) for x in c["detalle"])):
+            errs.append(f"comprobación {k} inválida")
+    ev, rg = r["evaluacion"], r["regeneracion"]
+    if not (isinstance(ev, dict) and set(ev) == {"estado", "motivo"} and ev["estado"] in _ESTADOS_EVAL):
+        return errs + ["evaluacion inválida"]
+    if not (isinstance(rg, dict) and set(rg) == {"estado", "ejecutada", "hash_registrado", "hash_regenerado", "error"} and rg["estado"] in _ESTADOS_REGEN
+            and isinstance(rg["ejecutada"], bool)):
+        return errs + ["regeneracion inválida"]
+    if rg["ejecutada"] != (rg["estado"] in ("completada", "fallida")):
+        errs.append("regeneracion.ejecutada no corresponde a su estado")
+    for campo in ("hash_registrado", "hash_regenerado"):
+        if rg[campo] is not None and not (isinstance(rg[campo], str) and _SHA_MIN.match(rg[campo])):
+            errs.append(f"regeneracion.{campo} no es un SHA-256")
+    if rg["estado"] == "completada" and rg["hash_regenerado"] is None:
+        errs.append("una regeneración completada debe traer su hash")
+    if rg["estado"] == "fallida" and not rg["error"]:
+        errs.append("una regeneración fallida debe traer su error")
+    if rg["estado"] in ("no_solicitada",) and rg["hash_regenerado"] is not None:
+        errs.append("una regeneración no solicitada no puede traer hash")
+    if (r["estado"] is None) != (ev["estado"] != "completada"):
+        errs.append("estado y evaluacion se contradicen")
+    if r["estado"] is None:
+        previas_ok = all(comps[k]["resultado"] == "pasa" for k in ("C1", "C2", "C3a", "C3b", "C4", "C5", "C6"))
+        error_interno = (ev["estado"] == "fallida" and rg["estado"] == "no_ejecutada" and bool(rg["error"])
+                         and all(c["resultado"] == "no_evaluada" for c in comps.values()))            # fallo ajeno a la regeneración: nada se evaluó
+        if not previas_ok and not error_interno:
+            errs.append("sin clasificar solo es posible cuando C1 a C6 pasan (o la evaluación falló antes de empezar)")
+        if ev["estado"] == "fallida" and rg["estado"] != "fallida" and not error_interno:
+            errs.append("evaluación fallida sin regeneración fallida")
+        if ev["estado"] == "no_ejecutada" and rg["estado"] not in ("no_solicitada", "no_ejecutada"):
+            errs.append("evaluación no ejecutada con una regeneración ya realizada")
+    if r["estado"] == "exacta":
+        if not all(comps[k]["resultado"] == "pasa" for k in COMPROBACIONES):
+            errs.append("«exacta» exige C1 a C7 en «pasa»")
+        if not (rg["estado"] == "completada" and rg["hash_regenerado"] == rg["hash_registrado"] and rg["hash_registrado"]):
+            errs.append("«exacta» exige una regeneración completada con el mismo hash_resultado")
+        if r["diferencias"]:
+            errs.append("«exacta» no admite diferencias")
+    if r["estado"] in ("exacta", "parcial", "no_reproducible") and not isinstance(r["causa"], str):
+        errs.append("la causa debe ser texto")
+    for campo in ("diferencias", "notas", "alertas"):
+        if not isinstance(r[campo], list):
+            errs.append(f"{campo} debe ser una lista")
+    evd = r["evidencia"]
+    if not (isinstance(evd, dict) and set(evd) == {"run_id", "manifiesto_sha256", "integridad", "copia"}):
+        errs.append("evidencia inválida")
+    elif evd["manifiesto_sha256"] is not None and not (isinstance(evd["manifiesto_sha256"], str) and _SHA_MIN.match(evd["manifiesto_sha256"])):
+        errs.append("evidencia.manifiesto_sha256 no es un SHA-256")
+    return errs
+
+
+def leer_comparacion(datos) -> tuple[dict | None, list[str]]:
+    """Lee bytes de una comparación guardada: `(resultado, [])` o `(None, errores)`. Nunca lanza. Mismo rigor que `leer_manifiesto` (UTF-8,
+    claves repetidas, NaN/Infinity, tamaño) más `validar_comparacion`."""
+    if not isinstance(datos, (bytes, bytearray)):
+        return None, ["la comparación debe leerse como bytes"]
+    if len(datos) > MAX_MANIFIESTO_BYTES:
+        return None, [f"la comparación excede el tamaño máximo ({MAX_MANIFIESTO_BYTES} bytes)"]
+    try:
+        r = json.loads(bytes(datos).decode("utf-8"), object_pairs_hook=_sin_claves_repetidas, parse_constant=_rechazar_constante)
+    except UnicodeDecodeError:
+        return None, ["la comparación no es UTF-8 válido"]
+    except (ValueError, RecursionError) as e:
+        return None, [f"JSON inválido o truncado: {str(e)[:120]}"]
+    errs = validar_comparacion(r)
+    return (r, []) if not errs else (None, errs)
+
+
 def serializar_comparacion(resultado: dict) -> bytes:
-    """Bytes deterministas (JSON de claves ordenadas, UTF-8) de un resultado de `comparar`, para conservarlo como evidencia de auditoría."""
+    """Bytes deterministas (JSON de claves ordenadas, UTF-8) de un resultado de `comparar`, para conservarlo como evidencia de auditoría.
+    Se rechaza un resultado estructural o lógicamente inválido (no se serializa una comparación incoherente)."""
     if not isinstance(resultado, dict) or resultado.get("esquema") != ESQUEMA_COMPARACION:
         raise ErrorProcedencia("no es un resultado de comparar")
+    errs = validar_comparacion(resultado)
+    if errs:
+        raise ErrorProcedencia("la comparación no es coherente: " + "; ".join(errs[:3]))
     try:
         return (json.dumps(resultado, ensure_ascii=False, sort_keys=True, indent=1, allow_nan=False) + "\n").encode("utf-8")
     except (TypeError, ValueError) as e:

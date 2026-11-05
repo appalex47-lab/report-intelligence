@@ -95,7 +95,7 @@ def test_el_hash_en_pyodide_coincide_con_el_de_cpython(tmp_path):
                                   regeneracion=c["regeneracion"])
         assert en_pyodide["comparaciones"][nombre] == pv2.sha256_hex(pv2.serializar_comparacion(esperado_c)), nombre
     assert {pv2.comparar(verificacion=c["verificacion"], registrado=c["registrado"], actual=c["actual"], fuentes_aportadas=c["fuentes"],
-                         regeneracion=c["regeneracion"])["estado"] for c in casos.values()} == {"exacta", "parcial", "no_reproducible", "no_evaluada"}
+                         regeneracion=c["regeneracion"])["estado"] for c in casos.values()} == {"exacta", "parcial", "no_reproducible", None}
 
 
 def _casos_comparacion() -> dict:
@@ -119,4 +119,4 @@ def _casos_comparacion() -> dict:
     legado["registrado"] = None
     sin_regen = copy.deepcopy(base)
     sin_regen["regeneracion"] = None
-    return {"exacta": base, "parcial": distinto, "no_reproducible": legado, "no_evaluada": sin_regen}
+    return {"exacta": base, "parcial": distinto, "no_reproducible": legado, "sin_clasificar": sin_regen}

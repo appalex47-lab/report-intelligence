@@ -30,7 +30,7 @@ def caso(tmp_path):
 
 
 def regen_ok(c):
-    return lambda: cap.construir(period=P, result=resultado(), narrative=narrativa("Hola"), sources=[c["fuente"]], template=c["tpl"])[0]["hash_resultado"]["valor"]
+    return lambda f, s: cap.construir(period=P, result=resultado(), narrative=narrativa("Hola"), sources=[c["fuente"]], template=c["tpl"])[0]["hash_resultado"]["valor"]
 
 
 def ev(c, **kw):
@@ -40,7 +40,8 @@ def ev(c, **kw):
 
 
 def estado(r):
-    return r["estado"]
+    """Estado de reproducibilidad; `None` (sin clasificar) se escribe «sin_clasificar» en las comparaciones."""
+    return r["estado"] if r["estado"] is not None else "sin_clasificar"
 
 
 # ---------------------------------------------------------------------------------------------------------------- A: exacta
@@ -53,7 +54,7 @@ def test_a01_a03_regeneracion_real_identica_es_exacta_y_usa_la_procedencia_exist
 
 def test_pr11_sin_regenerar_no_hay_exacta(caso):
     r = ev(caso)
-    assert estado(r) == "no_evaluada" and r["regeneracion"]["ejecutada"] is False
+    assert estado(r) == "sin_clasificar" and r["regeneracion"]["ejecutada"] is False
 
 
 def test_repetir_la_comparacion_da_el_mismo_resultado(caso):
@@ -65,9 +66,9 @@ def test_repetir_la_comparacion_da_el_mismo_resultado(caso):
 def test_ac11_solo_regenera_si_se_pide_y_si_c1_a_c6_pasan(caso):
     llamadas = []
 
-    def regen():
-        llamadas.append(1)
-        return regen_ok(caso)()
+    def regen(f, s):
+        llamadas.append((f, s))
+        return regen_ok(caso)(f, s)
     ev(caso)                                                                         # no se pide → no se llama
     assert llamadas == []
     ev(caso, fuentes=[], regenerar=regen)                                            # C3a falla → no hay nada equivalente que regenerar
@@ -78,26 +79,26 @@ def test_ac11_solo_regenera_si_se_pide_y_si_c1_a_c6_pasan(caso):
     r = ev(caso, fuentes=[], regenerar=regen)
     assert "no se regeneró" in " ".join(r["avisos"])
     ev(caso, regenerar=regen)
-    assert llamadas == [1]
+    assert len(llamadas) == 1
 
 
 def test_regeneracion_con_hash_distinto_es_parcial_con_anomalia(caso):
-    r = ev(caso, regenerar=lambda: "f" * 64)
+    r = ev(caso, regenerar=lambda f, s: "f" * 64)
     assert estado(r) == "parcial" and "anomalía de determinismo" in r["causa"] and r["regeneracion"]["hash_regenerado"] == "f" * 64
 
 
 @pytest.mark.parametrize("falla", [RuntimeError("boom"), OSError("disco"), KeyError("x"), cap.ErrorCaptura("entradas", "falta algo")])
 def test_a09_una_regeneracion_que_lanza_no_es_un_exito(caso, falla):
-    def regen():
+    def regen(f, s):
         raise falla
     r = ev(caso, regenerar=regen)
-    assert estado(r) == "no_evaluada" and r["comprobaciones"]["C7"]["resultado"] == "error" and r["regeneracion"]["error"]
+    assert estado(r) == "sin_clasificar" and r["comprobaciones"]["C7"]["resultado"] == "error" and r["regeneracion"]["error"]
 
 
 @pytest.mark.parametrize("devuelve", [None, "", "xx", 5, "z" * 64, "A" * 64])
 def test_una_regeneracion_que_devuelve_basura_no_es_un_exito(caso, devuelve):
-    r = ev(caso, regenerar=lambda: devuelve)
-    assert estado(r) in ("no_evaluada", "parcial") and estado(r) != "exacta"
+    r = ev(caso, regenerar=lambda f, s: devuelve)
+    assert estado(r) in ("sin_clasificar", "parcial") and estado(r) != "exacta"
 
 
 # ---------------------------------------------------------------------------------------------------------------- B: parcial
@@ -158,7 +159,7 @@ def test_ac12_reporte_legado_sin_procedencia_es_no_reproducible(tmp_path):
     carpeta = tmp_path / "viejo"
     carpeta.mkdir()
     db, rid = __import__("tests.proc_util", fromlist=["historial"]).historial(tmp_path / "h.sqlite", plantilla(tmp_path))
-    r = cmpm.evaluar(db, rid, carpeta=carpeta, fuentes=[], regenerar=lambda: pytest.fail("no debe regenerar"))
+    r = cmpm.evaluar(db, rid, carpeta=carpeta, fuentes=[], regenerar=lambda f, s: pytest.fail("no debe regenerar"))
     assert estado(r) == "no_reproducible" and "legado" in r["causa"]
 
 
@@ -184,7 +185,7 @@ def _manipular(db, sql, *p):
 
 def test_registro_manipulado_es_no_reproducible(caso):
     _manipular(caso["db"], "UPDATE procedencia SET manifiesto = replace(manifiesto, 'input.xlsx', 'falso.xlsx')")
-    r = ev(caso, regenerar=lambda: pytest.fail("no debe regenerar"))
+    r = ev(caso, regenerar=lambda f, s: pytest.fail("no debe regenerar"))
     assert estado(r) == "no_reproducible" and r["comprobaciones"]["C2"]["resultado"] == "falla"
 
 
@@ -225,7 +226,7 @@ def test_db_solo_con_copia_valida_es_a_lo_sumo_parcial(tmp_path):
     out, carpeta, _ = capturar(tmp_path, db=False)
     tpl = tmp_path / "templates" / "aetops-mensual" / "1" / "template.pptx"
     r = cmpm.evaluar(tmp_path / "nada.sqlite", 1, carpeta=carpeta, fuentes=[tmp_path / "input.xlsx"], template=tpl,
-                     regenerar=lambda: out["hash_resultado"])
+                     regenerar=lambda f, s: out["hash_resultado"])
     assert estado(r) == "parcial" and "D-B" in r["causa"]
 
 
@@ -243,8 +244,8 @@ def test_la_comparacion_no_modifica_ninguna_evidencia(caso):
     antes = _foto(caso)
     ev(caso, regenerar=regen_ok(caso))
     ev(caso, fuentes=[])
-    ev(caso, regenerar=lambda: "f" * 64)
-    ev(caso, regenerar=lambda: (_ for _ in ()).throw(RuntimeError("x")))
+    ev(caso, regenerar=lambda f, s: "f" * 64)
+    ev(caso, regenerar=lambda f, s: (_ for _ in ()).throw(RuntimeError("x")))
     assert _foto(caso) == antes
 
 
@@ -257,7 +258,7 @@ def test_la_comparacion_no_crea_archivos_ni_temporales(caso):
 def test_un_error_interno_jamas_es_exito(caso, monkeypatch):
     monkeypatch.setattr(ver, "verificar", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("fallo interno /home/x/secreto")))
     r = cmpm.evaluar(caso["db"], caso["run_id"], carpeta=caso["carpeta"], fuentes=[caso["fuente"]], template=caso["tpl"], regenerar=regen_ok(caso))
-    assert estado(r) == "no_evaluada" and "error al comparar" in r["causa"] and "/home/x" not in r["causa"]
+    assert estado(r) == "sin_clasificar" and "error al comparar" in r["causa"] and "/home/x" not in r["causa"]
 
 
 def test_acepta_una_conexion_abierta_sin_modificarla(caso):

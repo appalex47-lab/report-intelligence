@@ -4,6 +4,7 @@ Necesita las plantillas reales (gitignoradas); sin ellas se omite con ese motivo
 import pytest
 
 from backend.app import build as B
+from backend.app import provenance_capture as cap
 from backend.app import provenance_compare as cmpm
 from backend.app import version
 from backend.app.models import Period
@@ -46,7 +47,7 @@ def _evaluar(nombre, db, carpeta, run_id, fuente=None, regen=True, edits=None, *
     fuente = fuente or f
     kw.setdefault("targets", METAS)
     return cmpm.evaluar(db, run_id, carpeta=carpeta, fuentes=[fuente], template=plantilla, regenerar=(
-        cmpm.regenerador(period=periodo, fuentes=[fuente], template=plantilla, edits=edits, **kw) if regen else None), **kw)
+        cmpm.regenerador(period=periodo, template=plantilla, edits=edits, **kw) if regen else None), **kw)
 
 
 @pytest.mark.parametrize("nombre", ESC)
@@ -113,6 +114,24 @@ def test_la_regeneracion_falla_de_forma_visible_si_la_plantilla_no_sirve(tmp_pat
     mala.write_bytes(b"no es un pptx")
     periodo, fuente, _ = _datos(nombre)
     r = cmpm.evaluar(db, b.procedencia["run_id"], carpeta=carpeta, fuentes=[fuente], template=mala, targets=METAS,
-                     regenerar=cmpm.regenerador(period=periodo, fuentes=[fuente], template=mala, targets=METAS))
+                     regenerar=cmpm.regenerador(period=periodo, template=mala, targets=METAS))
     assert r["estado"] == "parcial"                                                   # la plantilla difiere (C4): no se regenera con una plantilla distinta
     assert r["regeneracion"]["ejecutada"] is False
+
+
+def test_el_regenerador_rechaza_fuentes_distintas_a_las_verificadas(tmp_path):
+    """Defensa contra cambios entre la verificación y la regeneración: si el archivo que se usa no tiene el SHA-256 verificado, lanza."""
+    import shutil
+    nombre = ESC[0]
+    periodo, fuente, plantilla = _datos(nombre)
+    b, db, carpeta = _original(nombre, tmp_path)
+    sha_ok = __import__("backend.app.history.store", fromlist=["sha256"]).sha256(fuente)
+    otra = tmp_path / "otra.xlsx"
+    shutil.copyfile(fuente, otra)
+    otra.write_bytes(otra.read_bytes() + b"\0")
+    regen = cmpm.regenerador(period=periodo, template=plantilla, targets=METAS)
+    with pytest.raises(Exception):                               # el libro alterado o no se lee, o su SHA no es el verificado
+        regen([otra], [sha_ok])
+    with pytest.raises(cap.ErrorCaptura, match="exactamente un libro"):
+        regen([fuente, fuente], [sha_ok])
+    assert regen([fuente], [sha_ok]) == b.procedencia["hash_resultado"]
