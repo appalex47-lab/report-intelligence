@@ -180,7 +180,7 @@ Clasificación: **D** = defecto real (comportamiento o documentación que contra
 | D-04 | D (documentación y comentario de prueba) | Baja | El comentario de `test_ambos_alterados_y_coherentes_…` afirma que la comparación contra las fuentes reales «delata el cambio», y `IMPLEMENTACION_3A4…` (I-1) dice que esa comparación y la regeneración «siguen siendo la defensa». Ambas valen para cambios de **contenido**; no para un reescrito coherente que solo cambia un nombre (resultado real: `exacta`) | Precisar el alcance de ambas afirmaciones |
 | D-05 | D (prueba) | Baja | Prueba vacía/engañosa citada arriba | Reescribirla afirmando el estado real y su razón |
 | D-06 | D (prueba) | Baja | Prueba mal nombrada citada arriba | Renombrarla o añadir la prueba que su nombre promete |
-| D-07 | D (cobertura) | Baja–media | Falta la prueba de regenerador cuando `build_*` falla o produce un resultado incompleto (escenario pedido en R-09) | Añadir una prueba con un `build_*` que lance y otra con `procedencia` sin hash, ambas esperando `fallida` |
+| D-07 | D (cobertura) | Baja (antes «Baja–media»; ver §14) | Falta la prueba de regenerador cuando `build_*` falla o produce un resultado incompleto (escenario pedido en R-09) | Añadir una prueba con un `build_*` que lance y otra con `procedencia` sin hash, ambas esperando `fallida` |
 | D-08 | M | Baja | Sin prueba de determinismo entre procesos de `comparar` (mutación M17) | Prueba con subprocesos y semillas, como en 3A-2 |
 | D-09 | L/M | Baja | La regeneración real y `regenerador` no se ejercitan en CI (sin plantillas) | Documentarlo como limitación o añadir una prueba con plantilla ficticia que cubra el camino de fallo |
 | D-10 | M | Baja | `evaluar` exige que quien llama aporte la misma `ia`, `targets` y `context` que el reporte original; con `ia=None` frente a `{"usada": False}` el resultado es `parcial`. No está dicho en la documentación | Documentarlo |
@@ -213,3 +213,45 @@ Clasificación: **D** = defecto real (comportamiento o documentación que contra
 * **Este dictamen no declara un cierre satisfactorio**: quedan asuntos no verificables y defectos demostrables que lo impiden.
 * No se emite **A** porque existen esos defectos y porque el cumplimiento de las dos observaciones perdidas no puede demostrarse. No se emite **C** porque no hay ambigüedad normativa que impida juzgar el alcance verificable: lo que falta solo impide verificar las dos observaciones.
 * Cuando se apliquen las correcciones y el usuario decida sobre las observaciones perdidas, el dictamen pasaría a **A** si ninguna de ellas revela un defecto adicional.
+
+## 14. Nota de resolución posterior (D-01 a D-07)
+
+> Esta nota se añade **después** del dictamen de las secciones 1 a 13, que se conservan tal como se emitieron (salvo la gravedad de D-07, unificada en Baja con la justificación de abajo). No es una recuperación del documento original perdido.
+
+**Fecha:** 5 de noviembre de 2026 · **Autorización:** documento «PR #20 — Autorización de implementación integral D-01 a D-07» · **Commit con el código y las pruebas:** `d790877c472e712c50cf034ebac5b6c14b2f1c20` · **CI de ese commit:** run 46 (`Pruebas`, `pull_request`), job `unit`, **success**, 22:25 a 22:30 UTC. El commit documental que contiene esta nota tiene su propio CI, que se cita en la descripción del PR (una nota no puede contener el hash de su propio commit).
+
+### 14.1 Gravedad y prioridad de D-07
+
+Gravedad **Baja** para los siete defectos. Justificación: `evaluar` captura toda excepción del regenerador (`provenance_compare.py`, `except Exception`), las validaciones del regenerador lanzan ante salida incompleta o inválida, y no se encontró ninguna ruta de falso éxito (además `exacta` exige que el hash regenerado sea igual al registrado). El defecto era la **falta de cobertura** de esos caminos de fallo, no un riesgo funcional comprobado. **Prioridad:** la más alta entre D-01 y D-07 (cubre un escenario obligatorio, R-09, y la única parte de la orquestación de la regeneración que no se ejercitaba en CI).
+
+### 14.2 Resolución por defecto
+
+| ID | Estado | Corrección | Archivos | Prueba o evidencia |
+|---|---|---|---|---|
+| D-01 | Resuelto | Docstring de `provenance_compare.py`: `estado` = `exacta`/`parcial`/`no_reproducible` o `null`; `evaluacion` y `regeneracion` separados; `no_evaluada` solo como resultado de una comprobación. Sin cambios de lógica | `backend/app/provenance_compare.py` | Diff de solo-docstring; `grep no_evaluada` en ese archivo devuelve solo la frase del docstring que aclara que es un resultado de comprobación y el uso legítimo en el resultado vacío de error interno |
+| D-02 | Resuelto | Conteos recalculados con `pytest --collect-only`: `TestI1` 13, `TestI2` 12, `TestI3` 17, `TestI4` 10 (52 en `test_procedencia_revision_3a4.py`); `test_procedencia_regenerador.py` 8; `test_procedencia_regeneracion.py` 10 | `IMPLEMENTACION_3A4_COMPARACION.md`, descripción del PR | `--collect-only` por archivo y clase |
+| D-03 | Resuelto | «(spec L-2)» sustituido por la referencia a `IMPLEMENTACION_3A3_PROCEDENCIA.md` §9 y §11 (riesgo 3) | `IMPLEMENTACION_3A4_COMPARACION.md` | Lectura de ambos documentos |
+| D-04 | Resuelto | Se distinguen cinco casos (contenido de origen, copia, registro sin recalcular SHA, `hash_resultado` de la fila distinto del manifiesto, reescritura coherente) y se declara que un cambio solo de nombre no se detecta; no se promete autenticidad criptográfica | `IMPLEMENTACION_3A4_COMPARACION.md`; comentario de la prueba | Resultados medidos reproducidos por las cuatro pruebas de D-05 |
+| D-05 | Resuelto | La prueba casi tautológica se sustituye por cuatro con aserciones concretas: solo nombre ⇒ `exacta` (límite conocido, no detección); SHA de la fuente ⇒ `no_reproducible` (C3b, sin regenerar); `hash_resultado` ⇒ `parcial` (C7, anomalía de determinismo); fila ≠ manifiesto ⇒ `no_reproducible` (C2) | `tests/unit/test_procedencia_revision_3a4.py` | Cuatro mutaciones deliberadas (C3b ignorado, C7 sin comparar, hash de fila ignorado, nombre participando en la comparación): las cuatro rompen la prueba correspondiente |
+| D-06 | Resuelto | Renombrada a `test_una_plantilla_distinta_es_parcial_y_no_regenera`, con docstring que declara lo que realmente verifica (C4 falla ⇒ `parcial`; la regeneración no se ejecuta) | `tests/regression/test_procedencia_regeneracion.py` | La prueba sigue pasando (con plantillas locales) |
+| D-07 | Resuelto | Nuevo módulo que corre en CI: escenario A con el `build_aetops` real (bloqueo `ReportBlocked`/`TARGETS_MISSING`), escenario B (procedencia en error, sin `procedencia.json`, otras fuentes) y escenario C (regeneración válida con captura real, `exacta`/`completada`/`completada`), con contadores de invocación, comprobación de los tres campos y de limpieza de temporales | `tests/unit/test_procedencia_regenerador.py` (8 pruebas) | Seis mutaciones deliberadas (excepción convertida en éxito, sin validar el estado de la procedencia, sin validar las fuentes usadas, regenerador sin exigir metas, error de regeneración como «pasa», temporal sin limpiar): todas detectadas |
+
+### 14.3 Resultados de validación
+
+* Suite completa local (Pyodide activo, `REPORT_PYODIDE_REQUIRED=1`): **1006 aprobadas, 0 fallidas, 35 omitidas** (antes 995/0/35; +11: 3 por la división de D-05 y 8 del módulo nuevo). Las 35 omitidas son las mismas de `tests/golden`.
+* `python -m pytest tests/unit tests/regression` (local, con plantillas): **1003 aprobadas, 0 omitidas, 0 fallidas**.
+* Pruebas nuevas y modificadas, ejecutadas dos veces: 60 aprobadas en ambas ejecuciones (D-05 y D-07).
+* `archivos_protegidos --check`: sin cambios · `capture_baseline --check`: 8 de 8 idéntico · `service.py` y `store.py`: sin diferencias respecto a `main`.
+
+### 14.4 Limitaciones que permanecen
+
+* Los escenarios B y C de D-07 **sustituyen la generación del PPTX**: no prueban el PPTX ni la narrativa real de un reporte. La regeneración con plantillas reales (`test_procedencia_regeneracion.py`, `test_procedencia_build.py`, generación por API) solo se valida en local; un CI verde no la demuestra.
+* La rama GLP-1 del regenerador sigue sin cobertura propia.
+* El escenario A usa el bloqueo de metas de AETOPS; no se verificó un bloqueo equivalente para GLP-1.
+* D-08 a D-12 **no se atendieron** (fuera del alcance autorizado).
+* La integridad sigue sin ser criptográfica (D-12).
+* Las **dos observaciones técnicas originales** de la revisión correctiva siguen siendo **NO VERIFICABLES**: no se recuperaron y no se reconstruyeron ni se identifican con D-01 a D-07.
+
+### 14.5 Efecto sobre la matriz de la sección 5
+
+Sin reescribir sus filas: R-09 deja de tener el vacío que citaba (D-07 resuelto) y su estado pasa a CUMPLIDO; R-05 sigue PARCIALMENTE CUMPLIDO (el límite de integridad es real, ahora descrito con precisión); N-11, N-17 y R-12 no cambian; R-02, R-13 e I-06 siguen NO VERIFICABLES. El dictamen global de la sección 13 sigue siendo **B** hasta que el usuario revise esta nota y decida sobre las observaciones perdidas y sobre D-08 a D-12.
