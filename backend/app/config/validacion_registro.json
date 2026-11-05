@@ -1,12 +1,12 @@
 {
   "esquema": "validacion_registro/1",
-  "version": "1.0.0",
-  "descripcion": "Registro de validación por regla. Las reglas aún no están implementadas (regla_version null). La validación sintética y la operacional se registran por separado; 'confirmada' exige extracto, fecha y confirmante.",
+  "version": "1.1.0",
+  "descripcion": "Registro de validación por regla. Las cinco reglas están implementadas (motor de reglas, catálogo reglas.json) y su validación sintética está aprobada con los machotes y contextos de prueba (Fase 2B). Ninguna está validada con datos reales: la validación operacional se registra por separado y 'confirmada' exige extracto, fecha y confirmante.",
   "reglas": [
     {
       "regla_id": "R-REL-PAC-PED",
-      "regla_version": null,
-      "validacion_sintetica": "pendiente",
+      "regla_version": "1.0.0",
+      "validacion_sintetica": "aprobada",
       "validacion_operacional": "no_validada_con_datos_reales",
       "extracto_id": null,
       "fecha": null,
@@ -15,8 +15,8 @@
     },
     {
       "regla_id": "R-CUADRE-DIM",
-      "regla_version": null,
-      "validacion_sintetica": "pendiente",
+      "regla_version": "1.0.0",
+      "validacion_sintetica": "aprobada",
       "validacion_operacional": "no_validada_con_datos_reales",
       "extracto_id": null,
       "fecha": null,
@@ -25,8 +25,8 @@
     },
     {
       "regla_id": "R-CONC-COMPRAS",
-      "regla_version": null,
-      "validacion_sintetica": "pendiente",
+      "regla_version": "1.0.0",
+      "validacion_sintetica": "aprobada",
       "validacion_operacional": "no_validada_con_datos_reales",
       "extracto_id": null,
       "fecha": null,
@@ -35,8 +35,8 @@
     },
     {
       "regla_id": "R-DENOM",
-      "regla_version": null,
-      "validacion_sintetica": "pendiente",
+      "regla_version": "1.0.0",
+      "validacion_sintetica": "aprobada",
       "validacion_operacional": "no_validada_con_datos_reales",
       "extracto_id": null,
       "fecha": null,
@@ -45,8 +45,8 @@
     },
     {
       "regla_id": "R-COBERTURA-ATC",
-      "regla_version": null,
-      "validacion_sintetica": "pendiente",
+      "regla_version": "1.0.0",
+      "validacion_sintetica": "aprobada",
       "validacion_operacional": "no_validada_con_datos_reales",
       "extracto_id": null,
       "fecha": null,
