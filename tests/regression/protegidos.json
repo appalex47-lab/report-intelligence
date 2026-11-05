@@ -11,7 +11,6 @@
   "backend/app/calc/tables_extra.py": "b7ae76d3d2a5deda67357654e28a73d5740060b8bb75feacedef4af1dc88cc63",
   "backend/app/cli.py": "4b8f2e613c24da444aea87bfc7079c89acba8330f4eb3a44a05b5d1cc34af579",
   "backend/app/deck/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "backend/app/deck/aetops_trimestral.py": "f777ebf97c004ff266d9e07d7bd70d04651dcb221cf613599531a2b49aa97f2f",
   "backend/app/deck/extras.py": "b60ae0ded655167937888d84c96f908db1614d7f86343a116df0c7c1e411f106",
   "backend/app/deck/glp1_mensual.py": "475cbd3a23e2e34850aa84905c6e6df2a4d02ba3515d9dfccbc4fdc8e07df698",
   "backend/app/format.py": "5e7509c3fa4cbb46cece58303e05245d449c833b9d32e0d98c60a7402175f5ff",
@@ -32,7 +31,6 @@
   "backend/app/narrative/rules.py": "8a9443cc0e0a9d5de3b35abb4ede2a52cfeee0a7089ae0eafd750485eaba629e",
   "backend/app/narrative/targets.py": "a1287a53564268b1a0227d9c55bc02f7d786d0aae860591d4f8368994d7962f4",
   "backend/app/narrative/trends.py": "4bdb41dbcf37f6dc2f87ed93edc4daf7490352f07372bdcd72a3eb5a041aed08",
-  "backend/app/narrative/writer.py": "c898185c5dddc15116c10edcb1b304ecdeff17c33d28932592560974ca1b846a",
   "backend/app/pipeline.py": "f87bf4e7387da97ee6b6eb05f916d23fe9464932f407d03eada86d73b42f1228",
   "backend/app/qa/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "backend/app/raw/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -57,8 +55,6 @@
   "data/ejemplos/LEEME.md": "6207de039c9c637ef6893ff82ebc3428e2ac299e7f22290b9c4cf1939c2e36cd",
   "docker-compose.yml": "8fba5a1e6c7a0125c5e86701ed34b83fd48a443b8a06c9b9df7afdce2d48c5ca",
   "docker/fonts.conf": "38cc3545508af6e0d6e04103acdf8644b80e4168ef7267b876f334efbf606654",
-  "frontend/index.html": "161a0277a11db779b58794a87f9afe3d5ae190c4949127808b07ee3a3f49b9ca",
-  "frontend/worker.js": "79f06478e80f44ade057f883fa454dddf7163abb70a09ed725ea556433e48a23",
   "profiles/aetops/mensual.yaml": "86d78c0f812d89f1ffa5d9098feed517cb8fd2216eb198153284fabc60dbd984",
   "profiles/aetops/trimestral.yaml": "d7904130f22b355de98104831c6a5f8b57d28c424c76a6b9445215cf31fa338b",
   "profiles/glp1/mensual.yaml": "2eb3ec0dba880cc7ca434ae10840c0aedd875bb96513dfa9b10fe54eafa9e64d",
@@ -74,16 +70,32 @@
  },
  "autorizados": {
   "backend/app/deck/aetops_mensual.py": {
-   "motivo": "Corrección QA OVERFLOW_ESTIMATED: tablas por grupos con más grupos que la plantilla se compactan (solicitado por el usuario tras un error real)",
-   "sha256": "46187dc3ef0a9104aae20bb6ee9fc676daee2b4b1fbc850f8b419b65b3f9eecd"
+   "motivo": "Corrección QA OVERFLOW_ESTIMATED (tablas con más grupos que la plantilla) y Conclusiones que no caben (patrón de la plantilla)",
+   "sha256": "24147b3a9eb3bf24b85284b6d52e778e4c16c029a31605d14ae2301f9245938a"
+  },
+  "backend/app/deck/aetops_trimestral.py": {
+   "motivo": "Quinta línea (AE-D) en el trimestral: tabla contigua y compactada; Conclusiones",
+   "sha256": "f97806e318420980d44b9462655bb21ff8c03485fcb68237c64328a90037c57d"
   },
   "backend/app/deck/pptx_ops.py": {
-   "motivo": "Funciones set_filler_font y compact_to_fit (misma corrección)",
-   "sha256": "20ace428c6365a341963c7d229509fe2291d9c761cd728ad05cc920435ad63ce"
+   "motivo": "set_filler_font y compact_to_fit (misma corrección)",
+   "sha256": "33aff3f2d5c56adee56653ab29489b14679a511fb273cffbb8275c988ea51349"
+  },
+  "backend/app/narrative/writer.py": {
+   "motivo": "to_paragraphs_conclusiones (patrón del original)",
+   "sha256": "99b5e820bf783c04064023179f02808a7bb77a60bba15ddf15ed996db4a9c227"
   },
   "backend/app/qa/checks.py": {
-   "motivo": "Funciones row_min_heights y row_content_floors (misma corrección; estimate_table_height sin cambio de resultado)",
+   "motivo": "row_min_heights y row_content_floors (misma corrección)",
    "sha256": "4960e01ccb49112c434b50a03c26142879d4461a4438b8aaa0a1e259455e2fa2"
+  },
+  "frontend/index.html": {
+   "motivo": "Cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",
+   "sha256": "e38973788d1b2ca37f3314242dd55e10817ce50d2e53532bc9d8f0e68a766347"
+  },
+  "frontend/worker.js": {
+   "motivo": "Cambio del usuario (commit 67fd179): nombre de archivo de respaldo",
+   "sha256": "cc2f689e28bf8d270cc6d3aa3d63921f77f95a08f56ff53a90f0220c39960f17"
   }
  },
  "base": "6e1104d",

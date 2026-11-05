@@ -18,3 +18,12 @@ El usuario delegó la resolución de las decisiones abiertas del informe de la F
 | DD-12 | Decisiones A-3, A-4, A-6, A-7, A-8 | **Se adoptan las recomendaciones documentadas**: no modificar láminas actuales (A-3); 25 % y 10 % como supuestos heredados no validados (A-4); QA visual en Actions solo con datos sintéticos (A-6); mantener `severity` (A-7); D3 «área sugerida» genérica, D4 sin ampliar, D5 anexo único, D8 plantillas fijas (A-8) | Todas son decisiones conservadoras que coinciden con lo ya implementado | Sin cambios | Reabrir cualquiera por decisión expresa |
 | DD-13 | A-2 (extractos reales) y A-5 (releases etiquetadas) | **No se deciden.** Siguen pendientes | A-2 depende de datos que solo el usuario puede aportar; A-5 es una acción de publicación hacia fuera (workflow y releases) que no debe tomarse por delegación genérica | Las reglas siguen «No validadas con datos reales»; no hay releases | — |
 | DD-14 | Inicio de la Fase 3 | **No se inicia.** Sigue requiriendo autorización expresa | Instrucción vigente: no avanzar a Fase 3 | — | — |
+
+## Actualización posterior a la fusión (noviembre 2026): decisiones A-2 y A-5 por delegación expresa
+
+El usuario pidió atender estos puntos «con tus recomendaciones». Se registran **como decisiones de proyecto, sin implementarlas**:
+
+| ID | Tema | Decisión | Motivo | Qué NO implica |
+|---|---|---|---|---|
+| DD-15 | **A-2** · extractos reales | **Diferida sin bloquear.** Los datos reales no se suben al repositorio ni a Actions. La validación V-01 se hace **local** con `REPORT_FIXTURES_DIR` cuando el usuario entregue extractos anonimizados. Entre tanto las reglas siguen rotuladas «No validadas con datos reales» | Solo el usuario puede aportar los datos y su privacidad lo impide en un repositorio público | No inventa datos ni cambia estados `confirmada` |
+| DD-16 | **A-5** · releases etiquetadas | **Se recomienda autorizarla, pero se ejecuta dentro de la Fase 3A** (procedencia), junto con `version.py` y el manifiesto: `release.yml` etiqueta `app-vX.Y.Z` y publica su `app.zip` con el SHA-256. **No se crea ninguna etiqueta ni workflow ahora** | Es una acción de publicación externa y depende del manifiesto de procedencia, que es Fase 3; no se inicia sin la orden de Fase 3 | No hay releases hoy; los reportes anteriores siguen sin código recuperable |

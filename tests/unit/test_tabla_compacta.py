@@ -125,3 +125,58 @@ def test_el_caso_normal_de_cuatro_lineas_no_se_compacta():
     with tempfile.TemporaryDirectory() as td:
         b = build_aetops(run_aetops_raw(LIBRO, p), p, TPL, Path(td), render=False)
         assert not any("compactó" in n for n in b.fill.notes) and b.qa.passed
+
+
+TPL_Q = ROOT / "templates" / "aetops-trimestral" / "1" / "template.pptx"
+
+
+@pytest.mark.skipif(not TPL_Q.exists(), reason="plantilla real no disponible (no se versiona)")
+def test_aetops_trimestral_con_quinta_linea_ya_no_la_omite(libro_con_linea_nueva):
+    from backend.app.build import build_aetops
+    from backend.app.pipeline import run_aetops_raw
+    p = Period("AETOPS", "trimestral", 2026, 3)
+    res = run_aetops_raw(libro_con_linea_nueva, p)
+    nombres = [g.name for g in res.tables["aetops.linea.yoy"].groups]
+    assert "AE-D" in nombres
+    with tempfile.TemporaryDirectory() as td:
+        b = build_aetops(res, p, TPL_Q, Path(td), render=False)
+        assert not any("se omiten" in n and "AE-D" in n for n in b.fill.notes), b.fill.notes
+        assert not [i for i in b.qa.issues if i.id == "OVERFLOW_ESTIMATED"]
+        prs = Presentation(b.pptx)
+        textos = " ".join(c.text for sh in prs.slides[2].shapes if getattr(sh, "has_table", False) and sh.has_table
+                          for r in sh.table.rows for c in r.cells)
+        assert "AE-D" in textos
+
+
+@pytest.mark.skipif(not TPL_Q.exists(), reason="plantilla real no disponible (no se versiona)")
+def test_trimestral_con_cuatro_lineas_no_cambia():
+    from backend.app.build import build_aetops
+    from backend.app.pipeline import run_aetops_raw
+    p = Period("AETOPS", "trimestral", 2026, 3)
+    with tempfile.TemporaryDirectory() as td:
+        b = build_aetops(run_aetops_raw(LIBRO, p), p, TPL_Q, Path(td), render=False)
+        assert not any("compactó" in n or "se omiten" in n for n in b.fill.notes)
+
+
+def test_conclusiones_reproduce_el_patron_del_original_sin_vacios_entre_cifras():
+    from backend.app.narrative.writer import Para, to_paragraphs_conclusiones
+    mk = lambda t: Para(t, "hecho", 0, nums=set())          # noqa: E731
+    out = to_paragraphs_conclusiones([mk("a"), mk("b"), mk("**Insights clave:**"), mk("i1"), mk("i2")])
+    assert out == ["a", "b", "", "**Insights clave:**", "i1", "", "i2"]
+    sin_enc = to_paragraphs_conclusiones([mk("a"), mk("b")])
+    assert sin_enc == ["a", "", "b"]                          # sin encabezado: patrón general
+
+
+@pytest.mark.skipif(not TPL.exists(), reason="plantilla real no disponible (no se versiona)")
+def test_conclusiones_usa_el_patron_general_si_cabe_y_el_compacto_si_no():
+    from backend.app.deck.aetops_mensual import FillReport, Filler, conclusiones_paragraphs
+    from backend.app.narrative.writer import Para, to_paragraphs
+    prs = Presentation(TPL)
+    fl = Filler(prs, FillReport())
+    sh = next(s for s in prs.slides[10].shapes if s.name == "CuadroTexto 12")
+    mk = lambda t, n=1: Para((t + " ") * n, "hecho", 0, nums=set())          # noqa: E731
+    corto = [mk("a"), mk("b"), mk("**Insights clave:**"), mk("c")]
+    assert conclusiones_paragraphs(fl, sh, corto) == to_paragraphs(corto)           # cabe: idéntico al patrón de siempre
+    largo = [mk("x", 30)] * 5 + [mk("**Insights clave:**")] + [mk("y", 60)] * 6
+    out = conclusiones_paragraphs(fl, sh, largo)
+    assert out != to_paragraphs(largo) and out[1] != "" and any("Conclusiones" in n for n in fl.rep.notes)
