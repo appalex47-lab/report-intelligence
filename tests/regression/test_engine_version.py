@@ -23,6 +23,17 @@ ALGORITMO DEL DIGEST (`RI-ENGINE-BASELINE/1`)
             b"len "  + <largo del contenido en bytes, en ASCII decimal> + b"\\n"
             <contenido>   (bytes del archivo, con los saltos de línea CRLF convertidos a LF)
             b"\\n"
+    Precisiones (para que otra implementación independiente obtenga el mismo SHA-256):
+        * Archivos incluidos: solo los archivos regulares directamente en la carpeta (sin subcarpetas, sin enlaces a carpetas)
+          cuyo nombre termina exactamente en `.json` en minúsculas. `a.JSON`, `a.json.bak` y las carpetas no cuentan.
+        * Nombre: el nombre base (sin ruta), codificado en UTF-8 sin normalizar. Orden: por esos bytes, de menor a mayor
+          (para texto UTF-8 coincide con el orden por punto de código).
+        * Largo: número de bytes del contenido YA normalizado (CRLF -> LF), en decimal ASCII, sin ceros a la izquierda ni
+          espacios (`len 0`, `len 8`, `len 12`).
+        * CRLF -> LF: cada secuencia `\r\n` pasa a `\n`. Un `\r` suelto no se toca.
+        * Archivo vacío: se incluye como `file <nombre>\nlen 0\n` + (0 bytes) + `\n`.
+        * Carpeta sin archivos: el digest es el SHA-256 del encabezado `RI-ENGINE-BASELINE/1\n` solo.
+        * Orden de los bytes entregados a SHA-256: encabezado y, por archivo, `file`, `len`, contenido, `\n`, exactamente en ese orden.
     El nombre y el largo hacen la concatenación inequívoca: renombrar un archivo, mover contenido de uno a otro o cambiar el
     orden de creación no produce el mismo digest por accidente. Codificación: UTF-8 para nombres; el contenido se usa tal
     como está guardado (los snapshots ya son UTF-8).
@@ -53,7 +64,8 @@ REGISTRO = ROOT / "tests" / "regression" / "engine_version.json"
 
 
 def archivos(carpeta: Path = CARPETA) -> list[Path]:
-    return sorted(carpeta.glob("*.json"), key=lambda p: p.name.encode("utf-8"))
+    """Archivos regulares de la carpeta (sin entrar en subcarpetas) cuyo nombre termina exactamente en `.json` (minúsculas)."""
+    return sorted((p for p in carpeta.iterdir() if p.is_file() and p.name.endswith(".json")), key=lambda p: p.name.encode("utf-8"))
 
 
 def digest(carpeta: Path = CARPETA) -> str:
@@ -146,6 +158,29 @@ def test_digest_coincide_con_el_flujo_documentado_calculado_a_mano(tmp_path):
         b"file a.json\nlen 7\n" b'{"x":1}' b"\n"
         b"file b.json\nlen 7\n" b'{"x":2}' b"\n").hexdigest()
     assert digest(c) == esperado                                         # orden por nombre; nombre y largo incluidos
+
+
+# Vectores de prueba: los mismos valores figuran en docs/fase3a/ESPECIFICACION_FASE3A_PROCEDENCIA.md §4.4 para verificar otra implementación.
+VECTOR_0 = "f2bc3a6368104bf178fc96f5d47607d669288352fcc0285d7bea24ff81e71fd5"      # carpeta sin archivos
+VECTOR_1 = "64f9dd728a509d6a04199e0ac758288f134e67fd706ca7211e1112cd3e3ac22a"      # a.json vacío
+VECTOR_2 = "271a02dc2a208b65775a086c047dd781335919dd63d0118f927942eff1b4c045"      # b.json = {"a":1}\r\n  (CRLF normalizado)
+VECTOR_3 = "62d0dea4c4da4398e56cd77ae53f7b6522f260f08b28551889d445a0e3a5c7a8"      # a.json, z.json (12 bytes), ñ.json: orden por bytes UTF-8
+
+
+def test_vectores_de_prueba_del_algoritmo(tmp_path):
+    assert digest(_carpeta(tmp_path, "v0", {})) == VECTOR_0 == hashlib.sha256(b"RI-ENGINE-BASELINE/1\n").hexdigest()
+    assert digest(_carpeta(tmp_path, "v1", {"a.json": b""})) == VECTOR_1                       # archivo vacío: len 0
+    assert digest(_carpeta(tmp_path, "v2", {"b.json": b'{"a":1}\r\n'})) == VECTOR_2            # CRLF -> LF, len 8
+    assert digest(_carpeta(tmp_path, "v3", {"z.json": b"0123456789ab", "\u00f1.json": b"hi", "a.json": b"x"})) == VECTOR_3   # len 12; ñ (c3 b1) va después de z
+
+
+def test_solo_cuentan_los_archivos_json_regulares_de_la_carpeta(tmp_path):
+    base = _carpeta(tmp_path, "b", {"a.json": b"x"})
+    ruido = _carpeta(tmp_path, "r", {"a.json": b"x", "a.JSON": b"otro", "a.json.bak": b"otro", "nota.txt": b"otro"})
+    (ruido / "sub.json").mkdir()                                       # una carpeta con nombre .json no cuenta
+    (ruido / "sub").mkdir()
+    (ruido / "sub" / "x.json").write_bytes(b"enterrado")               # ni lo que hay dentro de subcarpetas
+    assert digest(ruido) == digest(base)
 
 
 def test_digest_distingue_lo_que_una_concatenacion_simple_confundiria(tmp_path):

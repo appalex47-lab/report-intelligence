@@ -27,8 +27,22 @@ SKIP = {"__pycache__"}
 APP_FILES = [("backend", ROOT / "backend"), ("profiles", ROOT / "profiles")]
 TOOLS = ["make_machotes.py", "make_glp1_synthetic.py"]
 BUILD_INFO = "backend/app/_build_info.json"        # solo dentro de app.zip; nunca se escribe en el repositorio
-# Lo que viaja en el sitio: un cambio local en estas rutas hace la compilación «dirty».
-PACKAGED = ["backend", "profiles", "frontend/index.html", "frontend/worker.js", *[f"tools/{t}" for t in TOOLS]]
+FRONTEND = ["index.html", "worker.js"]             # frontend/: lo único que se publica de esa carpeta
+LEGACY = "legacy"                                  # la app anterior, copiada tal cual al sitio
+# Todo lo que puede alterar materialmente el artefacto publicado (app.zip y el sitio). Un cambio local en cualquiera de estas
+# rutas hace la compilación «dirty». Se deriva de las mismas constantes con las que se arma el sitio, para que la lista no se
+# desfase de lo que realmente se empaqueta:
+#   * lo que entra en app.zip (backend/, profiles/, las herramientas de machotes);
+#   * lo que se copia al sitio (frontend/index.html, frontend/worker.js, legacy/);
+#   * lo que ejecuta la construcción y la publicación (esta herramienta y el workflow de Pages).
+# NO se incluye documentación, pruebas, cachés ni archivos temporales: no alteran el artefacto.
+PACKAGED = [
+    *[arc for arc, _ in APP_FILES], *[f"tools/{t}" for t in TOOLS],
+    *[f"frontend/{f}" for f in FRONTEND], LEGACY,
+    "tools/build_site.py", ".github/workflows/pages.yml",
+]
+# Dentro de lo empaquetado, lo que NO viaja en el artefacto (no produce «dirty»): cachés y la copia suelta de _build_info.json.
+NOT_PACKAGED = [f":(exclude,glob)**/{n}/**" for n in sorted(SKIP)] + [":(exclude,glob)**/*.pyc", f":(exclude){BUILD_INFO}"]
 _SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -37,7 +51,9 @@ def commit_info(root: Path = ROOT, env=None, run=subprocess.run) -> str:
 
     El SHA sale de `GITHUB_SHA` (GitHub Actions) o de `git rev-parse HEAD`. Si hay cambios sin confirmar en lo que se empaqueta,
     se agrega `+dirty`: es el commit identificado, pero con el árbol modificado (no es una compilación reproducible del commit
-    limpio). Sin información suficiente devuelve `desconocido`; nunca se inventa un SHA."""
+    limpio). Sin información suficiente devuelve `desconocido` (incluido el caso de un SHA válido cuyo árbol no se puede comprobar,
+    p. ej. git no disponible): no se certifica «limpia» sin verificarlo. Nunca se inventa un SHA.
+    Límite: una carpeta de wheels local (`--wheels`) no está en git y no se evalúa; en CI los wheels salen de PyPI con versión fija."""
     env = os.environ if env is None else env
 
     def git(*args):
@@ -53,8 +69,10 @@ def commit_info(root: Path = ROOT, env=None, run=subprocess.run) -> str:
         sha = (out or "").strip().lower()
         if not _SHA.match(sha):
             return "desconocido"
-    estado = git("status", "--porcelain", "--", *PACKAGED)
-    return f"{sha}+dirty" if estado and estado.strip() else sha
+    estado = git("status", "--porcelain", "--", *PACKAGED, *NOT_PACKAGED)
+    if estado is None:                                  # no se pudo comprobar el árbol: no se certifica una compilación limpia
+        return "desconocido"
+    return f"{sha}+dirty" if estado.strip() else sha
 
 
 def add_tree(z: zipfile.ZipFile, arc: str, src: Path) -> int:
@@ -78,7 +96,7 @@ def main() -> None:
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
-    for f in ("index.html", "worker.js"):
+    for f in FRONTEND:
         shutil.copy(ROOT / "frontend" / f, out / f)
     (out / ".nojekyll").write_text("")
     with zipfile.ZipFile(out / "app.zip", "w", zipfile.ZIP_DEFLATED) as z:
@@ -100,9 +118,9 @@ def main() -> None:
         if not any(n.lower().startswith(need) for n in names):
             raise SystemExit(f"Falta el wheel de {need}.")
     (wd / "index.json").write_text(json.dumps(names))
-    legacy = ROOT / "legacy"
+    legacy = ROOT / LEGACY
     if legacy.exists():
-        shutil.copytree(legacy, out / "legacy")
+        shutil.copytree(legacy, out / LEGACY)
     print(f"sitio en {out}: app.zip ({total} archivos), wheels {names}")
 
 

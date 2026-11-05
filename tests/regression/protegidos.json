@@ -97,8 +97,8 @@
    "sha256": "cc2f689e28bf8d270cc6d3aa3d63921f77f95a08f56ff53a90f0220c39960f17"
   },
   "tools/build_site.py": {
-   "motivo": "Fase 3A-1: estampado del SHA del commit en backend/app/_build_info.json dentro de app.zip (commit_info, BUILD_INFO); sin fechas ni otros cambios en la compilación",
-   "sha256": "3125e658ded9ec230a4bef2e69122b7f5aa8881491c345530543986d8286f6f4"
+   "motivo": "Fase 3A-1: estampado del SHA del commit en backend/app/_build_info.json dentro de app.zip (commit_info, BUILD_INFO) y detección de +dirty sobre todas las rutas que alteran el artefacto (PACKAGED: incluye build_site.py, pages.yml y legacy/); FRONTEND y LEGACY como constantes; sin fechas ni otros cambios en la compilación",
+   "sha256": "094ae332f456364dd76e96fb6c97a5ec4da059ca9e061e2f19d958ce32b8190f"
   }
  },
  "base": "6e1104d",

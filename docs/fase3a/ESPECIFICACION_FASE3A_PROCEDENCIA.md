@@ -179,6 +179,17 @@ Consecuencias:
 | MINOR | Funcionalidad nueva compatible |
 | PATCH | Correcciones sin funcionalidad nueva |
 
+**Reglas transversales de la política (aplican a las dos versiones):**
+
+| Regla | Contenido |
+|---|---|
+| Cambios solo documentales | **No requieren incremento** de `APP_VERSION` ni de `ENGINE_VERSION` (documentos en `docs/`, comentarios, README). Tampoco los cambios solo de pruebas o de herramientas que no se empaquetan |
+| Cambio en el código del motor que pueda alterar resultados | **Exige revisar expresamente el incremento de `ENGINE_VERSION`** antes de fusionar, aunque la prueba de snapshots no falle: quien cambia el motor decide y deja constancia en la descripción del cambio de si sube (y por qué) o de por qué no |
+| Dónde se decide | El incremento es una decisión **humana y revisada**. Ninguna prueba automática sube versiones ni garantiza que se haya revisado |
+| Qué es el digest de snapshots | Un **mecanismo de protección**: hace saltar la alarma cuando cambian los resultados de referencia. **No** es un detector completo de cambios de código (§4.4) |
+| Relación entre las dos versiones | Son independientes: un cambio solo de interfaz o de empaquetado puede subir `APP_VERSION` sin tocar `ENGINE_VERSION`; un cambio que altera cifras sube `ENGINE_VERSION` y, como cambia la aplicación publicada, normalmente también `APP_VERSION` |
+| Quién es MAJOR, MINOR o PATCH | Según las dos tablas de arriba. En duda entre dos niveles, se elige el más alto y se explica |
+
 > **Nota sobre `CAMBIOS_JUSTIFICADOS.md`.** Los documentos de la Fase 1 lo citan como registro de cambios que alteran un resultado, pero **el archivo no existe** y la subfase 3A-1 **no lo crea** (decisión del usuario, X-2). Mientras no exista, la justificación de un cambio de `ENGINE_VERSION` se documenta en la descripción del PR y en la especificación o documentación existente. Crear ese archivo es una decisión pendiente, fuera de 3A-1.
 
 **Identidad completa del código:** `APP_VERSION` + SHA del commit (`version_codigo`). Dos compilaciones con el mismo `APP_VERSION` y distinto SHA son código distinto: el estado de reproducibilidad lo detecta (C5).
@@ -200,6 +211,21 @@ Consecuencias:
 | `limpia` | Commit identificado y árbol sin cambios al compilar | `<40 hex>` |
 | `dirty` | Commit identificado, pero el árbol tenía cambios en lo empaquetado | `<40 hex>+dirty` |
 | `desconocida` | No hay información suficiente (falta `_build_info.json`, está dañado o su SHA no es válido). No es un error | `desconocido` |
+
+**Qué rutas se revisan para decidir `+dirty`.** Todas las que pueden alterar materialmente el artefacto publicado. La lista se deriva en `tools/build_site.py` (`PACKAGED`) de las mismas constantes con que se arma el sitio, de modo que no se desfasa de lo que se empaqueta, y una prueba comprueba que cubre todo lo que viaja en `app.zip` y en el sitio:
+
+| Ruta | Por qué altera el artefacto |
+|---|---|
+| `backend/`, `profiles/` | Se empaquetan dentro de `app.zip` |
+| `tools/make_machotes.py`, `tools/make_glp1_synthetic.py` | Se empaquetan dentro de `app.zip` |
+| `frontend/index.html`, `frontend/worker.js` | Se copian al sitio publicado |
+| `legacy/` | Se copia al sitio publicado |
+| `tools/build_site.py` | Es el proceso que construye `app.zip` y el sitio: cambiarlo cambia el artefacto aunque no cambie ningún archivo empaquetado |
+| `.github/workflows/pages.yml` | Define cómo se construye y publica el sitio en producción |
+
+No producen `+dirty` (no alteran el artefacto): `docs/`, `tests/`, `README`, `requirements.txt`, cachés (`__pycache__/`, `*.pyc`, `.pytest_cache/`), salidas locales y la copia suelta de `_build_info.json` (que se omite al empaquetar). Los cambios preparados (*staged*), los archivos nuevos sin seguimiento y los borrados dentro de las rutas revisadas **sí** cuentan.
+
+**Límites declarados.** (1) Los wheels de `--wheels` (carpeta local fuera de git) no se evalúan; en CI salen de PyPI con versión fija en `WHEELS`. (2) Si el SHA es válido pero el árbol **no se puede comprobar** (git no disponible o falla), la identidad es `desconocido`: no se certifica «limpia» sin verificarlo.
 
 Una compilación `dirty` **no** se presenta como una compilación reproducible del commit limpio: el commit identifica el punto de partida, no el contenido real. `version.py` solo **lee** el archivo; no ejecuta git en tiempo de ejecución. En CI de un *pull request*, `GITHUB_SHA` es el commit de la fusión simulada, no el de la rama.
 
@@ -226,12 +252,27 @@ por cada archivo *.json de tests/regression/base/engine/, en orden ascendente de
 
 | Pregunta | Respuesta |
 |---|---|
-| Orden de los archivos | Ascendente por nombre (bytes UTF-8) |
-| ¿Se incluyen los nombres? | Sí (`file <nombre>`), así que renombrar un archivo cambia el digest |
-| Separación de contenidos | Cada contenido va precedido de su nombre y de su largo (`len N`) y seguido de `\n`: no hay concatenación ambigua (mover texto de un archivo a otro cambia el digest) |
-| Codificación | Nombres en UTF-8; el contenido se usa tal como está guardado (los snapshots ya son UTF-8). CRLF → LF para que el digest no dependa del sistema de archivos |
+| Archivos incluidos | Solo archivos **regulares** directamente en la carpeta (sin entrar en subcarpetas) cuyo nombre **termina exactamente en `.json`** en minúsculas. `a.JSON`, `a.json.bak`, `nota.txt` y las carpetas (aunque se llamen `x.json`) no cuentan |
+| Orden de los archivos | Ascendente por el **nombre base codificado en UTF-8** (comparación de bytes; para texto UTF-8 coincide con el orden por punto de código) |
+| ¿Se incluyen los nombres? | Sí: `file <nombre>` con el nombre base (sin ruta), en UTF-8 sin normalizar. Renombrar un archivo cambia el digest |
+| Codificación del contenido | Los bytes del archivo tal como están guardados (los snapshots son UTF-8) |
+| Normalización de saltos de línea | Cada secuencia `\r\n` pasa a `\n` antes de medir y de hashear. Un `\r` suelto no se modifica |
+| Representación de las longitudes | `len <N>`: N = número de bytes del contenido **ya normalizado**, en decimal ASCII, sin ceros a la izquierda ni espacios |
+| Delimitadores y prefijos | Encabezado `RI-ENGINE-BASELINE/1\n` una vez; por archivo: `file <nombre>\n`, `len <N>\n`, contenido, `\n`. Los saltos son el byte `0x0A` |
+| Archivos vacíos | Se incluyen: `file <nombre>\nlen 0\n` + 0 bytes + `\n` |
+| Carpeta sin archivos | El digest es el SHA-256 del encabezado `RI-ENGINE-BASELINE/1\n` solo |
+| Orden de los bytes entregados a SHA-256 | Encabezado y, archivo por archivo en el orden indicado, `file…`, `len…`, contenido, `\n`. La salida es el SHA-256 en hexadecimal minúscula (64 caracteres) |
 | Cómo se recalcula | `python tests/regression/test_engine_version.py` imprime el digest actual |
 | Cómo se actualiza la referencia | (1) justificar el cambio de resultados y regenerar la línea base con `tools/capture_baseline.py --write`; (2) subir `ENGINE_VERSION` en `backend/app/version.py` según §4.1; (3) `python tests/regression/test_engine_version.py --actualizar`, que agrega una entrada al `historial` de `engine_version.json` y **se niega** a registrar una huella nueva con una versión ya registrada o menor que la última |
+
+**Vectores de prueba** (para comprobar una implementación independiente; los valores se verifican en `tests/regression/test_engine_version.py`):
+
+| # | Carpeta | SHA-256 esperado |
+|---|---|---|
+| V0 | sin archivos | `f2bc3a6368104bf178fc96f5d47607d669288352fcc0285d7bea24ff81e71fd5` |
+| V1 | `a.json` vacío (0 bytes) | `64f9dd728a509d6a04199e0ac758288f134e67fd706ca7211e1112cd3e3ac22a` |
+| V2 | `b.json` = `{"a":1}` + CRLF (9 bytes; 8 tras normalizar) | `271a02dc2a208b65775a086c047dd781335919dd63d0118f927942eff1b4c045` |
+| V3 | `a.json`=`x`, `z.json`=`0123456789ab` (12 bytes), `ñ.json`=`hi` (el orden es `a`, `z`, `ñ`: en UTF-8 `ñ` es `c3 b1`, mayor que `z` = `7a`) | `62d0dea4c4da4398e56cd77ae53f7b6522f260f08b28551889d445a0e3a5c7a8` |
 
 Valor de referencia de `ENGINE_VERSION = 1.0.0`: `f80a6024f4ccbf47be48307ff76d2c1ccc30547eef29cf304cabdd052a285d3a`. (Un cálculo previo de esta especificación, por concatenación simple de los archivos, queda sustituido por este algoritmo, porque aquella concatenación era ambigua.)
 
@@ -455,7 +496,7 @@ Detalle de cada subfase:
 
 **3A-1**
 - Implementación esperada: constantes `APP_VERSION` y `ENGINE_VERSION`; `build_site.py` escribe `_build_info.json` (solo SHA) dentro de `app.zip`; `version.versiones()` devuelve las versiones y el commit; `tests/regression/engine_version.json` con el digest de §4.4 y su prueba.
-- Pruebas: T-16; `app.zip` contiene `_build_info.json` y los módulos; PR-7 (alcance acotado de §4.4); lectura de versiones con y sin información de compilación; estados `limpia`, `dirty` y `desconocida`.
+- Pruebas: T-16; `app.zip` contiene `_build_info.json` y los módulos; PR-7 (alcance acotado de §4.4) y PR-12 (detección de `dirty`); lectura de versiones con y sin información de compilación; estados `limpia`, `dirty` y `desconocida`.
 - Actualizaciones autorizadas fuera del código nuevo: la afirmación de `None` en `tests/unit/test_config_fase1.py` y la fila desactualizada de `docs/CONFIGURACION_FASE1.md` (X-3).
 - Aceptación: versión y SHA legibles desde `app.zip`; 0 cambios en reportes, huellas y línea base.
 
@@ -497,6 +538,7 @@ Detalle de cada subfase:
 | PR-10 (nueva) | Tres igualdades: con el mismo resultado canónico y PPTX con bytes distintos, la comparación devuelve `exacta` sin afirmar igualdad binaria ni visual; una diferencia de `entorno` se informa como nota y no cambia el estado (§3.4, §3.5) | 3A-4 |
 | PR-11 (nueva) | `exacta` no se asigna sin regeneración real: con C1 a C6 en verde y sin regenerar, el resultado nunca es `exacta` (§3.5) | 3A-4 |
 | PR-7 (nueva) | Acoplamiento `ENGINE_VERSION` ↔ digest de la línea base del motor (§4.4). Cubre los **resultados de referencia**; no detecta por sí sola cambios en el código del motor | 3A-1 |
+| PR-12 (nueva) | Detección de `+dirty` con repositorios git reales: cambiar `tools/build_site.py`, `pages.yml`, cualquier archivo empaquetado o publicado produce `+dirty`; un árbol limpio conserva el SHA; documentación, pruebas y cachés no producen falsos positivos; sin información suficiente (o sin poder comprobar el árbol) devuelve `desconocido`; la lista de rutas cubre todo lo que viaja en `app.zip` y en el sitio (§4.2) | 3A-1 |
 
 | Criterio | Redacción |
 |---|---|
