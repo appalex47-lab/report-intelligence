@@ -32,6 +32,17 @@ CREATE TRIGGER IF NOT EXISTS kpis_no_update BEFORE UPDATE ON kpis BEGIN SELECT R
 CREATE TRIGGER IF NOT EXISTS kpis_no_delete BEFORE DELETE ON kpis BEGIN SELECT RAISE(ABORT, 'historial inmutable'); END;
 CREATE TRIGGER IF NOT EXISTS src_no_update BEFORE UPDATE ON sources BEGIN SELECT RAISE(ABORT, 'historial inmutable'); END;
 CREATE TRIGGER IF NOT EXISTS src_no_delete BEFORE DELETE ON sources BEGIN SELECT RAISE(ABORT, 'historial inmutable'); END;
+CREATE TABLE IF NOT EXISTS procedencia(
+  run_id INTEGER PRIMARY KEY REFERENCES runs(id),
+  esquema TEXT NOT NULL,
+  manifiesto TEXT NOT NULL,
+  manifiesto_sha256 TEXT NOT NULL CHECK(length(manifiesto_sha256) = 64),
+  hash_resultado TEXT NOT NULL CHECK(length(hash_resultado) = 64));
+CREATE INDEX IF NOT EXISTS procedencia_sha ON procedencia(manifiesto_sha256);
+CREATE TRIGGER IF NOT EXISTS procedencia_run_existe BEFORE INSERT ON procedencia
+  WHEN NOT EXISTS (SELECT 1 FROM runs WHERE id = NEW.run_id) BEGIN SELECT RAISE(ABORT, 'la corrida no existe'); END;
+CREATE TRIGGER IF NOT EXISTS procedencia_no_update BEFORE UPDATE ON procedencia BEGIN SELECT RAISE(ABORT, 'historial inmutable'); END;
+CREATE TRIGGER IF NOT EXISTS procedencia_no_delete BEFORE DELETE ON procedencia BEGIN SELECT RAISE(ABORT, 'historial inmutable'); END;
 """
 METRICS = ("monto", "piezas", "pacientes", "pedidos", "ticket", "productos", "size_b", "v_paciente", "share")
 
@@ -135,6 +146,61 @@ def record_run(con, period: Period, kpis: list[KpiRow], *, profile: str = "", te
                     [(rid, k.scope, k.name, k.which, k.label, k.metric, str(k.value)) for k in kpis])
     con.commit()
     return rid
+
+
+class ProcedenciaExistente(Exception):
+    """Ya hay una procedencia distinta registrada para esa corrida (el registro es inmutable: no se sustituye)."""
+
+
+def record_procedencia(con, run_id: int, manifiesto: bytes) -> str:
+    """Registra la procedencia de una corrida en la tabla AUTORITATIVA `procedencia` (Fase 3A-3; spec Fase 3A §7).
+
+    `manifiesto` son los bytes exactos que también se escriben en `procedencia.json` (una sola serialización). Aquí se vuelven a validar
+    (esquema cerrado) y se calcula `manifiesto_sha256`; nunca se guarda un manifiesto inválido. La inserción es una sola sentencia
+    confirmada por `commit` (atómica en SQLite) en su propia transacción: no toca `runs` ni se revierte con él. Idempotente: repetir la
+    misma operación con los mismos bytes devuelve «ya_registrada»; con bytes distintos lanza `ProcedenciaExistente` (no se sobrescribe).
+    Devuelve «registrada» o «ya_registrada»."""
+    from .. import provenance as pv
+    m, errs = pv.leer_manifiesto(manifiesto)
+    if m is None:
+        raise ValueError("manifiesto inválido: " + "; ".join(errs[:4]))
+    if not isinstance(run_id, int) or isinstance(run_id, bool) or run_id < 1:
+        raise ValueError("run_id inválido")
+    datos = bytes(manifiesto)
+    texto = datos.decode("utf-8")
+    sha = hashlib.sha256(datos).hexdigest()
+    previo = con.execute("SELECT manifiesto FROM procedencia WHERE run_id=?", (run_id,)).fetchone()
+    if previo is not None:
+        if previo[0] == texto:
+            return "ya_registrada"
+        raise ProcedenciaExistente(f"la corrida {run_id} ya tiene una procedencia distinta registrada")
+    try:
+        con.execute("INSERT INTO procedencia(run_id, esquema, manifiesto, manifiesto_sha256, hash_resultado) VALUES (?,?,?,?,?)",
+                    (run_id, m["esquema"], texto, sha, m["hash_resultado"]["valor"]))
+        con.commit()
+    except sqlite3.IntegrityError:
+        con.rollback()
+        previo = con.execute("SELECT manifiesto FROM procedencia WHERE run_id=?", (run_id,)).fetchone()
+        if previo is None:                              # no fue una carrera: la propia tabla la rechazó (corrida inexistente, restricción, trigger)
+            raise
+        if previo[0] == texto:                          # otra conexión la registró entre la lectura y la inserción
+            return "ya_registrada"
+        raise ProcedenciaExistente(f"la corrida {run_id} ya tiene una procedencia distinta registrada") from None
+    except Exception:
+        con.rollback()
+        raise
+    return "registrada"
+
+
+def get_procedencia(con, run_id: int) -> dict | None:
+    """Fila de `procedencia` tal como está (solo lectura): `esquema`, `manifiesto` (bytes), `manifiesto_sha256`, `hash_resultado`; `None` si no existe."""
+    r = con.execute("SELECT esquema, manifiesto, manifiesto_sha256, hash_resultado FROM procedencia WHERE run_id=?", (run_id,)).fetchone()
+    return None if r is None else {"esquema": r[0], "manifiesto": r[1].encode("utf-8"), "manifiesto_sha256": r[2], "hash_resultado": r[3]}
+
+
+def buscar_procedencia_por_sha(con, manifiesto_sha256: str) -> list[int]:
+    """`run_id` de las corridas cuya procedencia tiene ese `manifiesto_sha256` (puede haber más de una si dos corridas dieron los mismos bytes)."""
+    return [r[0] for r in con.execute("SELECT run_id FROM procedencia WHERE manifiesto_sha256=? ORDER BY run_id", (manifiesto_sha256,))]
 
 
 def list_runs(con, unit: str | None = None):

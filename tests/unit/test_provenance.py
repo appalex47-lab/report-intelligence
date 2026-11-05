@@ -432,13 +432,11 @@ def test_el_modulo_es_puro_solo_biblioteca_estandar_y_no_toca_el_motor_de_reglas
     assert "open(" not in src and ".write" not in src and "environ" not in src
 
 
-def test_la_fase_3a2_no_adelanta_la_persistencia_ni_el_manifiesto():
-    """3A-2 no crea la tabla `procedencia`, no escribe `procedencia.json` y no toca `runs`."""
-    from backend.app.history import store
-    assert "procedencia" not in store.SCHEMA.lower().replace("procedencia.json", "")
+def test_el_modulo_puro_no_depende_de_la_captura_ni_del_historial():
+    """Desde 3A-3 la persistencia vive en `provenance_capture` / `history.store`; `provenance.py` sigue siendo puro (3A-2) y no los importa."""
+    src = (ROOT / "backend/app/provenance.py").read_text(encoding="utf-8")
+    assert "import provenance_capture" not in src and "from .provenance_capture" not in src and "from .history" not in src and "import sqlite3" not in src
     assert not (ROOT / "backend/app/web" / "procedencia.json").exists()
-    build_src = (ROOT / "backend/app/build.py").read_text(encoding="utf-8")
-    assert "provenance" not in build_src and "procedencia" not in build_src
 
 
 # ----------------------------------------------------------------------------------------------------------------- casos límite añadidos en la revisión

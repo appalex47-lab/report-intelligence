@@ -292,3 +292,258 @@ def huellas_por_bloque(canon: dict) -> dict:
     if faltan:
         raise ErrorProcedencia(f"resultado canónico incompleto: faltan {faltan}")
     return {b: sha256_hex(_texto_json_estricto(canon[b]).encode("utf-8")) for b in BLOQUES}
+
+
+# ======================================================================================================================================
+# Fase 3A-3 · manifiesto de procedencia (spec §5): construcción, validación estricta, serialización y lectura verificada.
+# Siguen siendo funciones PURAS (sin archivos, reloj ni red): lo que lee o escribe un archivo vive en `provenance_capture.py` y
+# `provenance_verify.py`. Aquí un manifiesto incompleto o inválido NUNCA se serializa ni se acepta (spec §8.4, E-3).
+# ======================================================================================================================================
+ESQUEMA = "procedencia/1"
+ESQUEMA_ERROR = "procedencia_error/1"
+MAX_MANIFIESTO_BYTES = 2_000_000
+# Los nueve campos de §5.1 más los dos aditivos aprobados en la adenda (§2): `esquema` y `entorno`.
+CAMPOS_MANIFIESTO = ("esquema", "version_codigo", "version_motor", "version_definiciones", "version_reglas", "version_plantillas",
+                     "archivos_fuente", "fecha_generacion", "configuracion", "hash_resultado", "entorno")
+ETAPAS_ERROR = ("entradas", "canonico", "manifiesto", "serializacion", "historial", "archivo")
+
+_SEMVER = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
+_COMMIT = re.compile(r"^([0-9a-f]{40}(\+dirty)?|desconocido)$")
+_SHA_MIN = re.compile(r"^[0-9a-f]{64}$")
+_FECHA_UTC = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+_ID_FUENTE = re.compile(r"^F[1-9]\d*$")
+_VALIDACION_SINTETICA = ("pendiente", "aprobada", "fallida", "no_aplica")
+_VALIDACION_OPERACIONAL = ("no_validada_con_datos_reales", "confirmada", "no_aplica")
+
+
+def _nfc_arbol(x):
+    if isinstance(x, str):
+        return nfc(x)
+    if isinstance(x, dict):
+        out = {}
+        for k, v in x.items():
+            kc = nfc(k) if isinstance(k, str) else k
+            if kc in out:
+                raise ErrorProcedencia(f"dos claves del manifiesto coinciden tras normalizar a NFC: {kc!r}")
+            out[kc] = _nfc_arbol(v)
+        return out
+    if isinstance(x, (list, tuple)):
+        return [_nfc_arbol(v) for v in x]
+    return x
+
+
+def _es_texto(x) -> bool:
+    return isinstance(x, str)
+
+
+def _es_entero(x) -> bool:
+    return isinstance(x, int) and not isinstance(x, bool)
+
+
+def _solo_claves(d, claves, ruta, errs) -> bool:
+    if not isinstance(d, dict):
+        errs.append(f"{ruta}: debe ser un objeto")
+        return False
+    faltan = [k for k in claves if k not in d]
+    sobran = [k for k in d if k not in claves]
+    if faltan:
+        errs.append(f"{ruta}: faltan campos {faltan}")
+    if sobran:
+        errs.append(f"{ruta}: campos no previstos {sobran}")
+    return not faltan and not sobran
+
+
+def validar_manifiesto(m) -> list[str]:
+    """Errores del manifiesto contra el esquema `procedencia/1` (lista vacía = válido). Esquema CERRADO: faltantes y campos
+    adicionales son errores (un campo nuevo exigiría otra versión del esquema). No interpreta reglas de negocio."""
+    errs: list[str] = []
+    if not _solo_claves(m, CAMPOS_MANIFIESTO, "manifiesto", errs):
+        if not isinstance(m, dict):
+            return errs
+    if m.get("esquema") != ESQUEMA:
+        errs.append(f"esquema: se esperaba {ESQUEMA!r} y llegó {m.get('esquema')!r}")
+
+    vc = m.get("version_codigo")
+    if _solo_claves(vc, ("app", "commit"), "version_codigo", errs):
+        if not (_es_texto(vc["app"]) and _SEMVER.match(vc["app"])):
+            errs.append("version_codigo.app: debe ser MAJOR.MINOR.PATCH")
+        if not (_es_texto(vc["commit"]) and _COMMIT.match(vc["commit"])):
+            errs.append("version_codigo.commit: debe ser un SHA de 40 hex (con o sin +dirty) o «desconocido»")
+    vm = m.get("version_motor")
+    if _solo_claves(vm, ("engine",), "version_motor", errs) and not (_es_texto(vm["engine"]) and _SEMVER.match(vm["engine"])):
+        errs.append("version_motor.engine: debe ser MAJOR.MINOR.PATCH")
+    vd = m.get("version_definiciones")
+    if _solo_claves(vd, ("archivo", "version"), "version_definiciones", errs):
+        if not (_es_texto(vd["archivo"]) and vd["archivo"]):
+            errs.append("version_definiciones.archivo: debe ser un texto no vacío")
+        if not (_es_texto(vd["version"]) and _SEMVER.match(vd["version"])):
+            errs.append("version_definiciones.version: debe ser MAJOR.MINOR.PATCH")
+
+    vr = m.get("version_reglas")
+    if _solo_claves(vr, ("catalogo", "reglas", "ejecucion"), "version_reglas", errs):
+        cat = vr["catalogo"]
+        if _solo_claves(cat, ("archivo", "version"), "version_reglas.catalogo", errs) and not (_es_texto(cat["version"]) and _SEMVER.match(cat["version"])):
+            errs.append("version_reglas.catalogo.version: debe ser MAJOR.MINOR.PATCH")
+        if not isinstance(vr["reglas"], list):
+            errs.append("version_reglas.reglas: debe ser una lista")
+        else:
+            vistas = set()
+            for i, r in enumerate(vr["reglas"]):
+                ruta = f"version_reglas.reglas[{i}]"
+                if _solo_claves(r, ("regla_id", "regla_version", "validacion_sintetica", "validacion_operacional"), ruta, errs):
+                    if not (_es_texto(r["regla_id"]) and r["regla_id"]) or r["regla_id"] in vistas:
+                        errs.append(f"{ruta}.regla_id: debe ser un texto no vacío y único")
+                    vistas.add(r["regla_id"] if _es_texto(r["regla_id"]) else None)
+                    if r["regla_version"] is not None and not (_es_texto(r["regla_version"]) and _SEMVER.match(r["regla_version"])):
+                        errs.append(f"{ruta}.regla_version: debe ser MAJOR.MINOR.PATCH o null")
+                    if r["validacion_sintetica"] not in _VALIDACION_SINTETICA:
+                        errs.append(f"{ruta}.validacion_sintetica: valor no válido")
+                    if r["validacion_operacional"] not in _VALIDACION_OPERACIONAL:
+                        errs.append(f"{ruta}.validacion_operacional: valor no válido")
+        ej = vr["ejecucion"]
+        if _solo_claves(ej, ("motor_ejecutado", "resultados_incluidos", "flags", "nota"), "version_reglas.ejecucion", errs):
+            if not isinstance(ej["motor_ejecutado"], bool) or not isinstance(ej["resultados_incluidos"], bool):
+                errs.append("version_reglas.ejecucion: motor_ejecutado y resultados_incluidos deben ser booleanos")
+            elif ej["resultados_incluidos"] and not ej["motor_ejecutado"]:
+                errs.append("version_reglas.ejecucion: no puede haber resultados de reglas si el motor no se ejecutó")
+            if not (isinstance(ej["flags"], dict) and all(_es_texto(k) and isinstance(v, bool) for k, v in ej["flags"].items())):
+                errs.append("version_reglas.ejecucion.flags: debe ser un objeto de booleanos")
+            if not _es_texto(ej["nota"]):
+                errs.append("version_reglas.ejecucion.nota: debe ser un texto")
+
+    vp = m.get("version_plantillas")
+    if not isinstance(vp, list):
+        errs.append("version_plantillas: debe ser una lista")
+    else:
+        for i, p in enumerate(vp):
+            ruta = f"version_plantillas[{i}]"
+            if _solo_claves(p, ("id", "nombre", "sha256"), ruta, errs):
+                if not (_es_texto(p["id"]) and p["id"]) or not (_es_texto(p["nombre"]) and p["nombre"]):
+                    errs.append(f"{ruta}: id y nombre deben ser textos no vacíos")
+                if not (_es_texto(p["sha256"]) and _SHA_MIN.match(p["sha256"])):
+                    errs.append(f"{ruta}.sha256: debe ser SHA-256 en hexadecimal minúscula")
+
+    af = m.get("archivos_fuente")
+    if not isinstance(af, list):
+        errs.append("archivos_fuente: debe ser una lista")
+    else:
+        shas = []
+        for i, f in enumerate(af):
+            ruta = f"archivos_fuente[{i}]"
+            if not _solo_claves(f, ("id", "nombre", "tamano_bytes", "sha256", "filas", "columnas", "periodo_detectado"), ruta, errs):
+                continue
+            if f["id"] != f"F{i + 1}" or not _ID_FUENTE.match(str(f["id"])):
+                errs.append(f"{ruta}.id: debe ser F{i + 1} (ids consecutivos por orden de sha256)")
+            if not (_es_texto(f["nombre"]) and f["nombre"] and "/" not in f["nombre"] and "\\" not in f["nombre"]):
+                errs.append(f"{ruta}.nombre: debe ser un nombre de archivo (sin ruta)")
+            if not _es_entero(f["tamano_bytes"]) or f["tamano_bytes"] < 0:
+                errs.append(f"{ruta}.tamano_bytes: debe ser un entero >= 0")
+            if not (_es_texto(f["sha256"]) and _SHA_MIN.match(f["sha256"])):
+                errs.append(f"{ruta}.sha256: debe ser SHA-256 en hexadecimal minúscula")
+            else:
+                shas.append(f["sha256"])
+            if not (isinstance(f["filas"], dict) and all(_es_texto(k) and _es_entero(v) and v >= 0 for k, v in f["filas"].items())):
+                errs.append(f"{ruta}.filas: debe ser un objeto {{hoja: entero >= 0}}")
+            if not (isinstance(f["columnas"], dict) and all(_es_texto(k) and isinstance(v, list) and all(_es_texto(c) for c in v)
+                                                            for k, v in f["columnas"].items())):
+                errs.append(f"{ruta}.columnas: debe ser un objeto {{hoja: [nombres]}}")
+            if f["periodo_detectado"] is not None and not _es_texto(f["periodo_detectado"]):
+                errs.append(f"{ruta}.periodo_detectado: debe ser texto o null")
+        if shas != sorted(shas) or len(set(shas)) != len(shas):
+            errs.append("archivos_fuente: deben estar ordenados por sha256, sin repetidos")
+
+    fg = m.get("fecha_generacion")
+    if _solo_claves(fg, ("utc", "zona_horaria"), "fecha_generacion", errs):
+        if not (_es_texto(fg["utc"]) and _FECHA_UTC.match(fg["utc"])):
+            errs.append("fecha_generacion.utc: debe ser AAAA-MM-DDThh:mm:ssZ")
+        if fg["zona_horaria"] is not None and not _es_texto(fg["zona_horaria"]):
+            errs.append("fecha_generacion.zona_horaria: debe ser texto o null")
+
+    cf = m.get("configuracion")
+    if _solo_claves(cf, ("metas", "umbrales", "escenarios", "contexto", "ia"), "configuracion", errs):
+        for k in ("metas", "umbrales", "escenarios"):
+            if not (isinstance(cf[k], dict) and all(_es_texto(a) and (_es_texto(b) or _es_entero(b)) for a, b in cf[k].items())):
+                errs.append(f"configuracion.{k}: debe ser un objeto de textos o enteros")
+        if _solo_claves(cf["contexto"], ("lineas", "sha256"), "configuracion.contexto", errs):
+            if not _es_entero(cf["contexto"]["lineas"]) or cf["contexto"]["lineas"] < 0:
+                errs.append("configuracion.contexto.lineas: debe ser un entero >= 0")
+            if not (_es_texto(cf["contexto"]["sha256"]) and _SHA_MIN.match(cf["contexto"]["sha256"])):
+                errs.append("configuracion.contexto.sha256: debe ser SHA-256 en hexadecimal minúscula")
+        if _solo_claves(cf["ia"], ("usada", "modelo_declarado"), "configuracion.ia", errs):
+            if cf["ia"]["usada"] is not None and not isinstance(cf["ia"]["usada"], bool):
+                errs.append("configuracion.ia.usada: debe ser booleano o null (no declarado)")
+            if cf["ia"]["modelo_declarado"] is not None and not _es_texto(cf["ia"]["modelo_declarado"]):
+                errs.append("configuracion.ia.modelo_declarado: debe ser texto o null")
+
+    hr = m.get("hash_resultado")
+    if _solo_claves(hr, ("algoritmo", "contrato", "valor"), "hash_resultado", errs):
+        if hr["algoritmo"] != ALGORITMO or hr["contrato"] != CONTRATO:
+            errs.append(f"hash_resultado: se esperaba {ALGORITMO}/{CONTRATO}")
+        if not (_es_texto(hr["valor"]) and _SHA_MIN.match(hr["valor"])):
+            errs.append("hash_resultado.valor: debe ser SHA-256 en hexadecimal minúscula")
+
+    en = m.get("entorno")
+    if _solo_claves(en, ("pyodide", "python", "python_pptx"), "entorno", errs) and not all(_es_texto(v) and v for v in en.values()):
+        errs.append("entorno: pyodide, python y python_pptx deben ser textos no vacíos («desconocido» si no se pueden leer)")
+    return errs
+
+
+def construir_manifiesto(*, version_codigo, version_motor, version_definiciones, version_reglas, version_plantillas, archivos_fuente,
+                         fecha_generacion, configuracion, hash_resultado, entorno) -> dict:
+    """Arma el manifiesto (esquema `procedencia/1`) y lo VALIDA: si falta algo o algo es inválido lanza `ErrorProcedencia`."""
+    m = _nfc_arbol({"esquema": ESQUEMA, "version_codigo": version_codigo, "version_motor": version_motor,
+                    "version_definiciones": version_definiciones, "version_reglas": version_reglas, "version_plantillas": version_plantillas,
+                    "archivos_fuente": archivos_fuente, "fecha_generacion": fecha_generacion, "configuracion": configuracion,
+                    "hash_resultado": hash_resultado, "entorno": entorno})
+    errs = validar_manifiesto(m)
+    if errs:
+        raise ErrorProcedencia("manifiesto inválido: " + "; ".join(errs[:6]) + (" …" if len(errs) > 6 else ""))
+    return m
+
+
+def serializar_manifiesto(m: dict) -> bytes:
+    """Bytes EXACTOS de `procedencia.json` (y de la fila de la tabla): JSON con claves ordenadas, sangría de 1, UTF-8 y un salto de línea final.
+    Es determinista: el mismo manifiesto da siempre los mismos bytes. Un manifiesto inválido NO se serializa."""
+    errs = validar_manifiesto(m)
+    if errs:
+        raise ErrorProcedencia("no se serializa un manifiesto inválido: " + "; ".join(errs[:6]))
+    try:
+        datos = (json.dumps(_nfc_arbol(m), ensure_ascii=False, indent=1, sort_keys=True, allow_nan=False) + "\n").encode("utf-8")
+    except (UnicodeEncodeError, ValueError, TypeError) as e:
+        raise ErrorProcedencia(f"el manifiesto no se puede serializar: {e}") from None
+    if len(datos) > MAX_MANIFIESTO_BYTES:
+        raise ErrorProcedencia(f"el manifiesto excede el tamaño máximo ({MAX_MANIFIESTO_BYTES} bytes)")
+    return datos
+
+
+def _sin_claves_repetidas(pares):
+    d = {}
+    for k, v in pares:
+        if k in d:
+            raise ValueError(f"clave repetida en el JSON: {k!r}")
+        d[k] = v
+    return d
+
+
+def _rechazar_constante(c):
+    raise ValueError(f"valor no permitido en el JSON: {c}")
+
+
+def leer_manifiesto(datos) -> tuple[dict | None, list[str]]:
+    """Lee bytes de un manifiesto: devuelve `(manifiesto, [])` si es válido o `(None, errores)`. Nunca lanza.
+    Rechaza: no-UTF-8, JSON inválido o truncado, claves repetidas, NaN/Infinity, exceso de tamaño o de profundidad y todo lo que no
+    cumpla el esquema cerrado `procedencia/1` (incluidos campos adicionales y esquemas desconocidos)."""
+    if not isinstance(datos, (bytes, bytearray)):
+        return None, ["el manifiesto debe leerse como bytes"]
+    if len(datos) > MAX_MANIFIESTO_BYTES:
+        return None, [f"el manifiesto excede el tamaño máximo ({MAX_MANIFIESTO_BYTES} bytes)"]
+    try:
+        texto = bytes(datos).decode("utf-8")
+    except UnicodeDecodeError:
+        return None, ["el manifiesto no es UTF-8 válido"]
+    try:
+        m = json.loads(texto, object_pairs_hook=_sin_claves_repetidas, parse_constant=_rechazar_constante)
+    except (ValueError, RecursionError) as e:
+        return None, [f"JSON inválido o truncado: {str(e)[:120]}"]
+    errs = validar_manifiesto(m)
+    return (m, []) if not errs else (None, errs)

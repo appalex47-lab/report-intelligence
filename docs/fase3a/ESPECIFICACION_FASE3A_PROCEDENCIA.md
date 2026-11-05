@@ -3,7 +3,7 @@
 
 | | |
 |---|---|
-| Estado | **3A-0 y 3A-1 cerradas** (PR #15, #16 y #17 fusionados; `main` en `8dc6cd6`). **3A-2** (resultado canónico y `hash_resultado`) **implementada y en revisión** en un PR independiente: ver `docs/fase3a/IMPLEMENTACION_3A2_HASH_CANONICO.md`. 3A-3 a 3A-5 **no están implementadas ni autorizadas**; cada subfase requiere autorización expresa |
+| Estado | **3A-0, 3A-1 y 3A-2 cerradas** (PR #15 a #18 fusionados; `main` en `c7de4b6`). **3A-3** (manifiesto, tabla autoritativa `procedencia`, captura y verificación de integridad) **implementada y en revisión** en un PR independiente, sin fusionar: ver `docs/fase3a/IMPLEMENTACION_3A3_PROCEDENCIA.md`. **3A-4** conserva la comparación por regeneración y los estados `exacta` / `parcial`; **3A-5** sigue diferida. Cada subfase requiere autorización expresa |
 | Punto de partida | `main` con los PR #11 a #17 fusionados. `version.py` define `APP_VERSION` y `ENGINE_VERSION` (`1.0.0`) desde 3A-1 (antes devolvía `None`) |
 | Fuente que desarrolla | `docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md` §5 (procedencia), §9 (archivos), §11 (T-07, T-08, T-16, V-02), §12 (AC-10, AC-11, AC-12, AC-28) |
 | Relación con la especificación original | Este documento es una **adenda**. No modifica la especificación original; cada diferencia está listada en §2 |
@@ -496,8 +496,8 @@ Cada subfase requiere tu autorización antes de empezar. Ninguna está autorizad
 | **3A-0** | Esta especificación | `docs/fase3a/` | — |
 | **3A-1** | Versiones SemVer, estampado de commit y acoplamiento con la línea base | `version.py`, `tools/build_site.py`, `tests/regression/engine_version.json`, pruebas | 3A-0 aprobada |
 | **3A-2** | Resultado canónico y `hash_resultado` | `provenance.py` (solo funciones puras), pruebas | 3A-1 |
-| **3A-3** | Manifiesto `procedencia.json`, entorno y escritura junto al reporte | `provenance.py`, `build.py` (llamada aditiva), `web/service.py` (permitir servir el archivo), pruebas | 3A-2 |
-| **3A-4** | Tabla `procedencia` en el historial, comparación y estados | `history/store.py`, `provenance.py`, pruebas | 3A-3 |
+| **3A-3** | Manifiesto `procedencia.json`, entorno, escritura junto al reporte **y tabla autoritativa `procedencia` con verificación de integridad** (adelantada desde 3A-4 por instrucción expresa) | `provenance.py`, `provenance_capture.py`, `provenance_verify.py`, `history/store.py`, `build.py` (llamada aditiva), `web/service.py`, pruebas | 3A-2 |
+| **3A-4** | Comparación por regeneración real y estados `exacta` / `parcial` | `provenance.py`, pruebas | 3A-3 |
 | **3A-5** | `release.yml` y etiquetas (A-5) | `.github/workflows/release.yml` | **Diferida: A-5 sin autorización** |
 
 Detalle de cada subfase:
@@ -518,9 +518,10 @@ Detalle de cada subfase:
 - Implementación esperada: `construir_manifiesto()`, `entorno`, escritura atómica de `procedencia.json` después del PPTX, y manejo de errores de §8.4 con `procedencia_error.json` (D-A).
 - Pruebas: T-07 (nueve campos presentes, más `esquema` y `entorno`); sin contenido de celdas; el PPTX y `manifest.json` idénticos con y sin procedencia; PR-6, PR-8 y PR-9 (fallos inyectados); `motor_ejecutado: false` y sin resultados de reglas.
 - Aceptación: AC-10 completo; huellas de láminas y línea base del motor sin cambios.
+- **Estado:** implementada (incluye la tabla `procedencia` de §7.2, adelantada desde 3A-4); no se declara completa la reproducibilidad: `exacta` y `parcial` requieren 3A-4. Ver `IMPLEMENTACION_3A3_PROCEDENCIA.md`.
 
 **3A-4**
-- Implementación esperada: tabla `procedencia` (§7.2), `comparar()` con los tres estados (§3.2).
+- Implementación esperada: `comparar()` con los tres estados (§3.2) sobre la tabla ya existente (§7.2).
 - Pruebas: T-08 con manifiestos sintéticos (coincidente, versión distinta, archivo faltante, sin manifiesto, hash de entrada distinto, manifiesto alterado, anomalía de determinismo, reporte con `procedencia_error.json`); PR-5, PR-10 y PR-11; un historial anterior abre sin migración; las filas son inmutables.
 - Aceptación: AC-11 (0 regeneraciones silenciosas) y AC-12 (legado = `no_reproducible`).
 
@@ -567,9 +568,9 @@ Detalle de cada subfase:
 | Archivo | Estado hoy | Subfase | Tratamiento |
 |---|---|---|---|
 | `tools/build_site.py` | protegido | 3A-1 | Se autoriza con motivo: estampado de versión |
-| `backend/app/build.py` | protegido | 3A-3 | Se autoriza: llamada aditiva |
-| `backend/app/web/service.py` | protegido | 3A-3 | Se autoriza: permitir servir `procedencia.json` |
-| `backend/app/history/store.py` | protegido | 3A-4 | Se autoriza: tabla nueva |
+| `backend/app/build.py` | protegido | 3A-3 | **Autorizado en 3A-3**: llamada aditiva |
+| `backend/app/web/service.py` | protegido | 3A-3 | **Autorizado en 3A-3**: declaración de IA y servir `procedencia.json` |
+| `backend/app/history/store.py` | protegido | 3A-3 | **Autorizado en 3A-3** (antes previsto en 3A-4): tabla nueva `procedencia` |
 | `backend/app/version.py` | fuera del manifiesto (creado en Fase 1) | 3A-1 | Se revisa por diff |
 | `backend/app/provenance.py` | nuevo | 3A-2 | Archivo nuevo |
 | `frontend/*`, `.github/workflows/*`, plantillas, importadores, `calc/`, `deck/`, `narrative/` | protegidos | — | **No se tocan** |
