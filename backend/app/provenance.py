@@ -59,7 +59,7 @@ def nfc(texto: str) -> str:
 # Ruta absoluta de Windows (C:\x\y.xlsx, C:/x/y.xlsx), UNC (\\servidor\recurso\y.xlsx) o POSIX con al menos dos tramos (/dir/y.xlsx).
 # Un tramo suelto («/s», «y/o», una fecha 12/05/2026) no es una ruta absoluta y no se toca.
 _RUTA = re.compile(
-    r"(?:[A-Za-z]:[\\/][^\s\"'<>|*?]*)"
+    r"(?:(?<!\w)[A-Za-z]:(?:\\|/(?!/))[^\s\"'<>|*?]*)"
     r"|(?:\\\\[^\s\\\"'<>|*?]+\\[^\s\"'<>|*?]*)"
     r"|(?:(?<![\w/.:~\\-])/(?:[^\s/\"'<>|*?:;,()\\]+/)+[^\s/\"'<>|*?:;,()\\]*)")
 

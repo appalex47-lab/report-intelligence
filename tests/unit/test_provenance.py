@@ -439,3 +439,39 @@ def test_la_fase_3a2_no_adelanta_la_persistencia_ni_el_manifiesto():
     assert not (ROOT / "backend/app/web" / "procedencia.json").exists()
     build_src = (ROOT / "backend/app/build.py").read_text(encoding="utf-8")
     assert "provenance" not in build_src and "procedencia" not in build_src
+
+
+# ----------------------------------------------------------------------------------------------------------------- casos límite añadidos en la revisión
+def test_serializar_rechaza_lo_que_no_es_json_estricto_en_lugar_de_ocultarlo():
+    for malo in ({"a": object()}, {"a": float("nan")}, {"a": float("inf")}, {"a": "\ud800"}, {"a": 10 ** 5000}):
+        with pytest.raises(pv.ErrorProcedencia):
+            pv.serializar(malo)
+
+
+def test_las_urls_y_las_fracciones_no_se_confunden_con_rutas():
+    for t in ("https://host.com/a/b/c.xlsx", "http://x/y", "ver https://a.b/c/d y luego", "~/a/b", "./a/b", "../a/b", "a/b/c"):
+        assert pv.rutas_a_nombre_base(t) == t, t
+
+
+def test_el_nombre_del_linaje_y_el_de_la_fuente_se_comparan_en_nfc():
+    nfd = unicodedata.normalize("NFD", "Reporte ñandú.xlsx")
+    a = h(resultado(archivo="Reporte ñandú.xlsx"), fuentes(nfd))
+    assert a == h(resultado(archivo=nfd), fuentes("Reporte ñandú.xlsx"))
+    c = pv.canonico(P, fuentes(nfd), resultado(archivo="Reporte ñandú.xlsx"), {})
+    assert c["valores"]["tables"]["aetops.linea.yoy"]["groups"][0]["current"]["values"]["monto"]["src"]["file"] == "F1"
+
+
+def test_la_identidad_del_pptx_no_es_una_entrada():
+    """El PPTX (su hash binario) no se puede pasar: la API solo recibe periodo, fuentes, resultado y narrativa."""
+    import inspect
+    assert list(inspect.signature(pv.calcular).parameters) == ["periodo", "fuentes", "resultado", "narrativa"]
+    assert list(inspect.signature(pv.canonico).parameters) == ["periodo", "fuentes", "resultado", "narrativa"]
+
+
+def test_un_historial_anterior_sin_objetos_de_resultado_no_se_puede_hashear_y_no_se_inventa_un_hash():
+    """Los reportes anteriores guardaron hallazgos y narrativa como JSON, sin `Value` ni `Lineage`: quedan `no_reproducible (legado)`."""
+    legado = {"tables": {}, "findings": [{"id": "X", "severity": "warn", "message": "m"}]}
+    with pytest.raises(pv.ErrorProcedencia):
+        pv.canonico(P, fuentes(), legado, {})
+    with pytest.raises(pv.ErrorProcedencia):
+        pv.canonico(P, fuentes(), resultado(findings=[{"id": "X", "severity": "warn", "message": "m"}]), {})
