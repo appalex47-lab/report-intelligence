@@ -3,7 +3,7 @@
 
 | | |
 |---|---|
-| Estado | **3A-0 con revisión favorable del usuario; decisiones D-A a D-D aprobadas.** Cierra al fusionarse el PR #15. No hay código de la Fase 3A y nada de este documento está implementado. **La subfase 3A-1 no está autorizada** |
+| Estado | **3A-0 cerrada** (decisiones D-A a D-D aprobadas; PR #15 fusionado). **3A-1 cerrada**: versiones formales y SHA del commit estampado en `app.zip`, fusionada en `main` mediante el PR #16 (commit de fusión `81966d8`). Lo demás de este documento (3A-2 a 3A-5) **no está implementado ni autorizado**; cada subfase requiere autorización expresa |
 | Punto de partida | `main` con los PR #11 a #14 fusionados; `ENGINE`/`APP` aún sin versión (`backend/app/version.py` devuelve `None`) |
 | Fuente que desarrolla | `docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md` §5 (procedencia), §9 (archivos), §11 (T-07, T-08, T-16, V-02), §12 (AC-10, AC-11, AC-12, AC-28) |
 | Relación con la especificación original | Este documento es una **adenda**. No modifica la especificación original; cada diferencia está listada en §2 |
@@ -608,7 +608,7 @@ Cada autorización se registra con `tools/archivos_protegidos.py --write --autor
 | Precisión: errores de procedencia | **Incorporada** (§8.4, PR-6, PR-8, PR-9, AC-13A) |
 | `1.0.0` = primera versión formalmente identificada, no inicio histórico | **Incorporada** (§1.3, §4.3) |
 | Fusión del PR #15 | **Pendiente** (solo documentación; la decide el usuario) |
-| Subfase **3A-1** | **Autorizada e implementada; en revisión (PR exclusivo).** No fusionada |
+| Subfase **3A-1** | **Cerrada.** Implementada y fusionada en `main` (PR #16, commit de fusión `81966d8`). Quedan vigentes las limitaciones declaradas en §4 (digest acotado a los resultados de referencia; wheels locales fuera de la detección `dirty`) |
 | Subfases 3A-2 a 3A-4 | No autorizadas; cada una requiere su propia autorización |
 | 3A-5 (`release.yml`, etiquetas) | Diferida: A-5 sin autorización |
 | Fase 3B, Fase 4, Fase 5, interfaz, conexión del motor de reglas | Fuera de alcance |
