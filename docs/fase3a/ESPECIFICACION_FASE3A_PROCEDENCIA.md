@@ -3,8 +3,8 @@
 
 | | |
 |---|---|
-| Estado | **3A-0 cerrada** (decisiones D-A a D-D aprobadas; PR #15 fusionado). **3A-1 cerrada**: versiones formales y SHA del commit estampado en `app.zip`, fusionada en `main` mediante el PR #16 (commit de fusión `81966d8`). Lo demás de este documento (3A-2 a 3A-5) **no está implementado ni autorizado**; cada subfase requiere autorización expresa |
-| Punto de partida | `main` con los PR #11 a #14 fusionados; `ENGINE`/`APP` aún sin versión (`backend/app/version.py` devuelve `None`) |
+| Estado | **3A-0 y 3A-1 cerradas** (PR #15, #16 y #17 fusionados; `main` en `8dc6cd6`). **3A-2** (resultado canónico y `hash_resultado`) **implementada y en revisión** en un PR independiente: ver `docs/fase3a/IMPLEMENTACION_3A2_HASH_CANONICO.md`. 3A-3 a 3A-5 **no están implementadas ni autorizadas**; cada subfase requiere autorización expresa |
+| Punto de partida | `main` con los PR #11 a #17 fusionados. `version.py` define `APP_VERSION` y `ENGINE_VERSION` (`1.0.0`) desde 3A-1 (antes devolvía `None`) |
 | Fuente que desarrolla | `docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md` §5 (procedencia), §9 (archivos), §11 (T-07, T-08, T-16, V-02), §12 (AC-10, AC-11, AC-12, AC-28) |
 | Relación con la especificación original | Este documento es una **adenda**. No modifica la especificación original; cada diferencia está listada en §2 |
 | Decisiones del usuario incorporadas | H-1 a H-8 y los puntos 9 a 12 de la instrucción de 3A-0 |
@@ -380,7 +380,15 @@ Fechas y horas, zona horaria, rutas absolutas, `run_id`, número de versión del
 - El vínculo `id` → nombre y SHA-256 vive en `archivos_fuente` del manifiesto. Así el linaje de cada celda sigue siendo trazable (`F1!Base!C3`) sin que el nombre del archivo ni su ruta cambien el hash. Cambiar el **contenido** de un archivo cambia su `sha256` y, con él, el hash; renombrarlo, no.
 - Cualquier texto de `message` o `evidence` que contenga una ruta absoluta (POSIX o de Windows) se reemplaza por su nombre base antes de serializar. Una prueba exige el mismo hash con los mismos datos cargados desde dos directorios distintos y con distinto nombre de archivo.
 
-### 6.5 Garantía de no alteración del reporte
+### 6.5 Precisiones de implementación (3A-2)
+
+Aclaraciones que resuelven términos que la especificación dejaba abiertos, sin cambiar el contrato (detalle y los demás vacíos en `IMPLEMENTACION_3A2_HASH_CANONICO.md` §4):
+* `texto` de la narrativa es el texto **sin marcas de negrita** (`**`), igual que `texto` de `narrative.json`.
+* Dos archivos con el mismo contenido son una sola fuente; el mismo nombre con contenido distinto es un error.
+* Un tipo de dato no previsto, una profundidad excesiva o una colisión de claves son un error (`ErrorProcedencia`), no un marcador dentro del hash.
+* `hash_resultado` cubre el **resultado final**; la identidad de las entradas es el bloque `fuentes` (SHA-256), y el hash binario del PPTX no es una entrada.
+
+### 6.6 Garantía de no alteración del reporte
 
 El manifiesto y el hash se calculan **después** de guardar el PPTX y a partir de objetos ya producidos. No se inserta nada en el PPTX, no se vuelve a leer el PPTX para calcular el hash y no se llama al motor de reglas. La regresión de huellas de láminas y del motor debe seguir idéntica.
 
@@ -504,6 +512,7 @@ Detalle de cada subfase:
 - Implementación esperada: `canonico()` y `hash_resultado()` sin tocar el pipeline ni `build.py`.
 - Pruebas: mismo hash en dos corridas; distinto con un dato alterado; **distinto al editar un párrafo**; igual al renombrar el archivo o moverlo de directorio; igual en Python 3.12 y 3.13 y en Pyodide (reutiliza `tools/pyodide_node_check.mjs`); la estructura de `valores` coincide con `capture_baseline.canon`.
 - Aceptación: criterios de AC-10 (parte de hash) y 0 cambios de comportamiento.
+- **Estado:** implementada en `backend/app/provenance.py`; pruebas en `tests/unit/test_provenance.py`, `tests/regression/test_hash_resultado.py` y `tests/e2e/test_hash_pyodide.py`; documentación técnica en `IMPLEMENTACION_3A2_HASH_CANONICO.md`.
 
 **3A-3**
 - Implementación esperada: `construir_manifiesto()`, `entorno`, escritura atómica de `procedencia.json` después del PPTX, y manejo de errores de §8.4 con `procedencia_error.json` (D-A).
@@ -607,9 +616,10 @@ Cada autorización se registra con `tools/archivos_protegidos.py --write --autor
 | Precisión: `entorno` fuera del hash, pero no irrelevante | **Incorporada** (§3.4) |
 | Precisión: errores de procedencia | **Incorporada** (§8.4, PR-6, PR-8, PR-9, AC-13A) |
 | `1.0.0` = primera versión formalmente identificada, no inicio histórico | **Incorporada** (§1.3, §4.3) |
-| Fusión del PR #15 | **Pendiente** (solo documentación; la decide el usuario) |
+| Fusión del PR #15 | **Fusionado** |
 | Subfase **3A-1** | **Cerrada.** Implementada y fusionada en `main` (PR #16, commit de fusión `81966d8`). Quedan vigentes las limitaciones declaradas en §4 (digest acotado a los resultados de referencia; wheels locales fuera de la detección `dirty`) |
-| Subfases 3A-2 a 3A-4 | No autorizadas; cada una requiere su propia autorización |
+| Subfase **3A-2** | **Implementada; en revisión (PR independiente, no fusionado).** `backend/app/provenance.py` con `canonico()`, `serializar()`, `hash_resultado()`, `calcular()`; sin conexión a `build.py`, historial ni interfaz. Documentación: `IMPLEMENTACION_3A2_HASH_CANONICO.md` |
+| Subfases 3A-3 y 3A-4 | No autorizadas; cada una requiere su propia autorización |
 | 3A-5 (`release.yml`, etiquetas) | Diferida: A-5 sin autorización |
 | Fase 3B, Fase 4, Fase 5, interfaz, conexión del motor de reglas | Fuera de alcance |
 

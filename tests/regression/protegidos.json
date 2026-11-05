@@ -68,6 +68,10 @@
   "tools/make_realistic_samples.py": "537cf0f0802bf22b6bd807e4bc54065345f3059c6808da47fcbd81b886470f89"
  },
  "autorizados": {
+  ".github/workflows/tests.yml": {
+   "motivo": "Fase 3A-2: paso de CI que ejecuta tests/e2e/test_hash_pyodide.py con Pyodide 0.27.7 (npm, solo el núcleo) y REPORT_PYODIDE_REQUIRED=1; no toca el flujo de publicación (pages.yml)",
+   "sha256": "77d966cd7517b05e85496d27a03b61cf2c372ce0d9258f5c7e1c225cf5f705ea"
+  },
   "backend/app/deck/aetops_mensual.py": {
    "motivo": "Corrección QA OVERFLOW_ESTIMATED (tablas con más grupos que la plantilla) y Conclusiones que no caben (patrón de la plantilla)",
    "sha256": "24147b3a9eb3bf24b85284b6d52e778e4c16c029a31605d14ae2301f9245938a"
