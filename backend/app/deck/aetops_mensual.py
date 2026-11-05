@@ -15,6 +15,9 @@ from ..models import Group, Period
 from ..narrative.aetops import Box, check as check_narrative, compose_aetops_mensual
 from ..narrative.writer import Para, to_paragraphs, verify_edited
 from ..pipeline import Result
+from pptx.util import Emu
+
+from ..qa.checks import footer_geometry, row_content_floors
 from . import pptx_ops as ops
 
 DATA_RX = re.compile(r"\d")
@@ -162,6 +165,16 @@ def fill_grouped(fl: Filler, n: int, name: str, tbl, header_cols: int = 8):
         for c, k in enumerate(keys, 1):
             w.delta(r0 + 3, c, g.pct[k])
     w.finish()
+    # Una tabla con más grupos que la plantilla (p. ej. una línea nueva en el catálogo) crece; si se pasa del pie de página:
+    # (1) las celdas de relleno de la fila-título (NBSP a 18 pt en la plantilla) pasan al tamaño del texto visible y (2) se
+    # compacta el alto sobrante de las filas, sin bajar de su mínimo real. Si la tabla ya cabe, no cambia nada.
+    limit = footer_geometry(fl.prs)[0] - 6
+    if Emu(w.shape.top).pt + sum(Emu(r.height).pt for r in w.t.rows) > limit:
+        ops.set_filler_font(w.t, [2 + 4 * i for i in range(len(tbl.groups))], range(1, header_cols), 11)
+        res = ops.compact_to_fit(w.shape, limit, row_content_floors(w.shape))
+        if res:
+            fl.rep.notes.append(f"Diap. {n} '{name}': {len(tbl.groups)} grupos (la plantilla trae {have}); se compactó el alto de las filas "
+                                f"({res[0]:.0f} → {res[1]:.0f} pt) para que la tabla quepa sobre el pie de página.")
 
 
 def fill_grouped_starts(fl: Filler, n: int, name: str, tbl, starts: list[int], rows: int, cols: int = 8):

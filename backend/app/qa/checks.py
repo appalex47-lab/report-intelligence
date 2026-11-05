@@ -229,11 +229,11 @@ def _font_pt(cell, default: float = 10.0) -> float:
     return default
 
 
-def estimate_table_height(shape) -> float:
-    """Alto estimado (pt) de una tabla: cada fila crece si el texto de alguna celda no cabe en una línea."""
+def row_min_heights(shape) -> list[float]:
+    """Alto mínimo (pt) que necesita el texto de cada fila de una tabla (0 si la fila está vacía). Misma estimación que el QA."""
     tbl = shape.table
     widths = [Emu(c.width).pt for c in tbl.columns]
-    total = 0.0
+    out = []
     for row in tbl.rows:
         need = 0.0
         for ci, cell in enumerate(row.cells):
@@ -248,8 +248,34 @@ def estimate_table_height(shape) -> float:
             cpl = max(int(usable / (CHAR_EM * fs)), 1)
             lines = sum(max(1, -(-len(par) // cpl)) for par in text.split("\n"))
             need = max(need, lines * fs * LINE_EM + 1.5)
-        total += max(Emu(row.height).pt, need)
-    return total
+        out.append(need)
+    return out
+
+
+def row_content_floors(shape) -> list[float]:
+    """Alto mínimo REAL (pt) de cada fila: incluye las celdas «en blanco» (un NBSP conserva su tamaño de letra y fuerza la altura de
+    la fila) y los márgenes de celda. Es la cota inferior a la que se puede compactar una fila sin que el render la vuelva a estirar."""
+    tbl = shape.table
+    widths = [Emu(c.width).pt for c in tbl.columns]
+    out = []
+    for row in tbl.rows:
+        need = 0.0
+        for ci, cell in enumerate(row.cells):
+            if cell.is_spanned:
+                continue
+            span = cell.span_width if cell.is_merge_origin else 1
+            usable = max(sum(widths[ci:ci + span]) - 3.0, 6.0)
+            fs = _font_pt(cell)
+            cpl = max(int(usable / (CHAR_EM * fs)), 1)
+            lines = sum(max(1, -(-len(par) // cpl)) for par in cell.text_frame.text.split("\n"))
+            need = max(need, lines * fs * 1.22 + Emu(cell.margin_top).pt + Emu(cell.margin_bottom).pt + 1.0)
+        out.append(need)
+    return out
+
+
+def estimate_table_height(shape) -> float:
+    """Alto estimado (pt) de una tabla: cada fila crece si el texto de alguna celda no cabe en una línea."""
+    return sum(max(Emu(row.height).pt, need) for row, need in zip(shape.table.rows, row_min_heights(shape)))
 
 
 def check_geometry(pptx: Path, rep: QAReport, template: Path | None = None, slide_map: list[int] | None = None) -> None:
