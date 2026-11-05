@@ -13,7 +13,7 @@ from .. import format as F
 from ..calc import indicators as ind
 from ..models import Group, Period
 from ..narrative.aetops import Box, check as check_narrative, compose_aetops_mensual
-from ..narrative.writer import Para, to_paragraphs, verify_edited
+from ..narrative.writer import Para, to_paragraphs, to_paragraphs_conclusiones, verify_edited
 from ..pipeline import Result
 from pptx.util import Emu
 
@@ -169,7 +169,7 @@ def fill_grouped(fl: Filler, n: int, name: str, tbl, header_cols: int = 8):
     # (1) las celdas de relleno de la fila-título (NBSP a 18 pt en la plantilla) pasan al tamaño del texto visible y (2) se
     # compacta el alto sobrante de las filas, sin bajar de su mínimo real. Si la tabla ya cabe, no cambia nada.
     limit = footer_geometry(fl.prs)[0] - 6
-    if Emu(w.shape.top).pt + sum(Emu(r.height).pt for r in w.t.rows) > limit:
+    if Emu(w.shape.top).pt + sum(max(Emu(r.height).pt, f) for r, f in zip(w.t.rows, row_content_floors(w.shape))) > limit:
         ops.set_filler_font(w.t, [2 + 4 * i for i in range(len(tbl.groups))], range(1, header_cols), 11)
         res = ops.compact_to_fit(w.shape, limit, row_content_floors(w.shape))
         if res:
@@ -353,6 +353,26 @@ NARR = {                      # clave de narrativa -> (diapositiva, shape de la 
 }
 
 
+def conclusiones_paragraphs(fl: Filler, shape, paras) -> list[str]:
+    """Párrafos de «Conclusiones Clave». Se usa el patrón general (párrafo vacío entre todos) salvo que, con el espaciado real
+    del cuadro (interlineado 1.2 y 3 pt después de cada párrafo), no quepa sobre el pie de página; entonces se usa el patrón
+    del original (cifras juntas, primer insight pegado a su encabezado). Si cabe, el resultado es idéntico al de siempre."""
+    general = to_paragraphs(paras)
+    cpl, _ = ops.box_capacity(shape)
+    fs = 12.0
+    for r in shape._element.iter(ops.qn("a:rPr")):
+        if r.get("sz"):
+            fs = int(r.get("sz")) / 100
+            break
+    # un párrafo vacío (sin texto) toma el tamaño por omisión de PowerPoint (18 pt), no el del cuerpo
+    alto = sum((max(1, -(-len(t.replace("**", "")) // cpl)) * fs if t else 18.0) * 1.2 + 3 for t in general)
+    limite = footer_geometry(fl.prs)[0] - 6 - Emu(shape.top).pt
+    if alto <= limite:
+        return general
+    fl.rep.notes.append("Conclusiones: se quitaron los párrafos vacíos entre las líneas de cifras (patrón de la plantilla) para que el texto quepa sobre el pie de página.")
+    return to_paragraphs_conclusiones(paras)
+
+
 def fill_aetops_mensual(prs, result: Result, period: Period, narrative: dict[str, list[str]] | None = None,
                         fix_titles: bool = True, att=None) -> FillReport:
     """`narrative`: ediciones manuales {clave: [párrafos]} que sustituyen al texto generado (se verifican)."""
@@ -414,7 +434,7 @@ def fill_aetops_mensual(prs, result: Result, period: Period, narrative: dict[str
     fill_negados(fl, 10, neg_alta, neg_prod, rep)
     # textos
     for key, (n, name) in NARR.items():
-        ops.set_paragraphs(fl.shape(n, name), to_paragraphs(narr[key]))
+        ops.set_paragraphs(fl.shape(n, name), (conclusiones_paragraphs(fl, fl.shape(n, name), narr[key]) if key == "conclusiones" else to_paragraphs(narr[key])))
     if rep.omitted_categories:
         rep.notes.append("Categorías no mostradas por capacidad de la plantilla (selección editorial pendiente): "
                          + ", ".join(rep.omitted_categories))

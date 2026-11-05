@@ -111,3 +111,22 @@ def to_paragraphs(paras: list[Para]) -> list[str]:
             out.append("")
         out.append(p.text)
     return out
+
+
+def to_paragraphs_conclusiones(paras: list[Para]) -> list[str]:
+    """Patrón de 'Conclusiones Clave' del original: las líneas de cifras van juntas (sin párrafo vacío), un
+    párrafo vacío antes de «Insights clave:», el primer insight pegado al encabezado y los demás separados por
+    párrafo vacío. Sin encabezado (p. ej. textos editados) se usa el patrón general."""
+    vis = [q for q in paras if q.visible]
+    head = next((i for i, q in enumerate(vis) if q.text.strip().startswith("**") and q.text.strip().endswith(":**")), None)
+    if head is None:
+        return to_paragraphs(paras)
+    out = [q.text for q in vis[:head]]
+    if out:
+        out.append("")
+    out.append(vis[head].text)
+    for j, q in enumerate(vis[head + 1:]):
+        if j:
+            out.append("")
+        out.append(q.text)
+    return out

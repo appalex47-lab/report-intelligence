@@ -15,7 +15,7 @@ from ..narrative.aetops import Box, check as check_narrative, compose_aetops_tri
 from ..narrative.writer import Para, to_paragraphs, verify_edited
 from ..pipeline import Result
 from . import pptx_ops as ops
-from .aetops_mensual import (DataMissing, FillReport, Filler, fill_cat_blocks, fill_grouped_starts, fill_productos,
+from .aetops_mensual import (DataMissing, FillReport, Filler, conclusiones_paragraphs, fill_cat_blocks, fill_grouped, fill_grouped_starts, fill_productos,
                              fmt_metric)
 
 NARR = {
@@ -127,7 +127,10 @@ def fill_aetops_trimestral(prs, result: Result, period: Period, narrative: dict[
 
     # --- tablas
     fill_panorama_single(fl, 1, yoy)
-    fill_grouped_starts(fl, 2, "Tabla 8", linea, LINEA_STARTS, rows=18)
+    if len(linea.groups) > len(LINEA_STARTS):        # línea nueva en el catálogo: la tabla crece (bloques contiguos) y se compacta si no cabe
+        fill_grouped(fl, 2, "Tabla 8", linea)
+    else:
+        fill_grouped_starts(fl, 2, "Tabla 8", linea, LINEA_STARTS, rows=18)
     fill_grouped_starts(fl, 3, "Tabla 7", canal, CANAL_STARTS, rows=23)
     q = period.index
     heads = {3: f"Venta Q{q} Actual {period.year}", 4: f"Venta Q{q} Año {period.year - 1}"}
@@ -143,7 +146,7 @@ def fill_aetops_trimestral(prs, result: Result, period: Period, narrative: dict[
     rep.omitted_categories += [g.name for g in omitted]
     fill_negados_q(fl, 7, neg_alta, neg_prod, rep)
     for key, (n, name) in NARR.items():
-        ops.set_paragraphs(fl.shape(n, name), to_paragraphs(narr[key]))
+        ops.set_paragraphs(fl.shape(n, name), (conclusiones_paragraphs(fl, fl.shape(n, name), narr[key]) if key == "conclusiones" else to_paragraphs(narr[key])))
     if rep.omitted_categories:
         rep.notes.append("Categorías no mostradas por capacidad de la plantilla (6): " + ", ".join(rep.omitted_categories))
     return rep

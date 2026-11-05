@@ -176,14 +176,14 @@ def compact_to_fit(shape, bottom_limit_pt: float, floors: list[float]) -> tuple[
     rows = list(shape.table.rows)
     heights = [Emu(r.height).pt for r in rows]
     avail = bottom_limit_pt - Emu(shape.top).pt
-    total = sum(heights)
+    eff = [max(h, f) for h, f in zip(heights, floors)]       # alto que el render dará de verdad (una fila no baja de lo que necesita su texto)
+    total = sum(eff)
     if total <= avail:
         return None
-    lows = [min(h, f) for h, f in zip(heights, floors)]
-    slack = sum(h - lo for h, lo in zip(heights, lows))
+    slack = sum(e - f for e, f in zip(eff, floors))
     k = 1.0 if slack <= 0 else min(1.0, (total - avail) / slack)
-    for r, h, lo in zip(rows, heights, lows):
-        r.height = Emu(int(round((h - k * (h - lo)) * 12700)))
+    for r, e, f in zip(rows, eff, floors):
+        r.height = Emu(int(round((e - k * (e - f)) * 12700)))
     sync_frame_height(shape)
     return total, sum(Emu(r.height).pt for r in rows)
 
