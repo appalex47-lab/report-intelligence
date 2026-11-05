@@ -3,7 +3,7 @@
 
 | | |
 |---|---|
-| Estado | **Propuesta para autorización.** No hay código de la Fase 3A. Nada de este documento está implementado |
+| Estado | **3A-0 con revisión favorable del usuario; decisiones D-A a D-D aprobadas.** Cierra al fusionarse el PR #15. No hay código de la Fase 3A y nada de este documento está implementado. **La subfase 3A-1 no está autorizada** |
 | Punto de partida | `main` con los PR #11 a #14 fusionados; `ENGINE`/`APP` aún sin versión (`backend/app/version.py` devuelve `None`) |
 | Fuente que desarrolla | `docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md` §5 (procedencia), §9 (archivos), §11 (T-07, T-08, T-16, V-02), §12 (AC-10, AC-11, AC-12, AC-28) |
 | Relación con la especificación original | Este documento es una **adenda**. No modifica la especificación original; cada diferencia está listada en §2 |
@@ -37,14 +37,14 @@
 | S-3 | Un fallo al construir la procedencia **no** debe impedir generar el reporte (principio 2, «sin regresiones») | Prueba en 3A-3 (ver D-A) |
 | S-4 | `Lineage.file` es el nombre base del archivo (comprobado: `libro_x.xlsx`, sin ruta) | Prueba de dos directorios distintos en 3A-2 |
 
-### 1.3 Puntos que esta especificación propone y que necesitan tu confirmación expresa
+### 1.3 Decisiones D-A a D-D (aprobadas por el usuario)
 
-| ID | Propuesta | Alternativa |
+| ID | Decisión aprobada | Dónde se concreta |
 |---|---|---|
-| D-A | Si falla la procedencia: el reporte se genera igual y el error se guarda en `procedencia_error.json` (no en `qa_report.json` ni en `manifest.json`) | Bloquear la generación (más estricto, riesgo de regresión) |
-| D-B | `exacta` exige integridad verificada contra el historial; un `procedencia.json` suelto, sin registro, llega como máximo a `parcial` (§3.3) | Permitir `exacta` solo con el archivo |
-| D-C | `APP_VERSION` y `ENGINE_VERSION` empiezan en **`1.0.0`** en 3A-1 | Otro valor inicial (p. ej. `0.1.0`) |
-| D-D | `procedencia.json` queda disponible en el directorio del reporte y en el historial, pero **sin botón de descarga** (la interfaz está fuera de 3A) | Permitir un cambio mínimo en `frontend/` |
+| D-A | Si falla la procedencia, **el reporte se genera igual**. El fallo se registra en `procedencia_error.json` (no en `qa_report.json` ni en `manifest.json`), con las garantías de §8.4 | §8.4 |
+| D-B | `exacta` exige integridad verificada contra el historial; un manifiesto sin historial alcanza **como máximo `parcial`** | §3.2 y §3.3 |
+| D-C | `APP_VERSION` y `ENGINE_VERSION` comienzan en **`1.0.0`**. Es la **primera versión formalmente identificada bajo este esquema**; **no** es el inicio histórico del proyecto, que existía antes sin versión estampada | §4.3 |
+| D-D | **No** se incorpora botón de descarga ni ningún cambio de interfaz. `procedencia.json` queda en el directorio del reporte y en el historial | §13 (L-1) |
 
 ---
 
@@ -108,24 +108,54 @@ El orden de evaluación es el de la tabla; gana la primera fila que se cumple.
 |---|---|---|
 | `no_reproducible` | C1 falla (sin manifiesto, **legado**, esquema desconocido) **o** C2 falla (manifiesto alterado) **o** C3b falla (un archivo fuente aportado difiere) | La causa exacta. No afirma equivalencia. Ofrece regenerar como reporte **nuevo** |
 | `parcial` | C1 y C2 pasan, C3b no falla, y se cumple al menos una: C3a falta (archivo no aportado), C4 falla, C5 falla, C6 falla, o no hay registro contra el cual verificar C2 (D-B) | La lista de componentes que difieren. **No regenera en silencio.** Permite regenerar «con versiones actuales», marcado *no equivalente al original* |
-| `exacta` | C1 a C6 pasan **y** C7 pasa | «Idéntico» |
+| `exacta` | C1 a C6 pasan **y** C7 pasa. C7 exige una **regeneración real** (ver §3.5): sin regeneración no existe `exacta` | «El resultado canónico es idéntico» (nunca «el archivo es idéntico») |
 
 Casos límite, definidos aquí para que no queden implícitos:
 - **C1 a C6 pasan y C7 falla** (mismos insumos y versiones, hash distinto): estado `parcial` con la alerta «anomalía de determinismo». Es un defecto del sistema y debe abrirse como incidencia.
 - **Solo difiere `entorno`:** no cambia el estado. Se informa como nota (§3.4).
 - **Solo difiere el SHA del commit, con las mismas versiones de motor, definiciones y reglas:** sigue siendo `parcial` (la especificación original lo exige: «el código actual es posterior»). Una equivalencia por versión de motor sería una ampliación y **no** se adopta sin tu decisión.
 - **Reportes anteriores a la Fase 3A:** `no_reproducible (legado)` (AC-12).
+- **Reporte con `procedencia_error.json` y sin `procedencia.json` válido (§8.4):** `no_reproducible`, con la causa «procedencia no disponible por un error al generarla». No hay evidencia suficiente y no se declara reproducibilidad.
 
 ### 3.3 Integridad sin registro (D-B)
 
 Con solo el archivo `procedencia.json` (p. ej. compartido por correo) no existe `manifiesto_sha256` contra el cual comparar. Se declara «integridad no verificable» y el estado máximo es `parcial`. `exacta` exige el historial.
 
-### 3.4 Por qué `entorno` está fuera del hash
+### 3.4 `entorno`: fuera del hash, pero no irrelevante
 
-- `hash_resultado` debe responder una sola pregunta: «¿el resultado es el mismo?». Los resultados numéricos usan `Decimal`, cuya aritmética es exacta y no depende de la versión de Python o de Pyodide.
-- Si el entorno entrara en el hash, cada actualización del navegador o de Pyodide cambiaría el hash sin que el resultado cambiara, y haría `parcial` a todo el historial sin razón.
-- Sí importa como **evidencia diagnóstica**: si el hash difiere con versiones iguales, la diferencia de `entorno` es la primera sospecha.
-- Por eso se registra en el manifiesto, se compara y se informa, pero no decide el estado.
+`entorno` (versiones de Pyodide, Python y python-pptx) se registra en el manifiesto como **evidencia diagnóstica** y queda **fuera** de `hash_resultado`.
+
+**Por qué fuera del hash.** `hash_resultado` responde una sola pregunta: «¿el resultado canónico es el mismo?». Si el entorno entrara en el hash, cualquier actualización de Pyodide o del navegador cambiaría el hash aunque el resultado canónico no cambiara, y dejaría `parcial` a todo el historial sin que haya una diferencia en el resultado.
+
+**Por qué no es irrelevante.** No se presupone que las versiones no afecten ningún comportamiento:
+
+| Una diferencia de entorno puede… | Efecto | Lo que la Fase 3A garantiza |
+|---|---|---|
+| Cambiar cómo se escribe el contenedor del PPTX (python-pptx, ZIP, marcas de tiempo) | Los **bytes** del `.pptx` pueden diferir | No se promete igualdad binaria (§3.5) |
+| Cambiar la forma de construir o serializar el XML de las láminas (python-pptx, `lxml`) | El PPTX puede abrirse o dibujarse de forma ligeramente distinta | No se promete igualdad visual (§3.5) |
+| Cambiar el render del PDF o de las imágenes de QA (motor de conversión, tipografías) | Los márgenes, saltos de línea o recortes pueden variar | El QA se evalúa en cada generación; no se hereda |
+| Cambiar la lectura de los libros de entrada o la aritmética (bibliotecas o Python) | **Podría** cambiar el resultado canónico | Se detecta: si cambia, `hash_resultado` cambia (C7) |
+
+**Uso en el sistema:**
+- `entorno` se compara y se informa como **nota**; **no decide** el estado de reproducibilidad por sí solo.
+- Si C1 a C6 pasan y C7 falla, la diferencia de `entorno` es la **primera sospecha** (junto con un defecto de determinismo) y se muestra en la alerta de «anomalía de determinismo» (§3.2).
+- Si el resultado canónico coincide pero el entorno difiere, la reproducibilidad **canónica** es `exacta` y se advierte expresamente que **no** implica igualdad binaria ni visual del PPTX, y que una diferencia de entorno puede limitar la reproducibilidad técnica o visual del archivo.
+
+### 3.5 Tres igualdades distintas: canónica, binaria y visual
+
+Estas tres condiciones **no son equivalentes** y la Fase 3A **no** afirma que lo sean.
+
+| Igualdad | Qué compara | ¿La garantiza la Fase 3A? |
+|---|---|---|
+| **Del resultado canónico** | El `hash_resultado` definido en §6 (cifras con su linaje, hallazgos, textos finales, incluidos los editados) | **Sí.** Es la única que se promete y es la que significa `exacta` |
+| **Binaria del PPTX** | Que los bytes del `.pptx` sean idénticos | **No.** El contenedor ZIP lleva marcas de tiempo y metadatos; el entorno también puede alterar los bytes. Nunca se afirma ni se prueba |
+| **Visual del reporte** | Que las láminas se vean igual al abrirlas o renderizarlas | **No.** Depende de la plantilla, las tipografías, el render y el entorno. La revisión visual es una verificación aparte (QA), no una propiedad de la procedencia |
+
+Consecuencias:
+- **`exacta` significa únicamente** que, con las mismas entradas y las mismas versiones registradas, una **regeneración real** produce un resultado canónico cuyo `hash_resultado` coincide con el del reporte original. El sistema regenera, calcula el hash y lo compara; comparar solo los manifiestos no basta.
+- Un mismo resultado canónico puede dar PPTX con bytes distintos y con diferencias visuales; el sistema no lo oculta.
+- Un PPTX con bytes distintos **no** es evidencia de un resultado distinto, y un PPTX visualmente igual **no** es evidencia de un resultado canónico igual.
+- Ningún mensaje de la aplicación debe usar «idéntico» sin decir **qué** es idéntico («resultado canónico»).
 
 ---
 
@@ -162,7 +192,7 @@ Con solo el archivo `procedencia.json` (p. ej. compartido por correo) no existe 
 ### 4.3 Línea base actual
 
 - **Estado actual:** `version.versiones()` devuelve `app: None` y `motor: None`. Todo reporte generado hasta ahora es `no_reproducible (legado)`.
-- **Propuesta (D-C):** al implementar 3A-1, `APP_VERSION = 1.0.0` y `ENGINE_VERSION = 1.0.0`.
+- **Decisión aprobada (D-C):** al implementar 3A-1, `APP_VERSION = 1.0.0` y `ENGINE_VERSION = 1.0.0`. **`1.0.0` es la primera versión formalmente identificada bajo este esquema; no marca el inicio histórico del proyecto.** El código anterior ya existía y evolucionó sin versión estampada; no se le asigna ninguna versión retroactiva ni se infiere una historia de versiones.
 - **Qué identifica `ENGINE_VERSION = 1.0.0`:** el motor de cálculo tal como lo congela la línea base `tests/regression/base/engine/` (4 escenarios; commit `386099b`), con SHA-256 de los cuatro archivos concatenados `73c840b368935f6757c7984eb77066b2e8950969ba36df43c63d507eb879d3a8`. Ese hash se guardará en `tests/regression/engine_version.json`.
 - **Acoplamiento con la regresión:** una prueba nueva compara el SHA-256 actual de la línea base del motor contra el registrado. Si difiere y `ENGINE_VERSION` no cambió (o falta la entrada en `CAMBIOS_JUSTIFICADOS.md`), la prueba falla. Así no se puede cambiar un resultado numérico sin cambiar la versión.
 - Las huellas de láminas (`tests/regression/base/deck/`) **no** acoplan `ENGINE_VERSION`: dependen de la plantilla local y no son reproducibles en CI. Un cambio de redacción se versiona por PATCH de forma manual y revisada.
@@ -319,12 +349,30 @@ CREATE TRIGGER IF NOT EXISTS procedencia_no_delete BEFORE DELETE ON procedencia 
 2. Se guarda el PPTX y se aplica el QA existente.
 3. `provenance` toma los objetos ya producidos (`Result`, narrativa final, plantilla, fuentes, configuración).
 4. Calcula `hash_resultado` (§6) y arma el manifiesto (§5).
-5. Serializa **una vez**; escribe `procedencia.json` y, si hay historial, la fila de `procedencia` en la misma transacción que `record_run`.
-6. Si algo falla en los pasos 3 a 5: el reporte ya está generado y no se altera; se guarda `procedencia_error.json` (D-A).
+5. Serializa **una vez**; escribe `procedencia.json` (escritura atómica, §8.4) y, si hay historial, inserta la fila de `procedencia` **después** de `record_run` y en **su propia transacción** (la corrida de `runs` ya existe y no se revierte si esta inserción falla).
+6. Si algo falla en los pasos 3 a 5: el reporte ya está generado y no se altera; se aplica el manejo de errores de §8.4 (D-A).
 
 ### 8.3 Qué NO hace la Fase 3A
 
 No ejecuta ni conecta el motor de reglas (flags en `false`), no cambia la interfaz, no toca `manifest.json`, `qa_report.json`, fórmulas, cifras, plantillas o láminas.
+
+### 8.4 Errores de procedencia (D-A)
+
+Un fallo de procedencia **nunca** impide ni deshace la generación de un reporte que ya se produjo correctamente.
+
+**Garantías:**
+
+| # | Garantía |
+|---|---|
+| E-1 | **No se pierde el reporte.** La procedencia se construye después de guardar el PPTX y el QA. Cualquier excepción se captura dentro del bloque de procedencia; el PPTX, el PDF, `manifest.json`, `qa_report.json` y la fila de `runs` quedan como están |
+| E-2 | **`procedencia_error.json` registra el fallo cuando es técnicamente posible.** Se escribe en el directorio del reporte, junto a `manifest.json`. Contiene: `esquema` (`"procedencia_error/1"`), el tipo de error y su mensaje (sin rutas absolutas ni contenido de archivos), la etapa en que ocurrió (`canonico`, `manifiesto`, `serializacion`, `archivo`, `historial`), la fecha UTC y la identificación del reporte (§ asociación) |
+| E-3 | **Nunca se presenta un manifiesto incompleto como válido.** `procedencia.json` solo se escribe cuando el manifiesto completo (los nueve campos más `esquema` y `entorno`) se construyó, se validó contra el esquema y se serializó. La escritura es atómica: se escribe a un archivo temporal y se renombra al terminar. Si algo falla antes, **no** queda `procedencia.json` (ni parcial ni con campos vacíos) y, si ya existiera uno parcial por un fallo a medias, se elimina o no se renombra |
+| E-4 | **No se declara reproducibilidad sin evidencia suficiente.** Un reporte con `procedencia_error.json` y sin `procedencia.json` válido se clasifica `no_reproducible` con la causa «procedencia no disponible por un error al generarla» (§3.2). Nunca `parcial` ni `exacta` |
+| E-5 | **El error queda asociado al reporte.** `procedencia_error.json` incluye la identificación del reporte: unidad, periodicidad, año, índice, nombre del PPTX generado y, si existe, `run_id` y la versión del historial. Si el historial registró la corrida pero falló la fila de `procedencia`, esa corrida queda sin procedencia y se trata como en E-4 |
+| E-6 | **Fila del historial atómica con el manifiesto.** La fila de `procedencia` solo se inserta si el manifiesto es válido; no se guarda un manifiesto incompleto en la base de datos. Un fallo al insertarla no revierte `runs` ni el reporte (E-1) |
+| E-7 | **Si ni siquiera se puede escribir `procedencia_error.json`** (disco o permisos), el fallo no se oculta: la función de procedencia devuelve el error a quien la llamó y la generación continúa. No se reintenta ni se bloquea el reporte. En ese caso la ausencia de `procedencia.json` ya implica `no_reproducible` (E-4) |
+
+**Qué NO hace el manejo de errores:** no reintenta en silencio, no genera un manifiesto «de emergencia» con datos inventados, no marca el reporte como no apto y no modifica `qa_report.json` ni `manifest.json`.
 
 ---
 
@@ -368,13 +416,13 @@ Detalle de cada subfase:
 - Aceptación: criterios de AC-10 (parte de hash) y 0 cambios de comportamiento.
 
 **3A-3**
-- Implementación esperada: `construir_manifiesto()`, `entorno`, escritura de `procedencia.json` después del PPTX, `procedencia_error.json` ante fallos (D-A).
-- Pruebas: T-07 (nueve campos presentes, más `esquema` y `entorno`); sin contenido de celdas; el PPTX y `manifest.json` idénticos con y sin procedencia; fallo simulado de procedencia no impide generar el reporte; `motor_ejecutado: false` y sin resultados de reglas.
+- Implementación esperada: `construir_manifiesto()`, `entorno`, escritura atómica de `procedencia.json` después del PPTX, y manejo de errores de §8.4 con `procedencia_error.json` (D-A).
+- Pruebas: T-07 (nueve campos presentes, más `esquema` y `entorno`); sin contenido de celdas; el PPTX y `manifest.json` idénticos con y sin procedencia; PR-6, PR-8 y PR-9 (fallos inyectados); `motor_ejecutado: false` y sin resultados de reglas.
 - Aceptación: AC-10 completo; huellas de láminas y línea base del motor sin cambios.
 
 **3A-4**
 - Implementación esperada: tabla `procedencia` (§7.2), `comparar()` con los tres estados (§3.2).
-- Pruebas: T-08 con manifiestos sintéticos (coincidente, versión distinta, archivo faltante, sin manifiesto, hash de entrada distinto, manifiesto alterado, anomalía de determinismo); un historial anterior abre sin migración; las filas son inmutables.
+- Pruebas: T-08 con manifiestos sintéticos (coincidente, versión distinta, archivo faltante, sin manifiesto, hash de entrada distinto, manifiesto alterado, anomalía de determinismo, reporte con `procedencia_error.json`); PR-5, PR-10 y PR-11; un historial anterior abre sin migración; las filas son inmutables.
 - Aceptación: AC-11 (0 regeneraciones silenciosas) y AC-12 (legado = `no_reproducible`).
 
 **3A-5 (diferida)**
@@ -394,14 +442,19 @@ Detalle de cada subfase:
 | PR-3 (nueva) | `ejecucion.motor_ejecutado = false` y ningún resultado por regla en manifiesto ni en hash | 3A-3 |
 | PR-4 (nueva) | `entorno` y fechas no afectan el hash | 3A-2 y 3A-3 |
 | PR-5 (nueva) | Fila de `procedencia` = bytes del archivo; `manifiesto_sha256` coincide; invariantes con `runs` y `sources` | 3A-4 |
-| PR-6 (nueva) | Un fallo de procedencia no impide generar el reporte | 3A-3 |
+| PR-6 (nueva) | Un fallo de procedencia (inyectado en cada etapa: `canonico`, `manifiesto`, `serializacion`, `archivo`, `historial`) no impide ni altera la generación: PPTX, `manifest.json`, `qa_report.json` y `runs` idénticos a los de una generación sin fallo (E-1) | 3A-3 y 3A-4 |
+| PR-8 (nueva) | Nunca queda un `procedencia.json` incompleto: ante un fallo no existe el archivo (ni parcial ni con campos vacíos) y no se inserta la fila de `procedencia` (E-3, E-6) | 3A-3 y 3A-4 |
+| PR-9 (nueva) | `procedencia_error.json` se escribe con el esquema definido y la identificación del reporte (unidad, periodo, PPTX, `run_id` si existe); sin rutas absolutas ni contenido de archivos; un reporte con error y sin manifiesto válido se clasifica `no_reproducible`, nunca `parcial` ni `exacta` (E-2, E-4, E-5) | 3A-3 y 3A-4 |
+| PR-10 (nueva) | Tres igualdades: con el mismo resultado canónico y PPTX con bytes distintos, la comparación devuelve `exacta` sin afirmar igualdad binaria ni visual; una diferencia de `entorno` se informa como nota y no cambia el estado (§3.4, §3.5) | 3A-4 |
+| PR-11 (nueva) | `exacta` no se asigna sin regeneración real: con C1 a C6 en verde y sin regenerar, el resultado nunca es `exacta` (§3.5) | 3A-4 |
 | PR-7 (nueva) | Acoplamiento `ENGINE_VERSION` ↔ línea base del motor | 3A-1 |
 
 | Criterio | Redacción |
 |---|---|
 | AC-10 | Los nueve campos de §5.1 presentes (más `esquema` y `entorno`) en el 100 % de los reportes nuevos; `hash_resultado` idéntico en dos corridas con las mismas entradas; versión y SHA estampados en `app.zip` |
-| AC-11 | Los tres estados de §3.2 se producen y se muestran correctamente; 0 regeneraciones silenciosas con versiones distintas |
+| AC-11 | Los tres estados de §3.2 se producen y se muestran correctamente; 0 regeneraciones silenciosas con versiones distintas; `exacta` solo tras una regeneración real con `hash_resultado` coincidente, sin afirmar igualdad binaria ni visual del PPTX (§3.5) |
 | AC-12 | Los reportes previos a la 3A se muestran como `no_reproducible (legado)` |
+| AC-13A (nuevo, de esta fase) | Ante cualquier fallo de procedencia el reporte se genera sin cambios; nunca existe un `procedencia.json` incompleto; el fallo queda en `procedencia_error.json` asociado al reporte y el reporte no se declara reproducible (§8.4) |
 | AC-28 | **Fuera de alcance** mientras A-5 no se autorice |
 | Generales | 0 pruebas fallidas; CI en verde; `capture_baseline --check` sin diferencias; `archivos_protegidos --check` limpio con los nuevos autorizados; las pruebas de las Fases 1, 2A y 2B sin cambios |
 
@@ -445,20 +498,28 @@ Cada autorización se registra con `tools/archivos_protegidos.py --write --autor
 | R-5 | `build_site.py` es la única vía a producción | Cambio aditivo y prueba T-16 sobre el zip generado |
 | R-6 | Un nombre de columna puede ser sensible | Se registran solo los nombres de columnas que la especificación pide («columnas detectadas»); no se guarda ningún valor |
 | R-7 | El motor de reglas se conecte después y cambie el hash | Es legítimo: `ENGINE_VERSION` sube, `ejecucion.motor_ejecutado` pasa a `true` y los reportes anteriores quedan `parcial` |
-| **L-1** | **Limitación (D-D):** `procedencia.json` no tendrá botón de descarga en la interfaz porque la interfaz queda fuera de 3A. Existirá en el directorio del reporte, en el historial y se podrá servir desde el backend, pero la persona usuaria no podrá descargarlo desde pantalla hasta una fase de interfaz | Documentada; decisión D-D |
+| **L-1** | **Limitación (D-D, aprobada):** no hay botón de descarga ni cambio de interfaz. `procedencia.json` existe en el directorio del reporte y en el historial, y el backend podrá servirlo (permiso en `service.py`, §12.1), pero la persona usuaria no podrá descargarlo desde pantalla hasta una fase de interfaz | Documentada; decisión D-D |
+| R-8 | Confundir «exacta» con igualdad del archivo o de su aspecto | §3.5: tres igualdades distintas; los mensajes dicen siempre «resultado canónico» (PR-10) |
+| R-9 | Un fallo de procedencia produzca un registro incompleto o parezca un reporte reproducible | §8.4: escritura atómica, sin manifiesto parcial, `no_reproducible` ante error, `procedencia_error.json` asociado (PR-6, PR-8, PR-9) |
 | L-2 | Reproducir con código anterior sigue sin ser posible mientras A-5 no se autorice | Estado `parcial` documentado |
 | L-3 | La comparación (3A-4) solo existe en backend; no hay pantalla que la muestre | Fase de interfaz posterior |
 
 ---
 
-## 14. Lista para tu autorización
+## 14. Estado de cierre de la subfase 3A-0
 
-Para aprobar **3A-0** necesito tu confirmación sobre:
+| Elemento | Estado |
+|---|---|
+| Revisión del documento | **Favorable** (usuario). No se registraron objeciones al esquema de §5, al contrato de §6 ni a la asignación de estados de §3.2 |
+| D-A, D-B, D-C, D-D | **Aprobadas** (§1.3) |
+| Precisión: `exacta` exige regeneración real; canónica ≠ binaria ≠ visual | **Incorporada** (§3.2, §3.5) |
+| Precisión: `entorno` fuera del hash, pero no irrelevante | **Incorporada** (§3.4) |
+| Precisión: errores de procedencia | **Incorporada** (§8.4, PR-6, PR-8, PR-9, AC-13A) |
+| `1.0.0` = primera versión formalmente identificada, no inicio histórico | **Incorporada** (§1.3, §4.3) |
+| Fusión del PR #15 | **Pendiente** (solo documentación; la decide el usuario) |
+| Subfase **3A-1** | **No autorizada.** Requiere autorización expresa |
+| Subfases 3A-2 a 3A-4 | No autorizadas; cada una requiere su propia autorización |
+| 3A-5 (`release.yml`, etiquetas) | Diferida: A-5 sin autorización |
+| Fase 3B, Fase 4, Fase 5, interfaz, conexión del motor de reglas | Fuera de alcance |
 
-1. El esquema definitivo de §5, incluidas las dos adiciones de primer nivel (`esquema`, `entorno`) y el subobjeto `version_reglas.ejecucion` (§2).
-2. El contrato del hash canónico (§6), en particular que los párrafos de IA aceptados entran y que `Lineage.file` se sustituye por `id`.
-3. La asignación de estados (§3.2), incluida la regla de que un SHA de commit distinto es `parcial`.
-4. D-A, D-B, D-C y D-D (§1.3).
-5. Que la siguiente subfase en autorizarse sea **3A-1** (versiones y estampado), sin tocar nada más.
-
-Mientras no la autorices, no se escribe código de la Fase 3A, no se toca la Fase 3B, la Fase 4 ni la interfaz, y A-5 sigue sin autorización.
+Hasta que se autorice 3A-1 no se escribe código de la Fase 3A, no se modifica ningún archivo de implementación y no se alteran las fases anteriores, sus reglas, fórmulas, plantillas ni pruebas.
