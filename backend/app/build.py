@@ -21,6 +21,7 @@ from .narrative.targets import attainment
 from .narrative.writer import Para, fit, to_paragraphs, verify_all, verify_edited
 from .models import Period
 from .pipeline import GlpResult, Result
+from .provenance_capture import ejecutar as registrar_procedencia
 from .qa import checks
 from .render import convert_to_pdf, pdf_to_pngs
 
@@ -40,6 +41,7 @@ class BuildResult:
     fill: FillReport
     downloadable: bool
     manifest: dict = field(default_factory=dict)
+    procedencia: dict = field(default_factory=dict)        # resultado de la captura de procedencia (Fase 3A-3); no altera el reporte
 
 
 def _sha(p: Path) -> str:
@@ -98,7 +100,8 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
                          narrative: dict | None = None, allow_blockers: bool = False,
                          fix_titles: bool = True, executive: bool = True,
                  context: list[str] | None = None, history_db: Path | None = None,
-                 sources: list[Path] | None = None, targets=None, render: bool = True, discovery: dict | None = None) -> BuildResult:
+                 sources: list[Path] | None = None, targets=None, render: bool = True, discovery: dict | None = None,
+                 ia: dict | None = None) -> BuildResult:
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
     if blockers and not allow_blockers:
@@ -156,7 +159,19 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
         shutil.rmtree(tpl_dir, ignore_errors=True)
     if history_db:
         _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest, targets)
-    return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest)
+    proc = _procedencia(out_dir, period, result, fill, sources, template, pptx, history_db, manifest, targets, context, ia)
+    return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest, proc)
+
+
+def _procedencia(out_dir, period, result, fill, sources, template, pptx, history_db, manifest, targets, context, ia) -> dict:
+    """Captura y registra la procedencia DESPUÉS de guardar el PPTX y la corrida del historial (Fase 3A-3). No lanza nunca y no modifica el
+    reporte: si falla, queda `procedencia_error.json` y el reporte sigue siendo válido (spec §8.4)."""
+    try:
+        run_id = (manifest.get("historial") or {}).get("run_id")
+        return registrar_procedencia(carpeta=out_dir, period=period, result=result, narrative=fill.narrative, sources=sources, template=template,
+                                     pptx=pptx, history_db=history_db or None, run_id=run_id, targets=targets, context=context, ia=ia)
+    except Exception as e:                                  # noqa: BLE001 - la captura ya no lanza; esto cubre un fallo imprevisto de la propia llamada
+        return {"estado": "error", "etapa": None, "error": f"{type(e).__name__}", "archivo": None, "archivo_error": None}
 
 
 def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest, targets=None, kpis=None):
@@ -185,7 +200,7 @@ def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sou
 def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path, narrative: dict | None = None,
                allow_blockers: bool = False, sources: list[Path] | None = None, executive: bool = True,
                context: list[str] | None = None, targets=None, history_db: Path | None = None, render: bool = True,
-               discovery: dict | None = None) -> BuildResult:
+               discovery: dict | None = None, ia: dict | None = None) -> BuildResult:
     """GLP-1 mensual: rellena la plantilla, convierte a PDF y aplica el QA (sin resumen ejecutivo ni metas por ahora)."""
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
@@ -239,7 +254,8 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
             findings = result.findings
         _record(_R, period, template, out_dir, pptx, pdf, qa, fill, context, sources, history_db, manifest, targets,
                 kpis=hist.snapshot_from_glp1(result.blocks, period, targets))
-    return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest)
+    proc = _procedencia(out_dir, period, result, fill, sources, template, pptx, history_db, manifest, targets, context, ia)
+    return BuildResult(pptx, pdf, pngs, qa, fill, qa.passed, manifest, proc)
 
 
 build_aetops_mensual = build_aetops          # nombre de la 5a (compatibilidad)

@@ -319,14 +319,14 @@ def generate(run_id: str) -> dict:
         if st["unit"] == "glp1":
             b = build_glp1(res, period_of(st), template_path(st), out, narrative=st["edits"] or None, sources=[_input(run_id)],
                            context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB, render=RENDER,
-                           discovery=st.get("discovery"))
+                           discovery=st.get("discovery"), ia=_ia_info(run_id, st))
             st["generated"] = True
             _save(run_id, st)
             _copy_ia_log(run_id)
             return result_info(run_id, b.qa.passed)
         b = build_aetops(res, period_of(st), template_path(st), out, narrative=st["edits"] or None,
                          context=st["context"] or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st),
-                         render=RENDER, discovery=st.get("discovery"))
+                         render=RENDER, discovery=st.get("discovery"), ia=_ia_info(run_id, st))
     except ReportBlocked as e:
         raise ServiceError(f"No se genera: hay hallazgos bloqueantes ({e}).", 409) from None
     except (DataMissing, TemplateMismatch) as e:
@@ -335,6 +335,22 @@ def generate(run_id: str) -> dict:
     _save(run_id, st)
     _copy_ia_log(run_id)
     return result_info(run_id, b.qa.passed)
+
+
+def _ia_info(run_id: str, st: dict) -> dict:
+    """Uso de IA declarado para la procedencia (spec §5): «usada» si hay entradas en `ia_log.json` o una hoja de descubrimiento validada, y el
+    último modelo registrado. Solo el nombre del modelo; nunca el texto enviado ni claves."""
+    modelo, usada = None, bool((st.get("discovery") or {}).get("items"))
+    log = _dir(run_id) / "ia_log.json"
+    try:
+        entradas = json.loads(log.read_text(encoding="utf-8")) if log.exists() else []
+    except (OSError, ValueError):
+        entradas = []
+    if isinstance(entradas, list) and entradas:
+        usada = True
+        ultimo = entradas[-1] if isinstance(entradas[-1], dict) else {}
+        modelo = str(ultimo.get("modelo") or "")[:80] or None
+    return {"usada": usada, "modelo_declarado": modelo}
 
 
 def result_info(run_id: str, passed: bool | None = None) -> dict:
@@ -354,7 +370,8 @@ def file_path(run_id: str, name: str) -> Path:
     out = _dir(run_id) / "out"
     if not out.is_dir():
         raise ServiceError("Aún no se ha generado el reporte.", 404)
-    if name in ("qa_report.json", "narrative.json", "manifest.json", "trends.json", "ia_log.json") or name.lower().endswith((".pptx", ".pdf")):
+    if name in ("qa_report.json", "narrative.json", "manifest.json", "trends.json", "ia_log.json", "procedencia.json", "procedencia_error.json") \
+            or name.lower().endswith((".pptx", ".pdf")):
         p, base = out / name, out
     elif re.fullmatch(r"[\w\-]+\.png", name):
         p, base = out / "png" / name, out / "png"

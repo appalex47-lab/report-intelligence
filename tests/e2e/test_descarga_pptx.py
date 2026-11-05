@@ -88,3 +88,28 @@ def test_el_boton_descargar_pptx_entrega_un_pptx_valido_con_el_motor_real(sitio,
         assert z.testzip() is None and "[Content_Types].xml" in z.namelist()      # ZIP íntegro
     from pptx import Presentation
     assert len(Presentation(str(ruta)).slides) >= 10                              # presentación abre y tiene diapositivas
+
+
+def test_la_procedencia_generada_en_el_navegador_es_verificable(sitio, tmp_path):
+    """Fase 3A-3 · con el motor real en Pyodide: `procedencia.json` existe, es válido, coincide con la fila del historial exportado y se verifica."""
+    import base64
+    import sqlite3
+    from backend.app import provenance as pv
+    from backend.app import provenance_verify as ver
+    url, npm_root = sitio
+    env = {**os.environ, "NODE_PATH": str(npm_root), "PLAYWRIGHT_REQUIRE_FROM": str(npm_root) + "/"}
+    r = subprocess.run(["node", str(SCRIPT), url, str(LIBRO), str(tmp_path), "9"], capture_output=True, text=True, env=env, timeout=900)
+    linea = next((ln for ln in r.stdout.splitlines() if ln.startswith("RESULTADO ")), None)
+    assert linea, f"el script no devolvió resultado:\n{r.stdout[-800:]}\n{r.stderr[-800:]}"
+    res = json.loads(linea[len("RESULTADO "):])
+    assert res["ok"] and "procedencia_b64" in res, res
+    datos = base64.b64decode(res["procedencia_b64"])
+    m, errs = pv.leer_manifiesto(datos)
+    assert errs == [] and m["archivos_fuente"][0]["nombre"] == "input.xlsx"
+    assert m["entorno"]["pyodide"] != "desconocido" or m["entorno"]["python"]                 # el entorno real queda registrado
+    assert "historial_b64" in res, res
+    db = tmp_path / "historial.sqlite"
+    db.write_bytes(base64.b64decode(res["historial_b64"]))
+    rid = sqlite3.connect(db).execute("SELECT run_id FROM procedencia").fetchone()[0]
+    v = ver.verificar(db, rid)
+    assert v["integridad"] == "verificada" and v["registro"]["manifiesto_sha256"] == pv.sha256_hex(datos)

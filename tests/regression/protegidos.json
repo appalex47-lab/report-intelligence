@@ -3,7 +3,6 @@
   ".github/workflows/pages.yml": "84b25ade6471ca675ee8fde07f71c8385310e2f6c7b5e6758fa1733c0af6ca6c",
   ".github/workflows/pdf.yml": "d80f6673447f99383d7edfa3c732e48802326734b4847a19d13f3b452bc982c6",
   "backend/app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "backend/app/build.py": "10b5935bc4ba0be2cf5583fe6bc52bbb5f75f85da50449b4f91d57d27d7b9c10",
   "backend/app/calc/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "backend/app/calc/glp1.py": "5e8267056b9bbdb08a8de55ee0528059304afefce5db3071f501f93fb31d1ac7",
   "backend/app/calc/indicators.py": "eda0d1c7bfc47a62e810fbc2932998484c414963bffe5540601562685a04dacc",
@@ -15,7 +14,6 @@
   "backend/app/deck/glp1_mensual.py": "475cbd3a23e2e34850aa84905c6e6df2a4d02ba3515d9dfccbc4fdc8e07df698",
   "backend/app/format.py": "5e7509c3fa4cbb46cece58303e05245d449c833b9d32e0d98c60a7402175f5ff",
   "backend/app/history/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "backend/app/history/store.py": "737961798d89491f08669e744196e79e62d6669f95972c42edd3e84b718fa7de",
   "backend/app/importer/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "backend/app/importer/base_sheet.py": "54527095d0eb0445791388170c3f0649638d973f6ba040fd7885d07d52e4b581",
   "backend/app/importer/glp1_blocks.py": "86c74d9cdc27380536923af0dd088499d5fb7116f3a13beb23005044338f5db3",
@@ -47,7 +45,6 @@
   "backend/app/web/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "backend/app/web/app.py": "1d12b5efb796a84c02b8bf5e174e83441d9984c463c9c23eeba9d96984fac23c",
   "backend/app/web/bridge.py": "a520fad01b3f439a3a3f3a78ca7f23eb2f4fad5ae56f0adec2857f13e0149348",
-  "backend/app/web/service.py": "99af003c4251df331a7c5dd950801c8f5ae78e28d2b1b15ecb5beed3fd9eb906",
   "data/ejemplos/AETOPS_crudo_con_defectos.xlsx": "58c198487bbdbb2612829d52b3438cc0399e57a4e2f995d3fd6cfcf5f6bc4027",
   "data/ejemplos/AETOPS_crudo_ejemplo.xlsx": "3505f61024ac2d421a88503b8ae8b411f2a309e9e0b522e66d14b0484ee8867d",
   "data/ejemplos/GLP1_crudo_con_defectos.xlsx": "a7bd1076bda734046c33381094eb500dcf4ecedb74ed05ec86b2214a98cc23d4",
@@ -72,6 +69,10 @@
    "motivo": "Fase 3A-2: paso de CI que ejecuta tests/e2e/test_hash_pyodide.py con Pyodide 0.27.7 (npm, solo el núcleo) y REPORT_PYODIDE_REQUIRED=1; no toca el flujo de publicación (pages.yml)",
    "sha256": "77d966cd7517b05e85496d27a03b61cf2c372ce0d9258f5c7e1c225cf5f705ea"
   },
+  "backend/app/build.py": {
+   "motivo": "Fase 3A-3: llama a la captura de procedencia tras guardar PPTX y corrida; añade parámetro opcional ia y campo BuildResult.procedencia; no altera la generación del reporte",
+   "sha256": "c07d03bec7328eda2c2724fcd81f1080c32af8ef1c7771a21f0ad00b4153b17a"
+  },
   "backend/app/deck/aetops_mensual.py": {
    "motivo": "Corrección QA OVERFLOW_ESTIMATED (tablas con más grupos que la plantilla) y Conclusiones que no caben (patrón de la plantilla)",
    "sha256": "24147b3a9eb3bf24b85284b6d52e778e4c16c029a31605d14ae2301f9245938a"
@@ -84,6 +85,10 @@
    "motivo": "set_filler_font y compact_to_fit (misma corrección)",
    "sha256": "33aff3f2d5c56adee56653ab29489b14679a511fb273cffbb8275c988ea51349"
   },
+  "backend/app/history/store.py": {
+   "motivo": "Fase 3A-3: añade la tabla autoritativa procedencia (inmutable, con triggers) y sus funciones; no cambia runs ni las demás tablas",
+   "sha256": "97a46198a75476ad4cb9fa7ea414e1a622c67eb85a6c5c05d62eb94fd9a7652c"
+  },
   "backend/app/narrative/writer.py": {
    "motivo": "to_paragraphs_conclusiones (patrón del original; encabezado con o sin negritas)",
    "sha256": "747d2462605a54cf1bd335a4693a3828868c53a950edfe3b74558e4bd8d908fb"
@@ -91,6 +96,10 @@
   "backend/app/qa/checks.py": {
    "motivo": "row_min_heights y row_content_floors (misma corrección)",
    "sha256": "4960e01ccb49112c434b50a03c26142879d4461a4438b8aaa0a1e259455e2fa2"
+  },
+  "backend/app/web/service.py": {
+   "motivo": "Fase 3A-3: pasa la declaración de uso de IA a la generación y permite descargar procedencia.json y procedencia_error.json",
+   "sha256": "0fb3fbf89afff4c14d9d8be28882c4aa6a6ebeed5b4c8355171b7f740ec52566"
   },
   "frontend/index.html": {
    "motivo": "Cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",

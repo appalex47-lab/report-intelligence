@@ -42,6 +42,15 @@ try {
   await d.saveAs(out.ruta);
   const buf = fs.readFileSync(out.ruta);
   out.bytes = buf.length; out.primeros_bytes = buf.subarray(0, 4).toString("hex");
+  // Fase 3A-3: la procedencia queda en el sistema de archivos virtual del motor y en el historial; se leen con los mismos canales que usa la UI.
+  const b64 = (u8) => Buffer.from(u8).toString("base64");
+  const idRun = await p.evaluate(() => S.run.id);
+  const fich = await p.evaluate(async (id) => { const f = await fetchFile(`/runs/${id}/files/procedencia.json`); return Array.from(new Uint8Array(f.buffer)); }, idRun)
+    .catch((e) => { out.procedencia_error = String(e).slice(0, 200); return null; });
+  if (fich) out.procedencia_b64 = b64(fich);
+  const hist = await p.evaluate(async () => { const f = await fetchFile("/history/export"); return Array.from(new Uint8Array(f.buffer)); })
+    .catch((e) => { out.historial_error = String(e).slice(0, 200); return null; });
+  if (hist) out.historial_b64 = b64(hist);
   out.ok = true;
 } catch (e) {
   out.error = String(e).slice(0, 400);
@@ -49,4 +58,4 @@ try {
   await browser.close();
 }
 console.log("RESULTADO " + JSON.stringify(out));
-process.exit(out.ok ? 0 : 1);
+process.exitCode = out.ok ? 0 : 1;                       // sin process.exit(): con una salida grande cortaría la tubería
