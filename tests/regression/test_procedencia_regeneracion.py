@@ -106,7 +106,10 @@ def test_un_texto_editado_no_registrado_se_detecta_como_anomalia_no_como_exacta(
     assert r2["estado"] == "exacta"                                                   # con las mismas ediciones sí coincide
 
 
-def test_la_regeneracion_falla_de_forma_visible_si_la_plantilla_no_sirve(tmp_path):
+def test_una_plantilla_distinta_es_parcial_y_no_regenera(tmp_path):
+    """Una plantilla distinta de la registrada hace que C4 no se cumpla: el resultado es `parcial` y la regeneración NO se ejecuta.
+    Esta prueba NO simula un fallo del regenerador; esa cobertura (excepción de construcción, salida incompleta, regeneración válida) está en
+    `tests/unit/test_procedencia_regenerador.py`, que se ejecuta también en CI."""
     nombre = ESC[0]
     b, db, carpeta = _original(nombre, tmp_path)
     mala = tmp_path / "templates" / "aetops-mensual" / "1" / "template.pptx"

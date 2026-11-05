@@ -38,6 +38,10 @@ def ev(c, **kw):
     return cmpm.evaluar(c["db"], c["run_id"], **base)
 
 
+def pasa_todas(r, claves):
+    return all(r["comprobaciones"][k]["resultado"] == "pasa" for k in claves)
+
+
 def _romper_registro(db, sql, *p):
     con = sqlite3.connect(db)
     con.execute("DROP TRIGGER IF EXISTS procedencia_no_update")
@@ -75,17 +79,58 @@ class TestI1CopiaVsRegistro:
         r = ev(caso)
         assert r["estado"] == "no_reproducible" and r["comprobaciones"]["C2"]["resultado"] == "falla"
 
-    def test_ambos_alterados_y_coherentes_entre_si_con_sha_recalculado(self, caso):
-        """Un atacante que reescribe registro, sha y copia a la vez: el sha de la fila ya no es el del reporte original, pero internamente es
-        coherente. Se acepta como registro íntegro (la integridad del historial es detectable, no criptográfica: límite documentado) PERO la
-        comparación contra las fuentes reales delata el cambio."""
-        alterado = (caso["carpeta"] / "procedencia.json").read_bytes().replace(b"input.xlsx", b"falso.xlsx")
-        _romper_registro(caso["db"], "UPDATE procedencia SET manifiesto=?, manifiesto_sha256=?", alterado.decode(), pv.sha256_hex(alterado))
+    # ---- Reescritura COHERENTE de registro + SHA + copia (D-04/D-05). La integridad (SHA de los bytes y triggers) detecta alteraciones
+    # accidentales o parciales, NO una reescritura que deje las tres piezas coherentes entre sí: no hay autenticidad criptográfica (límite
+    # documentado en IMPLEMENTACION_3A3 §9 y §11, riesgo 3). Lo que SÍ puede delatar esa reescritura es la comparación, pero solo si lo
+    # modificado participa en ella: SHA de la fuente (C3), hash_resultado (C7), versiones/configuración (C4-C6). El nombre y otros metadatos
+    # que no participan en el hash ni en las comprobaciones NO se detectan.
+    @staticmethod
+    def _reescribir_coherente(caso, modificar, hash_fila=None):
+        m = json.loads((caso["carpeta"] / "procedencia.json").read_text(encoding="utf-8"))
+        modificar(m)
+        alterado = pv.serializar_manifiesto(m)
+        _romper_registro(caso["db"], "UPDATE procedencia SET manifiesto=?, manifiesto_sha256=?, hash_resultado=?",
+                         alterado.decode(), pv.sha256_hex(alterado), hash_fila or m["hash_resultado"]["valor"])
         (caso["carpeta"] / "procedencia.json").write_bytes(alterado)
+        return alterado
+
+    def test_reescritura_coherente_que_solo_cambia_el_nombre_NO_se_detecta_y_es_exacta(self, caso):
+        """Documenta un LÍMITE CONOCIDO de la integridad, no una detección: el nombre del archivo no participa en el hash ni en C3 (que compara
+        SHA-256), así que con registro, SHA y copia reescritos de forma coherente todas las comprobaciones pasan."""
+        original = (caso["carpeta"] / "procedencia.json").read_bytes()
+        alterado = self._reescribir_coherente(caso, lambda m: m["archivos_fuente"][0].__setitem__("nombre", "falso.xlsx"))
+        assert alterado != original
+        regeneraciones = []
+
+        def regen(f, s):
+            regeneraciones.append(1)
+            return regen_ok(caso)(f, s)
+        r = ev(caso, regenerar=regen)
+        assert r["estado"] == "exacta" and len(regeneraciones) == 1
+        assert all(r["comprobaciones"][k]["resultado"] == "pasa" for k in ("C2", "C3a", "C3b", "C7"))
+        assert r["diferencias"] == [] and r["regeneracion"]["estado"] == "completada"
+        assert pv.leer_manifiesto((caso["carpeta"] / "procedencia.json").read_bytes())[0]["archivos_fuente"][0]["nombre"] == "falso.xlsx"
+        assert r["evidencia"]["manifiesto_sha256"] == pv.sha256_hex(alterado) != caso["out"]["manifiesto_sha256"]    # la evidencia es la de la NUEVA versión
+
+    def test_reescritura_coherente_que_cambia_el_sha_de_la_fuente_es_no_reproducible(self, caso):
+        self._reescribir_coherente(caso, lambda m: m["archivos_fuente"][0].__setitem__("sha256", "9" * 64))
+        r = ev(caso, regenerar=lambda f, s: pytest.fail("no debe regenerar: la fuente aportada no es la registrada"))
+        assert r["estado"] == "no_reproducible" and r["comprobaciones"]["C2"]["resultado"] == "pasa"
+        assert r["comprobaciones"]["C3b"]["resultado"] == "falla" and r["regeneracion"]["estado"] == "no_ejecutada"
+        assert any(d["motivo"] == "contenido distinto" and d["componente"] == "archivos_fuente.F1.sha256" for d in r["diferencias"])   # mismo nombre, otro SHA
+
+    def test_reescritura_coherente_que_cambia_el_hash_resultado_es_parcial_por_anomalia(self, caso):
+        self._reescribir_coherente(caso, lambda m: m["hash_resultado"].__setitem__("valor", "8" * 64))
         r = ev(caso)
-        assert r["estado"] != "exacta" or r["regeneracion"]["hash_regenerado"] == r["regeneracion"]["hash_registrado"]    # nunca exacta por accidente
+        assert r["estado"] == "parcial" and r["comprobaciones"]["C7"]["resultado"] == "falla"
+        assert pasa_todas(r, ("C1", "C2", "C3a", "C3b", "C4", "C5", "C6")) and "anomalía de determinismo" in r["causa"]
+        assert r["regeneracion"]["hash_registrado"] == "8" * 64 and r["regeneracion"]["hash_regenerado"] == caso["out"]["hash_resultado"]
+
+    def test_hash_resultado_de_la_fila_distinto_del_del_manifiesto_es_no_reproducible(self, caso):
         _romper_registro(caso["db"], "UPDATE procedencia SET hash_resultado=?", "f" * 64)
-        assert ev(caso)["estado"] == "no_reproducible"                             # y si el hash de la fila ya no coincide con el del manifiesto, se detecta
+        r = ev(caso, regenerar=lambda f, s: pytest.fail("no debe regenerar con un registro corrupto"))
+        assert r["estado"] == "no_reproducible" and r["comprobaciones"]["C2"]["resultado"] == "falla"
+        assert r["evidencia"]["integridad"] == "fallida" and any("hash_resultado" in d for d in r["comprobaciones"]["C2"]["detalle"])
 
     def test_informacion_contradictoria_copia_valida_de_otra_corrida(self, caso, tmp_path):
         otra_dir = tmp_path / "otra"

@@ -1,7 +1,10 @@
 """Fase 3A-4 · comparación por regeneración y estados de reproducibilidad (docs/fase3a/ESPECIFICACION_FASE3A_PROCEDENCIA.md §3).
 
 Separación de responsabilidades (igual que en 3A-3):
-  * `provenance.comparar`  (puro)  clasifica la evidencia: C1 a C7 → `exacta` / `parcial` / `no_reproducible` / `no_evaluada`.
+  * `provenance.comparar`  (puro)  clasifica la evidencia: C1 a C7 → `estado` = `exacta` / `parcial` / `no_reproducible`, o `null` cuando no hay
+                                   clasificación (nunca un cuarto estado). Lo separa de `evaluacion` (completada / no_ejecutada / fallida) y de
+                                   `regeneracion` (no_solicitada / no_ejecutada / completada / fallida). `no_evaluada` solo es el resultado de una
+                                   comprobación individual (C1..C7), no un estado de la comparación.
   * `provenance_verify`            integridad del registro y de su copia (C1, C2).
   * este módulo (con E/S)          reúne la evidencia ACTUAL (versiones, plantilla, configuración, fuentes aportadas), decide si hay que
                                    regenerar, REGENERA de verdad cuando se le pide y entrega todo a `comparar`.
@@ -10,7 +13,7 @@ Garantías:
   * Solo lectura sobre la evidencia original: el historial se abre en modo lectura y no se escribe ningún archivo del reporte ni del historial.
   * Nunca regenera en silencio: solo regenera si el llamador entrega un `regenerar` Y C1 a C6 ya pasan (si no, no habría nada equivalente que
     regenerar y el estado se decide sin ejecutar nada).
-  * Un fallo, de cualquier tipo, jamás se presenta como éxito: se devuelve `no_evaluada` con la causa; nunca `exacta`.
+  * Un fallo, de cualquier tipo, jamás se presenta como éxito: se devuelve `estado = null` y `evaluacion = fallida` con la causa; nunca `exacta`.
   * `evaluar` no lanza por datos corruptos ni por fallos de la regeneración: los describe.
 """
 from __future__ import annotations
