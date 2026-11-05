@@ -180,3 +180,14 @@ def test_conclusiones_usa_el_patron_general_si_cabe_y_el_compacto_si_no():
     largo = [mk("x", 30)] * 5 + [mk("**Insights clave:**")] + [mk("y", 60)] * 6
     out = conclusiones_paragraphs(fl, sh, largo)
     assert out != to_paragraphs(largo) and out[1] != "" and any("Conclusiones" in n for n in fl.rep.notes)
+
+
+def test_conclusiones_editadas_sin_negritas_tambien_se_compactan():
+    """Caso real (Chrome/Android): el texto reescrito con IA trae «Insights clave:» sin `**`; antes se ignoraba el encabezado y el
+    patrón compacto no se aplicaba, así que la lámina seguía invadiendo el pie."""
+    from backend.app.narrative.writer import Para, to_paragraphs_conclusiones
+    mk = lambda t: Para(t, "hecho", 0, edited=True, nums=set())          # noqa: E731
+    out = to_paragraphs_conclusiones([mk("a"), mk("b"), mk("Insights clave:"), mk("c"), mk("d")])
+    assert out == ["a", "b", "", "Insights clave:", "c", "", "d"]
+    largo = to_paragraphs_conclusiones([mk("Esta es una frase larga que termina en dos puntos y no es un encabezado de sección:"), mk("b")])
+    assert largo == ["Esta es una frase larga que termina en dos puntos y no es un encabezado de sección:", "", "b"]

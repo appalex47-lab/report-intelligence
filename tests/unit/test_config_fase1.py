@@ -144,12 +144,21 @@ def test_registro_de_validacion_separa_sintetica_y_operacional():
     r = config.cargar("validacion_registro")
     assert [e["regla_id"] for e in r["reglas"]] == list(config.REGLAS_FASE1)
     for e in r["reglas"]:
-        assert e["validacion_sintetica"] == "pendiente" and e["validacion_operacional"] == "no_validada_con_datos_reales"
-        assert e["regla_version"] is None                            # las reglas aún no existen
+        assert e["validacion_operacional"] == "no_validada_con_datos_reales"             # ninguna regla se validó con datos reales
+        assert e["extracto_id"] is None and e["fecha"] is None and e["confirmado_por"] is None
     mal = copy.deepcopy(r); mal["reglas"][0]["validacion_operacional"] = "confirmada"
     assert any("confirmada" in e for e in config.validar("validacion_registro", mal))   # exige extracto, fecha y confirmante
-    mal = copy.deepcopy(r); mal["reglas"][0]["validacion_sintetica"] = "aprobada"
+    mal = copy.deepcopy(r); mal["reglas"][0]["validacion_sintetica"] = "aprobada"; mal["reglas"][0]["regla_version"] = None
     assert any("regla_version" in e for e in config.validar("validacion_registro", mal))
+
+
+def test_registro_de_validacion_coincide_con_el_catalogo_de_reglas():
+    """Evita el desfase documental: la versión registrada de cada regla es la del catálogo y la validación sintética está aprobada."""
+    cat = {x["id"]: x["version"] for x in config.cargar("reglas")["reglas"]}
+    for e in config.cargar("validacion_registro")["reglas"]:
+        assert e["regla_version"] == cat[e["regla_id"]]
+        assert e["validacion_sintetica"] == "aprobada"
+    assert config.validar("validacion_registro", config.cargar("validacion_registro")) == []
 
 
 def test_configuracion_desconocida_o_ausente_lanza_error_claro(tmp_path):

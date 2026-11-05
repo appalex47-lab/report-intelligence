@@ -118,7 +118,9 @@ def to_paragraphs_conclusiones(paras: list[Para]) -> list[str]:
     párrafo vacío antes de «Insights clave:», el primer insight pegado al encabezado y los demás separados por
     párrafo vacío. Sin encabezado (p. ej. textos editados) se usa el patrón general."""
     vis = [q for q in paras if q.visible]
-    head = next((i for i, q in enumerate(vis) if q.text.strip().startswith("**") and q.text.strip().endswith(":**")), None)
+    # Encabezado = línea corta que termina en «:» (con o sin negritas: un texto editado o reescrito con IA puede venir sin `**`).
+    es_enc = lambda q: q.text.replace("**", "").strip().endswith(":") and len(q.text.replace("**", "").strip()) <= 40   # noqa: E731
+    head = next((i for i, q in enumerate(vis) if es_enc(q)), None)
     if head is None:
         return to_paragraphs(paras)
     out = [q.text for q in vis[:head]]
