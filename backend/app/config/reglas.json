@@ -1,0 +1,478 @@
+{
+  "esquema": "reglas/1",
+  "version": "1.1.0",
+  "descripcion": "Parámetros, flags, dimensiones y catálogo de reglas (Fase 2A). El motor de reglas (backend/app/validator/motor.py) lee el catálogo `reglas`; los servicios existentes aún no lo consumen (los flags siguen desactivados). Valores no configurados = null.",
+  "flags": {
+    "validacion_fase1": false,
+    "relacion_pedidos_carritos": false,
+    "anexo_calidad": false,
+    "qa_pptx_exportado": false,
+    "escenarios_estrictos": false
+  },
+  "parametros": {
+    "e1_recuperacion_negados_medio": {
+      "valor": 0.25,
+      "origen": "heredado",
+      "referencia": "backend/app/narrative/rules.py:21",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "fuente_codigo": "backend.app.narrative.rules.RULES.recovery_scenario",
+      "nota": "Supuesto heredado, no validado."
+    },
+    "e1_recuperacion_negados_conservador": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.0",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "e1_recuperacion_negados_optimista": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.0",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "e2_recuperacion_abandono_medio": {
+      "valor": 0.1,
+      "origen": "heredado",
+      "referencia": "backend/app/narrative/rules.py:25",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "fuente_codigo": "backend.app.narrative.rules.RULES.cart_recovery_scenario",
+      "nota": "Supuesto heredado, no validado."
+    },
+    "e2_recuperacion_abandono_conservador": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.0",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "e2_recuperacion_abandono_optimista": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.0",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "umbral_conciliacion_compras": {
+      "valor": 0.2,
+      "origen": "heredado",
+      "referencia": "backend/app/raw/glp1.py:349",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "fuente_codigo": "raw.glp1:TRAFICO_PURCHASE_DIFFERS",
+      "nota": "Umbral del aviso vigente; parámetro, no verdad."
+    },
+    "max_pacientes_por_pedido": {
+      "valor": 1,
+      "origen": "nuevo",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 R-REL-PAC-PED",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "estatus_excluidos": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "cobertura_minima_paciente": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 (AMB-7)",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "tolerancia_conteo": {
+      "valor": 0,
+      "origen": "nuevo",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 R-CUADRE-DIM",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "tolerancia_monto_fraccion": {
+      "valor": 0.005,
+      "origen": "nuevo",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 R-CUADRE-DIM (AMB-7)",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "unidad_carritos": {
+      "valor": "no_declarada",
+      "origen": "nuevo",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.3 R-COBERTURA-ATC",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "fuente_pedidos": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.2 (AMB-1)",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    },
+    "filtro_canal_relacion": {
+      "valor": null,
+      "origen": "no_configurado",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.2 (AMB-9)",
+      "validacion_operacional": "no_validada_con_datos_reales"
+    }
+  },
+  "dimensiones": {},
+  "reglas": [
+    {
+      "id": "R-REL-PAC-PED",
+      "nombre": "Relación paciente–pedido",
+      "version": "1.0.0",
+      "descripcion": "Valida, sobre pedidos únicos (id_pedido) y pacientes únicos (id_paciente) del sistema de ventas, que cada pedido declare como máximo `max_pacientes_por_pedido` pacientes y que su fecha sea única. Las clases de estatus (C0, C1) están reservadas e inactivas: los machotes no tienen columna de estatus.",
+      "tipo": "consistencia",
+      "gravedad": null,
+      "unidades": [
+        "GLP1",
+        "AETOPS"
+      ],
+      "columnas_requeridas": [
+        {
+          "hoja": "ventas",
+          "columna": "id_pedido"
+        },
+        {
+          "hoja": "ventas",
+          "columna": "id_paciente"
+        },
+        {
+          "hoja": "ventas",
+          "columna": "fecha_pedido"
+        }
+      ],
+      "parametros": [
+        "max_pacientes_por_pedido",
+        "estatus_excluidos",
+        "cobertura_minima_paciente"
+      ],
+      "activacion": {
+        "flag": "validacion_fase1",
+        "condicion": "Se ejecuta si la unidad tiene las columnas requeridas en `ventas`; el flag gobernará su consumo por los servicios (aún no cableado)."
+      },
+      "severidad": {
+        "valid": "info",
+        "warning": "warn",
+        "error": "warn",
+        "not_verifiable": "info",
+        "not_applicable": "info"
+      },
+      "severidad_codigos": {
+        "duplicado_exacto.warning": "info",
+        "linea_duplicada.warning": "info",
+        "cobertura_paciente.warning": "info"
+      },
+      "evidencia": [
+        "conteos por clase (A, B, C, C2, E)",
+        "muestra de hasta 5 id_pedido",
+        "identidades de control",
+        "cobertura de paciente",
+        "razón de recurrencia"
+      ],
+      "mensajes": {
+        "relacion_paciente_pedido.valid": "Los {n_pedidos} pedidos del periodo declaran como máximo {m} paciente(s) cada uno ({n_pacientes} pacientes únicos). Cobertura de paciente: {cobertura}.",
+        "relacion_paciente_pedido.error": "Se encontraron inconsistencias en la relación paciente–pedido del periodo: {resumen}.",
+        "relacion_paciente_pedido.not_verifiable": "No se puede verificar la relación paciente–pedido: {motivo}.",
+        "paciente_contradictorio.error": "{n} pedido(s) declaran más de {m} paciente(s) distintos. Quedan en el universo de pedidos pero fuera del conteo de pacientes únicos; no se corrige ningún dato.",
+        "fecha_contradictoria.error": "{n} pedido(s) tienen más de una fecha de pedido y no pueden asignarse a un periodo. No forman parte del universo de pedidos de esta regla.",
+        "lineas_sin_id_pedido.error": "{n} línea(s) no tienen id_pedido y no se pueden clasificar.",
+        "duplicado_exacto.warning": "{n} fila(s) son duplicados exactos de otra fila del periodo (informativo; no se eliminan).",
+        "linea_duplicada.warning": "{n} línea(s) repiten el mismo pedido y SKU (informativo; no se eliminan).",
+        "cobertura_paciente.valid": "Todos los pedidos del periodo tienen paciente identificado.",
+        "cobertura_paciente.warning": "{n_sin_paciente} pedido(s) del periodo no tienen paciente identificado (cobertura de paciente {cobertura}).",
+        "estatus_no_disponible.warning": "`estatus_excluidos` está configurado, pero ni los machotes ni el contrato tienen columna de estatus de pedido; se ignora. No se identifican cancelaciones ni devoluciones.",
+        "identidad_control.error": "Fallan las identidades de control de la clasificación de pedidos ({detalle}); es un error interno de la regla, no del dato.",
+        "columnas_faltantes.not_verifiable": "No se puede ejecutar la regla: {motivo}."
+      }
+    },
+    {
+      "id": "R-CUADRE-DIM",
+      "nombre": "Cuadre de dimensiones",
+      "version": "1.0.0",
+      "descripcion": "Detecta si una dimensión clasifica cada pedido o paciente en un solo valor (exclusiva). Si no lo es, sus subtotales no pueden sumarse como universos independientes. Las propiedades declaradas y justificadas en `dimensiones` se verifican con la tabla de cuatro combinaciones; las no declaradas solo se observan. No se filtra ni elimina ningún registro.",
+      "tipo": "consistencia",
+      "gravedad": null,
+      "unidades": [
+        "GLP1",
+        "AETOPS"
+      ],
+      "columnas_requeridas": [
+        {
+          "hoja": "ventas",
+          "columna": "id_pedido"
+        },
+        {
+          "hoja": "ventas",
+          "columna": "id_paciente"
+        },
+        {
+          "hoja": "ventas",
+          "columna": "fecha_pedido"
+        },
+        {
+          "hoja": "ventas",
+          "columna": "sku"
+        }
+      ],
+      "parametros": [
+        "tolerancia_conteo"
+      ],
+      "activacion": {
+        "flag": "validacion_fase1",
+        "condicion": "Se ejecuta si la unidad tiene las columnas requeridas; una dimensión candidata cuya columna no existe se reporta como no evaluable."
+      },
+      "severidad": {
+        "valid": "info",
+        "warning": "warn",
+        "error": "warn",
+        "not_verifiable": "info",
+        "not_applicable": "info"
+      },
+      "severidad_codigos": {},
+      "dimensiones_candidatas": {
+        "GLP1": [
+          {
+            "id": "canal",
+            "hoja": "ventas",
+            "columna": "canal"
+          },
+          {
+            "id": "estado",
+            "hoja": "ventas",
+            "columna": "estado"
+          },
+          {
+            "id": "region",
+            "hoja": "ventas",
+            "columna": "region"
+          },
+          {
+            "id": "categoria",
+            "hoja": "catalogo",
+            "columna": "categoria",
+            "via": "sku"
+          },
+          {
+            "id": "sku",
+            "hoja": "ventas",
+            "columna": "sku"
+          }
+        ],
+        "AETOPS": [
+          {
+            "id": "canal",
+            "hoja": "ventas",
+            "columna": "canal"
+          },
+          {
+            "id": "estado",
+            "hoja": "ventas",
+            "columna": "estado"
+          },
+          {
+            "id": "sucursal",
+            "hoja": "ventas",
+            "columna": "sucursal"
+          },
+          {
+            "id": "linea",
+            "hoja": "catalogo",
+            "columna": "linea",
+            "via": "sku"
+          },
+          {
+            "id": "categoria",
+            "hoja": "catalogo",
+            "columna": "categoria",
+            "via": "sku"
+          },
+          {
+            "id": "sku",
+            "hoja": "ventas",
+            "columna": "sku"
+          }
+        ]
+      },
+      "entidades": {
+        "pedido": "id_pedido",
+        "paciente": "id_paciente"
+      },
+      "evidencia": [
+        "entidades totales",
+        "entidades con más de un valor",
+        "suma de subtotales y total",
+        "ejemplos de hasta 3 entidades"
+      ],
+      "mensajes": {
+        "cuadre_dimensiones.valid": "Las {n_declaradas} dimensiones declaradas cumplen su condición de cuadre.",
+        "cuadre_dimensiones.warning": "{n_no_exclusivas} combinación(es) dimensión–entidad no son exclusivas en los datos: sus subtotales no pueden sumarse como universos independientes.",
+        "cuadre_dimensiones.not_verifiable": "No hay propiedades de dimensión declaradas y no se observó solapamiento; no se puede afirmar que las dimensiones sean exclusivas ni exhaustivas.",
+        "dimension_no_exclusiva.warning": "La dimensión «{dimension}» no es exclusiva para {entidad}s: {n_multi} de {n_total} aparecen en más de un valor (suma de subtotales {suma} frente a {total} {entidad}s distintos). No sumar sus subtotales como universos independientes.",
+        "dimension_sin_solapamiento.not_verifiable": "En «{dimension}» ningún {entidad} aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+        "dimension_declarada.valid": "La dimensión «{dimension}» ({entidad}) cumple su condición: {condicion} (suma {suma}, total {total}).",
+        "dimension_declarada.error": "La dimensión «{dimension}» ({entidad}) incumple su condición declarada ({condicion}): suma {suma}, total {total}.",
+        "dimension_no_evaluable.not_verifiable": "No se puede evaluar la dimensión «{dimension}»: {motivo}.",
+        "columnas_faltantes.not_verifiable": "No se puede ejecutar la regla: {motivo}.",
+        "cuadre_dimensiones.error": "{n_error} dimensión(es) declarada(s) incumplen su condición de cuadre; revise el detalle."
+      }
+    },
+    {
+      "id": "R-CONC-COMPRAS",
+      "nombre": "Conciliación de compras",
+      "version": "1.0.0",
+      "descripcion": "Compara, para el mismo periodo y alcance de sitio, los pedidos del sistema de ventas (ventas.id_pedido) con las compras GA4 (trafico.compras). Son fuentes distintas: no se sustituyen, no se suman y no se presentan como equivalentes; su diferencia no se trata como error. Conserva el aviso heredado de diferencia superior al umbral.",
+      "tipo": "conciliacion",
+      "gravedad": null,
+      "unidades": [
+        "GLP1"
+      ],
+      "columnas_requeridas": [
+        {
+          "hoja": "ventas",
+          "columna": "id_pedido"
+        },
+        {
+          "hoja": "trafico",
+          "columna": "compras"
+        }
+      ],
+      "parametros": [
+        "umbral_conciliacion_compras"
+      ],
+      "activacion": {
+        "flag": "validacion_fase1",
+        "condicion": "Solo GLP-1. En AETOPS devuelve «No aplica» porque no existe hoja `trafico`."
+      },
+      "severidad": {
+        "valid": "info",
+        "warning": "warn",
+        "error": "warn",
+        "not_verifiable": "info",
+        "not_applicable": "info"
+      },
+      "severidad_codigos": {},
+      "hipotesis": [
+        "bloqueadores de etiquetas",
+        "pagos fuera de línea",
+        "filtros distintos",
+        "deduplicación"
+      ],
+      "evidencia": [
+        "pedidos del sistema de ventas con su fuente",
+        "compras GA4 con su fuente",
+        "periodo",
+        "brecha",
+        "umbral",
+        "hipótesis a validar"
+      ],
+      "mensajes": {
+        "conciliacion_compras.valid": "Pedidos del sistema de ventas: {pedidos}. Compras GA4: {compras}. Son fuentes distintas; la diferencia ({brecha}) no supera el umbral heredado de {umbral}.",
+        "conciliacion_compras.warning": "Pedidos del sistema de ventas: {pedidos}. Compras GA4: {compras}. Las fuentes difieren {brecha} (más de {umbral}). Es una diferencia entre fuentes distintas, no un error confirmado; causas posibles a validar: {hipotesis}.",
+        "conciliacion_compras.not_verifiable": "No se pueden comparar las fuentes: {motivo}.",
+        "conciliacion_compras.not_applicable": "No aplica: la unidad {unidad} no tiene hoja `trafico`.",
+        "columnas_faltantes.not_verifiable": "No se puede ejecutar la regla: {motivo}."
+      }
+    },
+    {
+      "id": "R-DENOM",
+      "nombre": "Validación de denominadores",
+      "version": "1.0.0",
+      "descripcion": "Valida cada razón registrada: existencia de numerador y denominador, denominador cero o negativo, periodos y granularidades distintos y combinaciones de fuentes no permitidas. Un denominador cero o inexistente nunca se convierte en 0 %. Cada razón identifica su denominador y sus fuentes.",
+      "tipo": "integridad",
+      "gravedad": null,
+      "unidades": [
+        "GLP1",
+        "AETOPS"
+      ],
+      "columnas_requeridas": [
+        {
+          "hoja": "ventas",
+          "columna": "id_pedido"
+        },
+        {
+          "hoja": "ventas",
+          "columna": "monto_venta"
+        }
+      ],
+      "parametros": [],
+      "activacion": {
+        "flag": "validacion_fase1",
+        "condicion": "Se ejecuta sobre las razones que la unidad puede calcular (en AETOPS solo el ticket; las razones con `trafico` se omiten)."
+      },
+      "severidad": {
+        "valid": "info",
+        "warning": "warn",
+        "error": "warn",
+        "not_verifiable": "info",
+        "not_applicable": "info"
+      },
+      "severidad_codigos": {},
+      "evidencia": [
+        "numerador con fuente y periodo",
+        "denominador con fuente y periodo",
+        "problemas detectados"
+      ],
+      "mensajes": {
+        "razon_valida.valid": "{razon}: {numerador} {fuente_num} / {denominador} {fuente_den} (periodo {periodo}) es calculable.",
+        "razon_con_limitacion.warning": "{razon}: se puede calcular, pero con limitaciones: {problemas}.",
+        "razon_invalida.error": "{razon}: no es válida: {problemas}.",
+        "razon_no_calculable.not_verifiable": "{razon}: no es calculable ({problemas}). No se muestra 0 %.",
+        "columnas_faltantes.not_verifiable": "No se puede ejecutar la regla: {motivo}."
+      }
+    },
+    {
+      "id": "R-COBERTURA-ATC",
+      "nombre": "Comparabilidad de carritos agregados y pedidos (IND-01)",
+      "version": "1.0.0",
+      "descripcion": "Calcula la relación pedidos/carritos = (pedidos / carritos agregados) × 100 a nivel sitio, con la fuente de pedidos identificada (sistema de ventas o compras GA4), y evalúa su comparabilidad (periodo, fuente, universo, unidad). No es una tasa de abandono, no se calcula su complemento y no usa identificadores de carrito. Un resultado superior a 100 % se conserva con una advertencia.",
+      "tipo": "cobertura",
+      "gravedad": null,
+      "unidades": [
+        "GLP1"
+      ],
+      "columnas_requeridas": [
+        {
+          "hoja": "ventas",
+          "columna": "id_pedido"
+        },
+        {
+          "hoja": "trafico",
+          "columna": "add_to_cart"
+        },
+        {
+          "hoja": "trafico",
+          "columna": "compras"
+        }
+      ],
+      "parametros": [
+        "fuente_pedidos",
+        "unidad_carritos",
+        "filtro_canal_relacion"
+      ],
+      "activacion": {
+        "flag": "relacion_pedidos_carritos",
+        "condicion": "Solo GLP-1. En AETOPS devuelve «No aplica» porque no existe hoja `trafico`."
+      },
+      "severidad": {
+        "valid": "info",
+        "warning": "warn",
+        "error": "warn",
+        "not_verifiable": "info",
+        "not_applicable": "info"
+      },
+      "severidad_codigos": {
+        "relacion_pedidos_carritos.warning": "info",
+        "relacion_pedidos_carritos.warning_mayor_100": "warn"
+      },
+      "evidencia": [
+        "carritos agregados con su unidad",
+        "pedidos con su fuente",
+        "periodo",
+        "relación",
+        "limitaciones"
+      ],
+      "mensajes": {
+        "relacion_pedidos_carritos.valid": "{nombre}: {relacion} %. Por cada 100 carritos agregados ({unidad}), se registran {relacion} {numerador_texto} en el periodo (fuente de pedidos seleccionada: {fuente}).",
+        "relacion_pedidos_carritos.warning": "{nombre}: {relacion} %, con limitaciones: {limitaciones}. Por cada 100 carritos agregados ({unidad}), se registran {relacion} {numerador_texto} en el periodo (fuente de pedidos seleccionada: {fuente}). La interpretación es limitada.",
+        "relacion_pedidos_carritos.warning_mayor_100": "{nombre}: {relacion} %, mayor que 100 %. Esto puede ocurrir porque pedidos y carritos no necesariamente representan unidades equivalentes, o porque sus fuentes, periodos, universos o filtros no coinciden. Interprétese con cautela. Limitaciones: {limitaciones}.",
+        "relacion_pedidos_carritos.not_verifiable": "{nombre}: no calculable. {motivo}.",
+        "relacion_pedidos_carritos.not_applicable": "No aplica: la unidad {unidad} no tiene hoja `trafico`.",
+        "configuracion_invalida.error": "La configuración `fuente_pedidos` = {configurado} no es válida; opciones: sistema_ventas, ga4_compras o sin configurar.",
+        "columnas_faltantes.not_verifiable": "No se puede ejecutar la regla: {motivo}."
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "esquema": "mapeo_columnas/1",
+  "version": "1.0.0",
+  "descripcion": "Alias de columnas por hoja (nombre canónico del contrato -> lista de alias aceptados). Vacío: aún no se declara ningún alias; los nombres canónicos son los de docs/CONTRATO_DATOS.md. AETOPS no tiene hoja `trafico`. No se mapean identificadores de carrito, transacción ni sesión.",
+  "unidades": {
+    "GLP1": {
+      "hojas": {
+        "ventas": {
+          "alias": {}
+        },
+        "catalogo": {
+          "alias": {}
+        },
+        "trafico": {
+          "alias": {}
+        },
+        "negados": {
+          "alias": {}
+        }
+      }
+    },
+    "AETOPS": {
+      "hojas": {
+        "ventas": {
+          "alias": {}
+        },
+        "catalogo": {
+          "alias": {}
+        },
+        "negados": {
+          "alias": {}
+        }
+      }
+    }
+  }
+}

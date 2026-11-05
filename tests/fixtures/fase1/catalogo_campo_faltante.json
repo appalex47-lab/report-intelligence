@@ -1,0 +1,82 @@
+{
+ "definiciones": [
+  {
+   "aplicabilidad": {
+    "condicion": null,
+    "unidades": [
+     "GLP1"
+    ]
+   },
+   "descripcion": "Descripción sintética 1",
+   "fuente": {
+    "columna": "id_pedido",
+    "hoja": "ventas"
+   },
+   "granularidad": "sintética",
+   "id": "sint_def_01",
+   "limitaciones": [
+    "Solo para pruebas"
+   ],
+   "nombre": "Definición sintética 1",
+   "origen": "nuevo",
+   "referencia": "SINT",
+   "tipo": "metrica",
+   "unidad": null,
+   "validacion_operacional": "no_validada_con_datos_reales",
+   "version": "1.2.0"
+  },
+  {
+   "aplicabilidad": {
+    "condicion": null,
+    "unidades": [
+     "GLP1"
+    ]
+   },
+   "fuente": {
+    "columna": "id_pedido",
+    "hoja": "ventas"
+   },
+   "granularidad": "sintética",
+   "id": "sint_def_02",
+   "limitaciones": [
+    "Solo para pruebas"
+   ],
+   "nombre": "Definición sintética 2",
+   "origen": "nuevo",
+   "referencia": "SINT",
+   "tipo": "metrica",
+   "unidad": null,
+   "validacion_operacional": "no_validada_con_datos_reales",
+   "version": "1.2.0"
+  },
+  {
+   "aplicabilidad": {
+    "condicion": null,
+    "unidades": [
+     "GLP1"
+    ]
+   },
+   "descripcion": "Descripción sintética 3",
+   "fuente": {
+    "columna": "id_pedido",
+    "hoja": "ventas"
+   },
+   "granularidad": "sintética",
+   "id": "sint_def_03",
+   "limitaciones": [
+    "Solo para pruebas"
+   ],
+   "nombre": "Definición sintética 3",
+   "origen": "nuevo",
+   "referencia": "SINT",
+   "tipo": "metrica",
+   "unidad": null,
+   "validacion_operacional": "no_validada_con_datos_reales",
+   "version": "1.2.0"
+  }
+ ],
+ "esquema": "definiciones/1",
+ "fuente_documental": "sintético",
+ "sintetico": true,
+ "version": "1.0.0"
+}

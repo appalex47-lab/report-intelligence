@@ -1,0 +1,2518 @@
+{
+ "AETOPS_mensual_2026-09": {
+  "libro": "AETOPS_crudo_ejemplo.xlsx",
+  "libro_sha256": "3505f61024ac2d421a88503b8ae8b411f2a309e9e0b522e66d14b0484ee8867d",
+  "resultados": [
+   {
+    "codigo": "relacion_paciente_pedido",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "A": 1436,
+     "B": 0,
+     "C": 0,
+     "clases": {
+      "C0": 0,
+      "C1": 0,
+      "C2": 0,
+      "E": 16548,
+      "sin_fecha": 0
+     },
+     "clases_reservadas_inactivas": [
+      "C0 (excluido por estatus)",
+      "C1 (estatus mixto)"
+     ],
+     "cobertura_paciente": "1",
+     "identidades": {
+      "archivo": true,
+      "pacientes": true,
+      "universo": true
+     },
+     "max_pacientes_por_pedido": 1,
+     "no_asignables": 0,
+     "nota_universos": "este universo cuenta todo id_pedido con fecha única en el periodo; «pedidos del sistema de ventas» usa los criterios del motor actual (sku en catálogo, importes numéricos, ids no vacíos)",
+     "pacientes_unicos": 962,
+     "pedidos_archivo": 16548,
+     "pedidos_universo_motor": 1436,
+     "periodo": "2026-09",
+     "razon_recurrencia": "1.492723492723492723492723493",
+     "tasa_no_asignables": "0",
+     "universo_periodo": 1436
+    },
+    "faltante": [],
+    "mensaje": "Los 1,436 pedidos del periodo declaran como máximo 1 paciente(s) cada uno (962 pacientes únicos). Cobertura de paciente: 100.00 %.",
+    "regla_id": "R-REL-PAC-PED",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "cobertura_paciente",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "cobertura_paciente": "1"
+    },
+    "faltante": [],
+    "mensaje": "Todos los pedidos del periodo tienen paciente identificado.",
+    "regla_id": "R-REL-PAC-PED",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "cuadre_dimensiones",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "combinaciones_no_exclusivas": 10,
+     "declaradas_evaluadas": 0,
+     "declaradas_incumplidas": 0,
+     "periodo": "2026-09"
+    },
+    "faltante": [],
+    "mensaje": "10 combinación(es) dimensión–entidad no son exclusivas en los datos: sus subtotales no pueden sumarse como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_canal_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 1436,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.canal (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «canal» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_canal_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000077",
+       "valores": [
+        "APP FESA",
+        "ECOMMERCE"
+       ]
+      },
+      {
+       "id": "PX000092",
+       "valores": [
+        "APP FESA",
+        "ECOMMERCE",
+        "WHATSAPP"
+       ]
+      },
+      {
+       "id": "PX000093",
+       "valores": [
+        "ECOMMERCE",
+        "WHATSAPP"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 183,
+     "entidades_totales": 962,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1227,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «canal» no es exclusiva para pacientes: 183 de 962 aparecen en más de un valor (suma de subtotales 1,227 frente a 962 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_estado_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 1436,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.estado (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «estado» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_estado_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000077",
+       "valores": [
+        "CHIHUAHUA",
+        "JALISCO"
+       ]
+      },
+      {
+       "id": "PX000092",
+       "valores": [
+        "CIUDAD DE MÉXICO",
+        "NUEVO LEÓN",
+        "PUEBLA"
+       ]
+      },
+      {
+       "id": "PX000094",
+       "valores": [
+        "BAJA CALIFORNIA",
+        "GUANAJUATO",
+        "JALISCO"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 211,
+     "entidades_totales": 962,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1328,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «estado» no es exclusiva para pacientes: 211 de 962 aparecen en más de un valor (suma de subtotales 1,328 frente a 962 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sucursal_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "A2609-015113",
+       "valores": [
+        "SUC-02",
+        "SUC-08"
+       ]
+      },
+      {
+       "id": "A2609-015114",
+       "valores": [
+        "SUC-05",
+        "SUC-14"
+       ]
+      },
+      {
+       "id": "A2609-015116",
+       "valores": [
+        "SUC-03",
+        "SUC-06"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 469,
+     "entidades_totales": 1436,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1905,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sucursal» no es exclusiva para pedidos: 469 de 1,436 aparecen en más de un valor (suma de subtotales 1,905 frente a 1,436 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sucursal_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000025",
+       "valores": [
+        "SUC-04",
+        "SUC-13"
+       ]
+      },
+      {
+       "id": "PX000052",
+       "valores": [
+        "SUC-02",
+        "SUC-09"
+       ]
+      },
+      {
+       "id": "PX000077",
+       "valores": [
+        "SUC-04",
+        "SUC-12"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 461,
+     "entidades_totales": 962,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1798,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sucursal» no es exclusiva para pacientes: 461 de 962 aparecen en más de un valor (suma de subtotales 1,798 frente a 962 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_linea_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "A2609-015113",
+       "valores": [
+        "AE-A",
+        "HYR"
+       ]
+      },
+      {
+       "id": "A2609-015117",
+       "valores": [
+        "AE-B",
+        "AE-C"
+       ]
+      },
+      {
+       "id": "A2609-015118",
+       "valores": [
+        "AE-A",
+        "HYR"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 334,
+     "entidades_totales": 1436,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1770,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «linea» no es exclusiva para pedidos: 334 de 1,436 aparecen en más de un valor (suma de subtotales 1,770 frente a 1,436 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_linea_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000025",
+       "valores": [
+        "AE-A",
+        "AE-B"
+       ]
+      },
+      {
+       "id": "PX000052",
+       "valores": [
+        "AE-A",
+        "AE-C"
+       ]
+      },
+      {
+       "id": "PX000092",
+       "valores": [
+        "AE-A",
+        "AE-B",
+        "AE-C"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 358,
+     "entidades_totales": 962,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1422,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «linea» no es exclusiva para pacientes: 358 de 962 aparecen en más de un valor (suma de subtotales 1,422 frente a 962 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_categoria_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "A2609-015113",
+       "valores": [
+        "Infectología",
+        "Oncología y Hematología"
+       ]
+      },
+      {
+       "id": "A2609-015116",
+       "valores": [
+        "Oncología y Hematología",
+        "Ortopedia , Reumatología"
+       ]
+      },
+      {
+       "id": "A2609-015117",
+       "valores": [
+        "Endocrinología",
+        "Inmunología"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 399,
+     "entidades_totales": 1436,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1835,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «categoria» no es exclusiva para pedidos: 399 de 1,436 aparecen en más de un valor (suma de subtotales 1,835 frente a 1,436 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_categoria_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000025",
+       "valores": [
+        "Oncología y Hematología",
+        "Ortopedia , Reumatología"
+       ]
+      },
+      {
+       "id": "PX000052",
+       "valores": [
+        "Endocrinología",
+        "Oncología y Hematología"
+       ]
+      },
+      {
+       "id": "PX000077",
+       "valores": [
+        "Oncología y Hematología",
+        "Ortopedia , Reumatología"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 410,
+     "entidades_totales": 962,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1588,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «categoria» no es exclusiva para pacientes: 410 de 962 aparecen en más de un valor (suma de subtotales 1,588 frente a 962 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sku_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "A2609-015113",
+       "valores": [
+        "20628",
+        "37229"
+       ]
+      },
+      {
+       "id": "A2609-015114",
+       "valores": [
+        "20628",
+        "24918"
+       ]
+      },
+      {
+       "id": "A2609-015116",
+       "valores": [
+        "21290",
+        "22525"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 514,
+     "entidades_totales": 1436,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1950,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sku» no es exclusiva para pedidos: 514 de 1,436 aparecen en más de un valor (suma de subtotales 1,950 frente a 1,436 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sku_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000025",
+       "valores": [
+        "25529",
+        "29290"
+       ]
+      },
+      {
+       "id": "PX000052",
+       "valores": [
+        "23161",
+        "34150"
+       ]
+      },
+      {
+       "id": "PX000077",
+       "valores": [
+        "21290",
+        "24918"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 489,
+     "entidades_totales": 962,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 1881,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sku» no es exclusiva para pacientes: 489 de 962 aparecen en más de un valor (suma de subtotales 1,881 frente a 962 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "conciliacion_compras",
+    "estado": "not_applicable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "unidad": "AETOPS",
+     "unidades_aplicables": [
+      "GLP1"
+     ]
+    },
+    "faltante": [],
+    "mensaje": "No aplica: la unidad AETOPS no tiene hoja `trafico`.",
+    "regla_id": "R-CONC-COMPRAS",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "razon_ticket",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-09",
+      "valor": "1436"
+     },
+     "numerador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.monto_venta",
+      "periodo": "2026-09",
+      "valor": "12221525.28"
+     },
+     "por_cien": false,
+     "problemas": [],
+     "razon": "ticket",
+     "valor": "8510.811476323119777158774373"
+    },
+    "faltante": [],
+    "mensaje": "Ticket promedio (F-11): 12,221,525 (sistema_ventas) / 1,436 (sistema_ventas) (periodo 2026-09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "8510.811476323119777158774373"
+   },
+   {
+    "codigo": "relacion_pedidos_carritos",
+    "estado": "not_applicable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "unidad": "AETOPS",
+     "unidades_aplicables": [
+      "GLP1"
+     ]
+    },
+    "faltante": [],
+    "mensaje": "No aplica: la unidad AETOPS no tiene hoja `trafico`.",
+    "regla_id": "R-COBERTURA-ATC",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   }
+  ],
+  "resumen": {
+   "bloquea": false,
+   "estado_validacion": [
+    "not_validated_with_real_data"
+   ],
+   "por_estado": {
+    "error": 0,
+    "not_applicable": 2,
+    "not_verifiable": 2,
+    "valid": 3,
+    "warning": 11
+   }
+  },
+  "sintetico": true
+ },
+ "AETOPS_trimestral_2026-03": {
+  "libro": "AETOPS_crudo_ejemplo.xlsx",
+  "libro_sha256": "3505f61024ac2d421a88503b8ae8b411f2a309e9e0b522e66d14b0484ee8867d",
+  "resultados": [
+   {
+    "codigo": "relacion_paciente_pedido",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "A": 4062,
+     "B": 0,
+     "C": 0,
+     "clases": {
+      "C0": 0,
+      "C1": 0,
+      "C2": 0,
+      "E": 16548,
+      "sin_fecha": 0
+     },
+     "clases_reservadas_inactivas": [
+      "C0 (excluido por estatus)",
+      "C1 (estatus mixto)"
+     ],
+     "cobertura_paciente": "1",
+     "identidades": {
+      "archivo": true,
+      "pacientes": true,
+      "universo": true
+     },
+     "max_pacientes_por_pedido": 1,
+     "no_asignables": 0,
+     "nota_universos": "este universo cuenta todo id_pedido con fecha única en el periodo; «pedidos del sistema de ventas» usa los criterios del motor actual (sku en catálogo, importes numéricos, ids no vacíos)",
+     "pacientes_unicos": 2033,
+     "pedidos_archivo": 16548,
+     "pedidos_universo_motor": 4062,
+     "periodo": "2026-07..09",
+     "razon_recurrencia": "1.998032464338416133792424988",
+     "tasa_no_asignables": "0",
+     "universo_periodo": 4062
+    },
+    "faltante": [],
+    "mensaje": "Los 4,062 pedidos del periodo declaran como máximo 1 paciente(s) cada uno (2,033 pacientes únicos). Cobertura de paciente: 100.00 %.",
+    "regla_id": "R-REL-PAC-PED",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "cobertura_paciente",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "cobertura_paciente": "1"
+    },
+    "faltante": [],
+    "mensaje": "Todos los pedidos del periodo tienen paciente identificado.",
+    "regla_id": "R-REL-PAC-PED",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "cuadre_dimensiones",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "combinaciones_no_exclusivas": 10,
+     "declaradas_evaluadas": 0,
+     "declaradas_incumplidas": 0,
+     "periodo": "2026-07..09"
+    },
+    "faltante": [],
+    "mensaje": "10 combinación(es) dimensión–entidad no son exclusivas en los datos: sus subtotales no pueden sumarse como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_canal_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 4062,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.canal (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «canal» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_canal_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000003",
+       "valores": [
+        "ECOMMERCE",
+        "WHATSAPP"
+       ]
+      },
+      {
+       "id": "PX000005",
+       "valores": [
+        "ECOMMERCE",
+        "LLAMADAS GOOGLE"
+       ]
+      },
+      {
+       "id": "PX000009",
+       "valores": [
+        "ECOMMERCE",
+        "LLAMADAS GOOGLE"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 596,
+     "entidades_totales": 2033,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 2889,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «canal» no es exclusiva para pacientes: 596 de 2,033 aparecen en más de un valor (suma de subtotales 2,889 frente a 2,033 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_estado_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 4062,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.estado (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «estado» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_estado_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000003",
+       "valores": [
+        "CIUDAD DE MÉXICO",
+        "VERACRUZ"
+       ]
+      },
+      {
+       "id": "PX000005",
+       "valores": [
+        "CIUDAD DE MÉXICO",
+        "JALISCO"
+       ]
+      },
+      {
+       "id": "PX000013",
+       "valores": [
+        "JALISCO",
+        "QUERÉTARO"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 684,
+     "entidades_totales": 2033,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 3368,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «estado» no es exclusiva para pacientes: 684 de 2,033 aparecen en más de un valor (suma de subtotales 3,368 frente a 2,033 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sucursal_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "A2607-012487",
+       "valores": [
+        "SUC-06",
+        "SUC-07"
+       ]
+      },
+      {
+       "id": "A2607-012488",
+       "valores": [
+        "SUC-02",
+        "SUC-05"
+       ]
+      },
+      {
+       "id": "A2607-012491",
+       "valores": [
+        "SUC-08",
+        "SUC-09"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 1370,
+     "entidades_totales": 4062,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 5432,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sucursal» no es exclusiva para pedidos: 1,370 de 4,062 aparecen en más de un valor (suma de subtotales 5,432 frente a 4,062 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sucursal_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000001",
+       "valores": [
+        "SUC-05",
+        "SUC-08"
+       ]
+      },
+      {
+       "id": "PX000003",
+       "valores": [
+        "SUC-04",
+        "SUC-05"
+       ]
+      },
+      {
+       "id": "PX000005",
+       "valores": [
+        "SUC-02",
+        "SUC-10",
+        "SUC-12"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 1147,
+     "entidades_totales": 2033,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 4654,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sucursal» no es exclusiva para pacientes: 1,147 de 2,033 aparecen en más de un valor (suma de subtotales 4,654 frente a 2,033 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_linea_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "A2607-012488",
+       "valores": [
+        "AE-A",
+        "AE-B"
+       ]
+      },
+      {
+       "id": "A2607-012491",
+       "valores": [
+        "AE-B",
+        "AE-C"
+       ]
+      },
+      {
+       "id": "A2607-012492",
+       "valores": [
+        "AE-A",
+        "AE-B"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 931,
+     "entidades_totales": 4062,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 4993,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «linea» no es exclusiva para pedidos: 931 de 4,062 aparecen en más de un valor (suma de subtotales 4,993 frente a 4,062 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_linea_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000001",
+       "valores": [
+        "AE-A",
+        "AE-B"
+       ]
+      },
+      {
+       "id": "PX000003",
+       "valores": [
+        "AE-A",
+        "AE-B"
+       ]
+      },
+      {
+       "id": "PX000012",
+       "valores": [
+        "AE-A",
+        "AE-B"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 880,
+     "entidades_totales": 2033,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 3245,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «linea» no es exclusiva para pacientes: 880 de 2,033 aparecen en más de un valor (suma de subtotales 3,245 frente a 2,033 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_categoria_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "A2607-012488",
+       "valores": [
+        "Inmunología",
+        "Oncología y Hematología"
+       ]
+      },
+      {
+       "id": "A2607-012491",
+       "valores": [
+        "Endocrinología",
+        "Ortopedia , Reumatología"
+       ]
+      },
+      {
+       "id": "A2607-012492",
+       "valores": [
+        "Inmunología",
+        "Oncología y Hematología"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 1144,
+     "entidades_totales": 4062,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 5206,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «categoria» no es exclusiva para pedidos: 1,144 de 4,062 aparecen en más de un valor (suma de subtotales 5,206 frente a 4,062 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_categoria_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000001",
+       "valores": [
+        "Inmunología",
+        "Ortopedia , Reumatología"
+       ]
+      },
+      {
+       "id": "PX000003",
+       "valores": [
+        "Dermatología",
+        "Ortopedia , Reumatología"
+       ]
+      },
+      {
+       "id": "PX000012",
+       "valores": [
+        "Dermatología",
+        "Oncología y Hematología"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 1006,
+     "entidades_totales": 2033,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 3808,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «categoria» no es exclusiva para pacientes: 1,006 de 2,033 aparecen en más de un valor (suma de subtotales 3,808 frente a 2,033 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sku_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "A2607-012487",
+       "valores": [
+        "23161",
+        "24369"
+       ]
+      },
+      {
+       "id": "A2607-012488",
+       "valores": [
+        "23161",
+        "28001"
+       ]
+      },
+      {
+       "id": "A2607-012491",
+       "valores": [
+        "29290",
+        "33540"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 1484,
+     "entidades_totales": 4062,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 5546,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sku» no es exclusiva para pedidos: 1,484 de 4,062 aparecen en más de un valor (suma de subtotales 5,546 frente a 4,062 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sku_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "PX000001",
+       "valores": [
+        "21290",
+        "28001"
+       ]
+      },
+      {
+       "id": "PX000003",
+       "valores": [
+        "21290",
+        "30432"
+       ]
+      },
+      {
+       "id": "PX000005",
+       "valores": [
+        "21867",
+        "22525",
+        "23161"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 1189,
+     "entidades_totales": 2033,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 4995,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sku» no es exclusiva para pacientes: 1,189 de 2,033 aparecen en más de un valor (suma de subtotales 4,995 frente a 2,033 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "conciliacion_compras",
+    "estado": "not_applicable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "unidad": "AETOPS",
+     "unidades_aplicables": [
+      "GLP1"
+     ]
+    },
+    "faltante": [],
+    "mensaje": "No aplica: la unidad AETOPS no tiene hoja `trafico`.",
+    "regla_id": "R-CONC-COMPRAS",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "razon_ticket",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-07..09",
+      "valor": "4062"
+     },
+     "numerador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.monto_venta",
+      "periodo": "2026-07..09",
+      "valor": "34209646.68"
+     },
+     "por_cien": false,
+     "problemas": [],
+     "razon": "ticket",
+     "valor": "8421.872644017725258493353028"
+    },
+    "faltante": [],
+    "mensaje": "Ticket promedio (F-11): 34,209,647 (sistema_ventas) / 4,062 (sistema_ventas) (periodo 2026-07..09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "8421.872644017725258493353028"
+   },
+   {
+    "codigo": "relacion_pedidos_carritos",
+    "estado": "not_applicable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "unidad": "AETOPS",
+     "unidades_aplicables": [
+      "GLP1"
+     ]
+    },
+    "faltante": [],
+    "mensaje": "No aplica: la unidad AETOPS no tiene hoja `trafico`.",
+    "regla_id": "R-COBERTURA-ATC",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   }
+  ],
+  "resumen": {
+   "bloquea": false,
+   "estado_validacion": [
+    "not_validated_with_real_data"
+   ],
+   "por_estado": {
+    "error": 0,
+    "not_applicable": 2,
+    "not_verifiable": 2,
+    "valid": 3,
+    "warning": 11
+   }
+  },
+  "sintetico": true
+ },
+ "GLP1_mensual_2026-09": {
+  "libro": "GLP1_crudo_ejemplo.xlsx",
+  "libro_sha256": "c89fc22f9deb6c8516a9256c724aa860fbfca70384e4c5d1bbb92f45fcb56cfb",
+  "resultados": [
+   {
+    "codigo": "relacion_paciente_pedido",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "A": 2356,
+     "B": 0,
+     "C": 0,
+     "clases": {
+      "C0": 0,
+      "C1": 0,
+      "C2": 0,
+      "E": 33486,
+      "sin_fecha": 0
+     },
+     "clases_reservadas_inactivas": [
+      "C0 (excluido por estatus)",
+      "C1 (estatus mixto)"
+     ],
+     "cobertura_paciente": "1",
+     "identidades": {
+      "archivo": true,
+      "pacientes": true,
+      "universo": true
+     },
+     "max_pacientes_por_pedido": 1,
+     "no_asignables": 0,
+     "nota_universos": "este universo cuenta todo id_pedido con fecha única en el periodo; «pedidos del sistema de ventas» usa los criterios del motor actual (sku en catálogo, importes numéricos, ids no vacíos)",
+     "pacientes_unicos": 1966,
+     "pedidos_archivo": 33486,
+     "pedidos_universo_motor": 2356,
+     "periodo": "2026-09",
+     "razon_recurrencia": "1.198372329603255340793489318",
+     "tasa_no_asignables": "0",
+     "universo_periodo": 2356
+    },
+    "faltante": [],
+    "mensaje": "Los 2,356 pedidos del periodo declaran como máximo 1 paciente(s) cada uno (1,966 pacientes únicos). Cobertura de paciente: 100.00 %.",
+    "regla_id": "R-REL-PAC-PED",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "cobertura_paciente",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "cobertura_paciente": "1"
+    },
+    "faltante": [],
+    "mensaje": "Todos los pedidos del periodo tienen paciente identificado.",
+    "regla_id": "R-REL-PAC-PED",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "cuadre_dimensiones",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "combinaciones_no_exclusivas": 4,
+     "declaradas_evaluadas": 0,
+     "declaradas_incumplidas": 0,
+     "periodo": "2026-09"
+    },
+    "faltante": [],
+    "mensaje": "4 combinación(es) dimensión–entidad no son exclusivas en los datos: sus subtotales no pueden sumarse como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_canal_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 2356,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.canal (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «canal» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_canal_paciente",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 1966,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.canal (exclusiva/exhaustiva con justificación)",
+      "granularidad": "paciente"
+     }
+    ],
+    "mensaje": "En «canal» ningún paciente aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_estado_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 2356,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.estado (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «estado» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_estado_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "GP000008",
+       "valores": [
+        "BAJA CALIFORNIA",
+        "MORELOS"
+       ]
+      },
+      {
+       "id": "GP000018",
+       "valores": [
+        "VERACRUZ",
+        "YUCATÁN"
+       ]
+      },
+      {
+       "id": "GP000038",
+       "valores": [
+        "CHIHUAHUA",
+        "CIUDAD DE MÉXICO"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 303,
+     "entidades_totales": 1966,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 2295,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «estado» no es exclusiva para pacientes: 303 de 1,966 aparecen en más de un valor (suma de subtotales 2,295 frente a 1,966 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_region_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 2356,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.region (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «region» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_region_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "GP000008",
+       "valores": [
+        "CENTRO",
+        "NOROESTE"
+       ]
+      },
+      {
+       "id": "GP000038",
+       "valores": [
+        "CENTRO",
+        "NOROESTE"
+       ]
+      },
+      {
+       "id": "GP000042",
+       "valores": [
+        "CENTRO",
+        "NOROESTE"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 250,
+     "entidades_totales": 1966,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 2233,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «region» no es exclusiva para pacientes: 250 de 1,966 aparecen en más de un valor (suma de subtotales 2,233 frente a 1,966 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_categoria_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 2356,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.categoria (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «categoria» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_categoria_paciente",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 1966,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.categoria (exclusiva/exhaustiva con justificación)",
+      "granularidad": "paciente"
+     }
+    ],
+    "mensaje": "En «categoria» ningún paciente aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sku_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "G2609-031143",
+       "valores": [
+        "GLP-MJ-50",
+        "GLP-WG-10"
+       ]
+      },
+      {
+       "id": "G2609-031150",
+       "valores": [
+        "GLP-MJ-50",
+        "GLP-WG-24"
+       ]
+      },
+      {
+       "id": "G2609-031157",
+       "valores": [
+        "GLP-MJ-100",
+        "GLP-WG-17"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 122,
+     "entidades_totales": 2356,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 2478,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sku» no es exclusiva para pedidos: 122 de 2,356 aparecen en más de un valor (suma de subtotales 2,478 frente a 2,356 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sku_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "GP000001",
+       "valores": [
+        "GLP-WG-025",
+        "GLP-WG-17"
+       ]
+      },
+      {
+       "id": "GP000018",
+       "valores": [
+        "GLP-MJ-50",
+        "GLP-MJ-75",
+        "GLP-WG-17"
+       ]
+      },
+      {
+       "id": "GP000038",
+       "valores": [
+        "GLP-MJ-100",
+        "GLP-MJ-50"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 398,
+     "entidades_totales": 1966,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 2417,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sku» no es exclusiva para pacientes: 398 de 1,966 aparecen en más de un valor (suma de subtotales 2,417 frente a 1,966 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "conciliacion_compras",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "alcance": "nivel sitio; ventas sin filtro de canal",
+     "aviso_heredado": "TRAFICO_PURCHASE_DIFFERS (raw/glp1.py): se emite si |brecha| > umbral; no se modifica",
+     "brecha": "0.1218166383701188455008488964",
+     "compras_ga4": {
+      "fuente": "ga4",
+      "nombre": "trafico.compras (nivel sitio)",
+      "periodo": "2026-09",
+      "valor": "2643"
+     },
+     "hipotesis_a_validar": [
+      "bloqueadores de etiquetas",
+      "pagos fuera de línea",
+      "filtros distintos",
+      "deduplicación"
+     ],
+     "pedidos_sistema_ventas": {
+      "fuente": "sistema_ventas",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-09",
+      "valor": "2356"
+     },
+     "periodo": "2026-09",
+     "regla": "las fuentes no se sustituyen, no se suman y no son equivalentes",
+     "umbral": "0.2"
+    },
+    "faltante": [],
+    "mensaje": "Pedidos del sistema de ventas: 2,356. Compras GA4: 2,643. Son fuentes distintas; la diferencia (+12.18 %) no supera el umbral heredado de 20 %.",
+    "regla_id": "R-CONC-COMPRAS",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "0.1218166383701188455008488964"
+   },
+   {
+    "codigo": "razon_ticket",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-09",
+      "valor": "2356"
+     },
+     "numerador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.monto_venta",
+      "periodo": "2026-09",
+      "valor": "12506326.01"
+     },
+     "por_cien": false,
+     "problemas": [],
+     "razon": "ticket",
+     "valor": "5308.287780135823429541595925"
+    },
+    "faltante": [],
+    "mensaje": "Ticket promedio (F-11): 12,506,326 (sistema_ventas) / 2,356 (sistema_ventas) (periodo 2026-09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "5308.287780135823429541595925"
+   },
+   {
+    "codigo": "razon_ind01_sistema_ventas",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.add_to_cart (nivel sitio)",
+      "periodo": "2026-09",
+      "valor": "18883"
+     },
+     "numerador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-09",
+      "valor": "2356"
+     },
+     "por_cien": true,
+     "problemas": [],
+     "razon": "ind01_sistema_ventas",
+     "valor": "12.47683101202139490547052905"
+    },
+    "faltante": [],
+    "mensaje": "Relación pedidos (sistema de ventas) / carritos agregados (F-01): 2,356 (sistema_ventas) / 18,883 (ga4) (periodo 2026-09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "12.47683101202139490547052905"
+   },
+   {
+    "codigo": "razon_ind01_ga4",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.add_to_cart (nivel sitio)",
+      "periodo": "2026-09",
+      "valor": "18883"
+     },
+     "numerador": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.compras (nivel sitio)",
+      "periodo": "2026-09",
+      "valor": "2643"
+     },
+     "por_cien": true,
+     "problemas": [],
+     "razon": "ind01_ga4",
+     "valor": "13.99671662341788910660382354"
+    },
+    "faltante": [],
+    "mensaje": "Relación compras GA4 / carritos agregados (F-02): 2,643 (ga4) / 18,883 (ga4) (periodo 2026-09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "13.99671662341788910660382354"
+   },
+   {
+    "codigo": "razon_brecha_compras",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-09",
+      "valor": "2356"
+     },
+     "numerador": {
+      "fuente": "ga4-sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "compras GA4 − pedidos del sistema de ventas",
+      "periodo": "2026-09",
+      "valor": "287"
+     },
+     "por_cien": false,
+     "problemas": [],
+     "razon": "brecha_compras",
+     "valor": "0.1218166383701188455008488964"
+    },
+    "faltante": [],
+    "mensaje": "Diferencia compras GA4 frente a pedidos del sistema de ventas (F-03): 287 (ga4-sistema_ventas) / 2,356 (sistema_ventas) (periodo 2026-09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "0.1218166383701188455008488964"
+   },
+   {
+    "codigo": "relacion_pedidos_carritos_sistema_ventas",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "carritos_agregados": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.add_to_cart (nivel sitio)",
+      "periodo": "2026-09",
+      "unidad": "unidad no declarada",
+      "valor": "18883"
+     },
+     "estado_ind01": "calculable_con_limitacion",
+     "fuente_pedidos": "sistema_ventas",
+     "limitaciones": [
+      "unidad de los carritos no declarada: la interpretación es limitada"
+     ],
+     "naturaleza": "relación entre volúmenes agregados; no es tasa de abandono; no se calcula su complemento",
+     "nombre": "Relación pedidos (sistema de ventas) / carritos agregados",
+     "numerador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-09",
+      "valor": "2356"
+     },
+     "periodo": "2026-09",
+     "relacion": "12.47683101202139490547052905",
+     "universo": "nivel sitio (vista=general, sku vacío); ventas sin filtro de canal"
+    },
+    "faltante": [],
+    "mensaje": "Relación pedidos (sistema de ventas) / carritos agregados: 12.48 %, con limitaciones: unidad de los carritos no declarada: la interpretación es limitada. Por cada 100 carritos agregados (unidad no declarada), se registran 12.48 pedidos del sistema de ventas en el periodo (fuente de pedidos seleccionada: sistema de ventas). La interpretación es limitada.",
+    "regla_id": "R-COBERTURA-ATC",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "12.47683101202139490547052905"
+   },
+   {
+    "codigo": "relacion_pedidos_carritos_ga4_compras",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "carritos_agregados": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.add_to_cart (nivel sitio)",
+      "periodo": "2026-09",
+      "unidad": "unidad no declarada",
+      "valor": "18883"
+     },
+     "estado_ind01": "calculable_con_limitacion",
+     "fuente_pedidos": "ga4_compras",
+     "limitaciones": [
+      "unidad de los carritos no declarada: la interpretación es limitada"
+     ],
+     "naturaleza": "relación entre volúmenes agregados; no es tasa de abandono; no se calcula su complemento",
+     "nombre": "Relación compras GA4 / carritos agregados",
+     "numerador": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.compras (nivel sitio)",
+      "periodo": "2026-09",
+      "valor": "2643"
+     },
+     "periodo": "2026-09",
+     "relacion": "13.99671662341788910660382354",
+     "universo": "nivel sitio (vista=general, sku vacío); ventas sin filtro de canal"
+    },
+    "faltante": [],
+    "mensaje": "Relación compras GA4 / carritos agregados: 14.00 %, con limitaciones: unidad de los carritos no declarada: la interpretación es limitada. Por cada 100 carritos agregados (unidad no declarada), se registran 14.00 compras GA4 en el periodo (fuente de pedidos seleccionada: GA4). La interpretación es limitada.",
+    "regla_id": "R-COBERTURA-ATC",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "13.99671662341788910660382354"
+   }
+  ],
+  "resumen": {
+   "bloquea": false,
+   "estado_validacion": [
+    "not_validated_with_real_data"
+   ],
+   "por_estado": {
+    "error": 0,
+    "not_applicable": 0,
+    "not_verifiable": 6,
+    "valid": 7,
+    "warning": 7
+   }
+  },
+  "sintetico": true
+ },
+ "GLP1_trimestral_2026-03": {
+  "libro": "GLP1_crudo_ejemplo.xlsx",
+  "libro_sha256": "c89fc22f9deb6c8516a9256c724aa860fbfca70384e4c5d1bbb92f45fcb56cfb",
+  "resultados": [
+   {
+    "codigo": "relacion_paciente_pedido",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "A": 6791,
+     "B": 0,
+     "C": 0,
+     "clases": {
+      "C0": 0,
+      "C1": 0,
+      "C2": 0,
+      "E": 33486,
+      "sin_fecha": 0
+     },
+     "clases_reservadas_inactivas": [
+      "C0 (excluido por estatus)",
+      "C1 (estatus mixto)"
+     ],
+     "cobertura_paciente": "1",
+     "identidades": {
+      "archivo": true,
+      "pacientes": true,
+      "universo": true
+     },
+     "max_pacientes_por_pedido": 1,
+     "no_asignables": 0,
+     "nota_universos": "este universo cuenta todo id_pedido con fecha única en el periodo; «pedidos del sistema de ventas» usa los criterios del motor actual (sku en catálogo, importes numéricos, ids no vacíos)",
+     "pacientes_unicos": 4147,
+     "pedidos_archivo": 33486,
+     "pedidos_universo_motor": 6791,
+     "periodo": "2026-07..09",
+     "razon_recurrencia": "1.637569327224499638292741741",
+     "tasa_no_asignables": "0",
+     "universo_periodo": 6791
+    },
+    "faltante": [],
+    "mensaje": "Los 6,791 pedidos del periodo declaran como máximo 1 paciente(s) cada uno (4,147 pacientes únicos). Cobertura de paciente: 100.00 %.",
+    "regla_id": "R-REL-PAC-PED",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "cobertura_paciente",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "cobertura_paciente": "1"
+    },
+    "faltante": [],
+    "mensaje": "Todos los pedidos del periodo tienen paciente identificado.",
+    "regla_id": "R-REL-PAC-PED",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "cuadre_dimensiones",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "combinaciones_no_exclusivas": 4,
+     "declaradas_evaluadas": 0,
+     "declaradas_incumplidas": 0,
+     "periodo": "2026-07..09"
+    },
+    "faltante": [],
+    "mensaje": "4 combinación(es) dimensión–entidad no son exclusivas en los datos: sus subtotales no pueden sumarse como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_canal_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 6791,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.canal (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «canal» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_canal_paciente",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 4147,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.canal (exclusiva/exhaustiva con justificación)",
+      "granularidad": "paciente"
+     }
+    ],
+    "mensaje": "En «canal» ningún paciente aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_estado_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 6791,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.estado (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «estado» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_estado_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "GP000001",
+       "valores": [
+        "ESTADO DE MÉXICO",
+        "GUANAJUATO"
+       ]
+      },
+      {
+       "id": "GP000002",
+       "valores": [
+        "CIUDAD DE MÉXICO",
+        "COAHUILA"
+       ]
+      },
+      {
+       "id": "GP000005",
+       "valores": [
+        "CHIHUAHUA",
+        "ESTADO DE MÉXICO"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 1612,
+     "entidades_totales": 4147,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 6289,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «estado» no es exclusiva para pacientes: 1,612 de 4,147 aparecen en más de un valor (suma de subtotales 6,289 frente a 4,147 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_region_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 6791,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.region (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «region» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_region_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "GP000001",
+       "valores": [
+        "BAJÍO",
+        "CENTRO"
+       ]
+      },
+      {
+       "id": "GP000002",
+       "valores": [
+        "CENTRO",
+        "NORESTE"
+       ]
+      },
+      {
+       "id": "GP000005",
+       "valores": [
+        "CENTRO",
+        "NOROESTE"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 1422,
+     "entidades_totales": 4147,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 5901,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «region» no es exclusiva para pacientes: 1,422 de 4,147 aparecen en más de un valor (suma de subtotales 5,901 frente a 4,147 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_categoria_pedido",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 6791,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.categoria (exclusiva/exhaustiva con justificación)",
+      "granularidad": "pedido"
+     }
+    ],
+    "mensaje": "En «categoria» ningún pedido aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_categoria_paciente",
+    "estado": "not_verifiable",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "entidades_con_mas_de_un_valor": 0,
+     "entidades_totales": 4147,
+     "sin_categoria": 0
+    },
+    "faltante": [
+     {
+      "archivo": "reglas.json",
+      "columna": "dimensiones.categoria (exclusiva/exhaustiva con justificación)",
+      "granularidad": "paciente"
+     }
+    ],
+    "mensaje": "En «categoria» ningún paciente aparece en más de un valor en este periodo, pero las propiedades de la dimensión no están declaradas; no se asume exclusividad.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sku_pedido",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "G2607-026716",
+       "valores": [
+        "GLP-WG-05",
+        "GLP-WG-17"
+       ]
+      },
+      {
+       "id": "G2607-026726",
+       "valores": [
+        "GLP-MJ-25",
+        "GLP-RY-7"
+       ]
+      },
+      {
+       "id": "G2607-026750",
+       "valores": [
+        "GLP-MJ-150",
+        "GLP-MJ-75"
+       ]
+      }
+     ],
+     "entidad": "pedido",
+     "entidades_con_mas_de_un_valor": 363,
+     "entidades_totales": 6791,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 7154,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sku» no es exclusiva para pedidos: 363 de 6,791 aparecen en más de un valor (suma de subtotales 7,154 frente a 6,791 pedidos distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "dimension_sku_paciente",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "ejemplos": [
+      {
+       "id": "GP000001",
+       "valores": [
+        "GLP-WG-025",
+        "GLP-WG-10",
+        "GLP-WG-17"
+       ]
+      },
+      {
+       "id": "GP000002",
+       "valores": [
+        "GLP-MJ-50",
+        "GLP-RY-14"
+       ]
+      },
+      {
+       "id": "GP000005",
+       "valores": [
+        "GLP-MJ-100",
+        "GLP-MJ-25"
+       ]
+      }
+     ],
+     "entidad": "paciente",
+     "entidades_con_mas_de_un_valor": 1785,
+     "entidades_totales": 4147,
+     "sin_categoria": 0,
+     "suma_de_subtotales": 6709,
+     "tratamiento": "no se filtra ni elimina ningún registro"
+    },
+    "faltante": [],
+    "mensaje": "La dimensión «sku» no es exclusiva para pacientes: 1,785 de 4,147 aparecen en más de un valor (suma de subtotales 6,709 frente a 4,147 pacientes distintos). No sumar sus subtotales como universos independientes.",
+    "regla_id": "R-CUADRE-DIM",
+    "regla_version": "1.0.0",
+    "severity": "warn",
+    "valor": null
+   },
+   {
+    "codigo": "conciliacion_compras",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "alcance": "nivel sitio; ventas sin filtro de canal",
+     "aviso_heredado": "TRAFICO_PURCHASE_DIFFERS (raw/glp1.py): se emite si |brecha| > umbral; no se modifica",
+     "brecha": "0.1606538065086143425121484317",
+     "compras_ga4": {
+      "fuente": "ga4",
+      "nombre": "trafico.compras (nivel sitio)",
+      "periodo": "2026-07..09",
+      "valor": "7882"
+     },
+     "hipotesis_a_validar": [
+      "bloqueadores de etiquetas",
+      "pagos fuera de línea",
+      "filtros distintos",
+      "deduplicación"
+     ],
+     "pedidos_sistema_ventas": {
+      "fuente": "sistema_ventas",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-07..09",
+      "valor": "6791"
+     },
+     "periodo": "2026-07..09",
+     "regla": "las fuentes no se sustituyen, no se suman y no son equivalentes",
+     "umbral": "0.2"
+    },
+    "faltante": [],
+    "mensaje": "Pedidos del sistema de ventas: 6,791. Compras GA4: 7,882. Son fuentes distintas; la diferencia (+16.07 %) no supera el umbral heredado de 20 %.",
+    "regla_id": "R-CONC-COMPRAS",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "0.1606538065086143425121484317"
+   },
+   {
+    "codigo": "razon_ticket",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-07..09",
+      "valor": "6791"
+     },
+     "numerador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.monto_venta",
+      "periodo": "2026-07..09",
+      "valor": "36188126.14"
+     },
+     "por_cien": false,
+     "problemas": [],
+     "razon": "ticket",
+     "valor": "5328.836127227212487115299661"
+    },
+    "faltante": [],
+    "mensaje": "Ticket promedio (F-11): 36,188,126 (sistema_ventas) / 6,791 (sistema_ventas) (periodo 2026-07..09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "5328.836127227212487115299661"
+   },
+   {
+    "codigo": "razon_ind01_sistema_ventas",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.add_to_cart (nivel sitio)",
+      "periodo": "2026-07..09",
+      "valor": "56315"
+     },
+     "numerador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-07..09",
+      "valor": "6791"
+     },
+     "por_cien": true,
+     "problemas": [],
+     "razon": "ind01_sistema_ventas",
+     "valor": "12.05895409748734795347598331"
+    },
+    "faltante": [],
+    "mensaje": "Relación pedidos (sistema de ventas) / carritos agregados (F-01): 6,791 (sistema_ventas) / 56,315 (ga4) (periodo 2026-07..09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "12.05895409748734795347598331"
+   },
+   {
+    "codigo": "razon_ind01_ga4",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.add_to_cart (nivel sitio)",
+      "periodo": "2026-07..09",
+      "valor": "56315"
+     },
+     "numerador": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.compras (nivel sitio)",
+      "periodo": "2026-07..09",
+      "valor": "7882"
+     },
+     "por_cien": true,
+     "problemas": [],
+     "razon": "ind01_ga4",
+     "valor": "13.99627097576134244872591672"
+    },
+    "faltante": [],
+    "mensaje": "Relación compras GA4 / carritos agregados (F-02): 7,882 (ga4) / 56,315 (ga4) (periodo 2026-07..09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "13.99627097576134244872591672"
+   },
+   {
+    "codigo": "razon_brecha_compras",
+    "estado": "valid",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "denominador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-07..09",
+      "valor": "6791"
+     },
+     "numerador": {
+      "fuente": "ga4-sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "compras GA4 − pedidos del sistema de ventas",
+      "periodo": "2026-07..09",
+      "valor": "1091"
+     },
+     "por_cien": false,
+     "problemas": [],
+     "razon": "brecha_compras",
+     "valor": "0.1606538065086143425121484317"
+    },
+    "faltante": [],
+    "mensaje": "Diferencia compras GA4 frente a pedidos del sistema de ventas (F-03): 1,091 (ga4-sistema_ventas) / 6,791 (sistema_ventas) (periodo 2026-07..09) es calculable.",
+    "regla_id": "R-DENOM",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "0.1606538065086143425121484317"
+   },
+   {
+    "codigo": "relacion_pedidos_carritos_sistema_ventas",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "carritos_agregados": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.add_to_cart (nivel sitio)",
+      "periodo": "2026-07..09",
+      "unidad": "unidad no declarada",
+      "valor": "56315"
+     },
+     "estado_ind01": "calculable_con_limitacion",
+     "fuente_pedidos": "sistema_ventas",
+     "limitaciones": [
+      "unidad de los carritos no declarada: la interpretación es limitada"
+     ],
+     "naturaleza": "relación entre volúmenes agregados; no es tasa de abandono; no se calcula su complemento",
+     "nombre": "Relación pedidos (sistema de ventas) / carritos agregados",
+     "numerador": {
+      "fuente": "sistema_ventas",
+      "granularidad": "mes",
+      "nombre": "ventas.id_pedido distintos",
+      "periodo": "2026-07..09",
+      "valor": "6791"
+     },
+     "periodo": "2026-07..09",
+     "relacion": "12.05895409748734795347598331",
+     "universo": "nivel sitio (vista=general, sku vacío); ventas sin filtro de canal"
+    },
+    "faltante": [],
+    "mensaje": "Relación pedidos (sistema de ventas) / carritos agregados: 12.06 %, con limitaciones: unidad de los carritos no declarada: la interpretación es limitada. Por cada 100 carritos agregados (unidad no declarada), se registran 12.06 pedidos del sistema de ventas en el periodo (fuente de pedidos seleccionada: sistema de ventas). La interpretación es limitada.",
+    "regla_id": "R-COBERTURA-ATC",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "12.05895409748734795347598331"
+   },
+   {
+    "codigo": "relacion_pedidos_carritos_ga4_compras",
+    "estado": "warning",
+    "estado_validacion": "not_validated_with_real_data",
+    "evidencia": {
+     "carritos_agregados": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.add_to_cart (nivel sitio)",
+      "periodo": "2026-07..09",
+      "unidad": "unidad no declarada",
+      "valor": "56315"
+     },
+     "estado_ind01": "calculable_con_limitacion",
+     "fuente_pedidos": "ga4_compras",
+     "limitaciones": [
+      "unidad de los carritos no declarada: la interpretación es limitada"
+     ],
+     "naturaleza": "relación entre volúmenes agregados; no es tasa de abandono; no se calcula su complemento",
+     "nombre": "Relación compras GA4 / carritos agregados",
+     "numerador": {
+      "fuente": "ga4",
+      "granularidad": "mes",
+      "nombre": "trafico.compras (nivel sitio)",
+      "periodo": "2026-07..09",
+      "valor": "7882"
+     },
+     "periodo": "2026-07..09",
+     "relacion": "13.99627097576134244872591672",
+     "universo": "nivel sitio (vista=general, sku vacío); ventas sin filtro de canal"
+    },
+    "faltante": [],
+    "mensaje": "Relación compras GA4 / carritos agregados: 14.00 %, con limitaciones: unidad de los carritos no declarada: la interpretación es limitada. Por cada 100 carritos agregados (unidad no declarada), se registran 14.00 compras GA4 en el periodo (fuente de pedidos seleccionada: GA4). La interpretación es limitada.",
+    "regla_id": "R-COBERTURA-ATC",
+    "regla_version": "1.0.0",
+    "severity": "info",
+    "valor": "13.99627097576134244872591672"
+   }
+  ],
+  "resumen": {
+   "bloquea": false,
+   "estado_validacion": [
+    "not_validated_with_real_data"
+   ],
+   "por_estado": {
+    "error": 0,
+    "not_applicable": 0,
+    "not_verifiable": 6,
+    "valid": 7,
+    "warning": 7
+   }
+  },
+  "sintetico": true
+ }
+}

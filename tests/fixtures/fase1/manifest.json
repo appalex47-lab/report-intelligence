@@ -1,0 +1,46 @@
+{
+ "aviso": "Datos inventados para pruebas. No contienen datos reales ni identificadores personales.",
+ "esquema": "fixtures_fase1/1",
+ "fixtures": [
+  {
+   "archivo": "catalogo_campo_faltante.json",
+   "bytes": 1684,
+   "sha256": "18f9362dd0a8ce173afabea668ce095c093f98d86f5ffc8b520200def28fabf5",
+   "sintetico": true
+  },
+  {
+   "archivo": "catalogo_id_duplicado.json",
+   "bytes": 1731,
+   "sha256": "9b027fd9e9243ef66b2dd33509c36e93f768db98a93521d0ef09914dde7306b6",
+   "sintetico": true
+  },
+  {
+   "archivo": "catalogo_unidad_invalida.json",
+   "bytes": 1731,
+   "sha256": "e8e40c10a50cad6a028a5ef0255e47ce40e74d270665b425283164c6be7f8c62",
+   "sintetico": true
+  },
+  {
+   "archivo": "catalogo_valido.json",
+   "bytes": 1731,
+   "sha256": "73cc7a451f36b1e3494390885a1dfb11bf7f194f7f6d125e5327cc1abf5e13c2",
+   "sintetico": true
+  },
+  {
+   "archivo": "catalogo_version_invalida.json",
+   "bytes": 1729,
+   "sha256": "d06a39d90389a73f28f192fb76ab817491ff9c48b5aa80cc7862d4106ccdbb5f",
+   "sintetico": true
+  },
+  {
+   "archivo": "hallazgos_compat.json",
+   "bytes": 4089,
+   "sha256": "9506f6f2a2730259aefd173c01eec779c4e60feed2a4e4baf88b1ca0f34292bc",
+   "sintetico": true
+  }
+ ],
+ "generador": "tools/make_fixtures_fase1.py",
+ "semilla": 20260601,
+ "sintetico": true,
+ "version_generador": "1.0.0"
+}

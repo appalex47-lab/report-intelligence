@@ -1,0 +1,265 @@
+{
+  "esquema": "definiciones/1",
+  "version": "1.0.0",
+  "fuente_documental": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.1 y §8.2",
+  "definiciones": [
+    {
+      "id": "visita_sesion",
+      "nombre": "Visita / Sesión",
+      "descripcion": "Periodo de actividad según la herramienta de analítica. No se asume visita = sesión; el contrato nombra la columna `visitas` y la describe como sesiones.",
+      "version": "1.0.0",
+      "tipo": "metrica",
+      "unidad": "visitas",
+      "fuente": {
+        "hoja": "trafico",
+        "columna": "visitas"
+      },
+      "granularidad": "mes × vista × valor × SKU opcional (nivel sitio: vista = general, sku vacío)",
+      "aplicabilidad": {
+        "unidades": [
+          "GLP1"
+        ],
+        "condicion": "Requiere la hoja `trafico`."
+      },
+      "limitaciones": [
+        "AETOPS no tiene hoja `trafico`: no aplica.",
+        "No es aditiva entre desgloses."
+      ],
+      "origen": "nuevo",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.1"
+    },
+    {
+      "id": "evento",
+      "nombre": "Evento",
+      "descripcion": "Interacción registrada en la analítica (`vistas_producto`, `add_to_cart`, `begin_checkout`, `compras`). Un evento no es una persona, una sesión ni un carrito individual.",
+      "version": "1.0.0",
+      "tipo": "metrica",
+      "unidad": "eventos",
+      "fuente": [
+        {
+          "hoja": "trafico",
+          "columna": "vistas_producto"
+        },
+        {
+          "hoja": "trafico",
+          "columna": "add_to_cart"
+        },
+        {
+          "hoja": "trafico",
+          "columna": "begin_checkout"
+        },
+        {
+          "hoja": "trafico",
+          "columna": "compras"
+        }
+      ],
+      "granularidad": "mes × vista × valor × SKU opcional (nivel sitio: vista = general, sku vacío)",
+      "aplicabilidad": {
+        "unidades": [
+          "GLP1"
+        ],
+        "condicion": "Requiere la hoja `trafico`."
+      },
+      "limitaciones": [
+        "No identifica personas ni carritos individuales."
+      ],
+      "origen": "nuevo",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.1"
+    },
+    {
+      "id": "usuario",
+      "nombre": "Usuario",
+      "descripcion": "Usuario de analítica.",
+      "version": "1.0.0",
+      "tipo": "metrica",
+      "unidad": "usuarios",
+      "fuente": {
+        "hoja": "trafico",
+        "columna": "usuarios"
+      },
+      "granularidad": "mes × vista × valor × SKU opcional (nivel sitio: vista = general, sku vacío)",
+      "aplicabilidad": {
+        "unidades": [
+          "GLP1"
+        ],
+        "condicion": "Requiere la hoja `trafico`."
+      },
+      "limitaciones": [
+        "No es aditivo entre meses ni entre desgloses."
+      ],
+      "origen": "nuevo",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.1"
+    },
+    {
+      "id": "carritos_agregados",
+      "nombre": "Carritos agregados",
+      "descripcion": "Volumen agregado de la métrica `add_to_cart` a nivel sitio en el periodo, en la unidad que reporte la fuente. Es un volumen, no una lista de carritos identificables.",
+      "version": "1.0.0",
+      "tipo": "metrica",
+      "unidad": null,
+      "fuente": {
+        "hoja": "trafico",
+        "columna": "add_to_cart"
+      },
+      "granularidad": "mes × vista × valor × SKU opcional (nivel sitio: vista = general, sku vacío)",
+      "aplicabilidad": {
+        "unidades": [
+          "GLP1"
+        ],
+        "condicion": "Solo nivel sitio (vista = general, sku vacío)."
+      },
+      "limitaciones": [
+        "La unidad (eventos, sesiones u otra) no está declarada en los machotes: se trata como 'unidad no declarada'.",
+        "No es una lista de carritos ni exige identificadores."
+      ],
+      "origen": "nuevo",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.1, §8.2"
+    },
+    {
+      "id": "pedido_sistema_ventas",
+      "nombre": "Pedido del sistema de ventas",
+      "descripcion": "Cada `id_pedido` distinto de la hoja `ventas` con `fecha_pedido` en el periodo. Fuente de verdad de ventas.",
+      "version": "1.0.0",
+      "tipo": "entidad",
+      "unidad": "pedidos",
+      "fuente": {
+        "hoja": "ventas",
+        "columna": "id_pedido"
+      },
+      "granularidad": "pedido (valores distintos de id_pedido); la hoja `ventas` trae una fila por línea de pedido",
+      "aplicabilidad": {
+        "unidades": [
+          "GLP1",
+          "AETOPS"
+        ],
+        "condicion": null
+      },
+      "limitaciones": [
+        "No es sinónimo de compra GA4.",
+        "Los machotes no traen estatus de pedido: no se identifican cancelaciones."
+      ],
+      "origen": "nuevo",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.1"
+    },
+    {
+      "id": "compra_ga4",
+      "nombre": "Compra GA4",
+      "descripcion": "Valor de `compras` de la hoja `trafico` (evento purchase de la analítica) a nivel sitio.",
+      "version": "1.0.0",
+      "tipo": "metrica",
+      "unidad": "compras",
+      "fuente": {
+        "hoja": "trafico",
+        "columna": "compras"
+      },
+      "granularidad": "mes × vista × valor × SKU opcional (nivel sitio: vista = general, sku vacío)",
+      "aplicabilidad": {
+        "unidades": [
+          "GLP1"
+        ],
+        "condicion": "Requiere la hoja `trafico`."
+      },
+      "limitaciones": [
+        "No es sinónimo de pedido del sistema de ventas.",
+        "Sus diferencias con los pedidos no se tratan como error ni se concilian de forma individual."
+      ],
+      "origen": "nuevo",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.1, §3.3"
+    },
+    {
+      "id": "paciente",
+      "nombre": "Paciente",
+      "descripcion": "Cada `id_paciente` distinto y no nulo de la hoja `ventas`.",
+      "version": "1.0.0",
+      "tipo": "entidad",
+      "unidad": "pacientes",
+      "fuente": {
+        "hoja": "ventas",
+        "columna": "id_paciente"
+      },
+      "granularidad": "paciente (valores distintos de id_paciente)",
+      "aplicabilidad": {
+        "unidades": [
+          "GLP1",
+          "AETOPS"
+        ],
+        "condicion": null
+      },
+      "limitaciones": [
+        "`paciente_nuevo` es un atributo por pedido (primer pedido histórico), no define al paciente."
+      ],
+      "origen": "nuevo",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §3.1"
+    },
+    {
+      "id": "carritos_abandonados_heredado",
+      "nombre": "Carritos abandonados (métrica heredada)",
+      "descripcion": "Columna `carritos_abandonados` de `trafico`: dato de la fuente o, si viene vacía, `add_to_cart − compras` marcado como derivado. Alimenta el escenario histórico E2.",
+      "version": "1.0.0",
+      "tipo": "metrica",
+      "unidad": null,
+      "fuente": {
+        "hoja": "trafico",
+        "columna": "carritos_abandonados"
+      },
+      "granularidad": "mes × vista × valor × SKU opcional (nivel sitio: vista = general, sku vacío)",
+      "aplicabilidad": {
+        "unidades": [
+          "GLP1"
+        ],
+        "condicion": "Requiere la hoja `trafico`."
+      },
+      "limitaciones": [
+        "No constituye abandono individual comprobado.",
+        "El significado exacto cuando la informa la herramienta de analítica no se puede determinar con los machotes."
+      ],
+      "origen": "heredado",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.3; docs/CONTRATO_DATOS.md"
+    },
+    {
+      "id": "relacion_pedidos_carritos",
+      "nombre": "Relación pedidos/carritos (IND-01)",
+      "descripcion": "(Pedidos realizados / Carritos agregados) × 100, calculada con una fuente de pedidos identificada (sistema de ventas o compras GA4). Relación entre volúmenes agregados.",
+      "version": "1.0.0",
+      "tipo": "indicador",
+      "unidad": "%",
+      "fuente": [
+        {
+          "hoja": "ventas",
+          "columna": "id_pedido"
+        },
+        {
+          "hoja": "trafico",
+          "columna": "compras"
+        },
+        {
+          "hoja": "trafico",
+          "columna": "add_to_cart"
+        }
+      ],
+      "granularidad": "periodo del reporte (mes calendario o trimestre de tres meses)",
+      "aplicabilidad": {
+        "unidades": [
+          "GLP1"
+        ],
+        "condicion": "Requiere `trafico`; las dos fuentes de pedidos nunca se combinan."
+      },
+      "limitaciones": [
+        "No es una conversión individual ni una tasa de abandono.",
+        "No se calcula 100 − relación.",
+        "Puede superar 100 %: se conserva el valor con una advertencia."
+      ],
+      "origen": "nuevo",
+      "validacion_operacional": "no_validada_con_datos_reales",
+      "referencia": "docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md §8.2"
+    }
+  ]
+}

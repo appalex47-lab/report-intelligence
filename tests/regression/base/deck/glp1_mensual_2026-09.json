@@ -1,0 +1,359 @@
+{
+ "diapositivas": [
+  {
+   "n_formas": 8,
+   "sha256": "4cad4b6bbb38fde2361660f4ffaf0f22c28b532fc863fbdddbfad12ec479140d",
+   "slide": 1
+  },
+  {
+   "n_formas": 9,
+   "sha256": "f3c1f00aaaf60d16c245ed3c5bfe05b0ff361f07db55e2e484b0d6623f905fa5",
+   "slide": 2
+  },
+  {
+   "n_formas": 11,
+   "sha256": "4187a10bcde629faa9506e22b895c7289938af19f3aa3f5f138a1d7db3d76b0a",
+   "slide": 3
+  },
+  {
+   "n_formas": 14,
+   "sha256": "5a5bdbff3434663a0743cb9d28ba4a8563e758dfb4c38da252012b8d0b6bf6e4",
+   "slide": 4
+  },
+  {
+   "n_formas": 8,
+   "sha256": "ff5de64797db4b6a61684971324ef26d71262631db49d67f01e353e406fca276",
+   "slide": 5
+  },
+  {
+   "n_formas": 10,
+   "sha256": "ab345e339f1c018b5f0478339d7a35a535a0995c0d533569b182c6ed0b5937a9",
+   "slide": 6
+  },
+  {
+   "n_formas": 10,
+   "sha256": "c0b433d6652567c71b77d94a7c50e2f2d3369ae4c4c15c2c953a853ee59ed8d0",
+   "slide": 7
+  },
+  {
+   "n_formas": 20,
+   "sha256": "6a07cb300aa173606565162782b0474ff552a788888f9a44d38e65108be8d2d0",
+   "slide": 8
+  },
+  {
+   "n_formas": 9,
+   "sha256": "22085e66efd6d2b9b22a08677a9b34d0bcbe7585b6d67c7edce358fa3824d7e1",
+   "slide": 9
+  },
+  {
+   "n_formas": 9,
+   "sha256": "221e595874d3f4dc94880307d1cc013eef38119b49f8e0131d2ebdf8407d9ab7",
+   "slide": 10
+  },
+  {
+   "n_formas": 9,
+   "sha256": "9ee77edb3214dd6be94f3858845f5da6e60ab3f21f1bb7cb53311b798043e164",
+   "slide": 11
+  },
+  {
+   "n_formas": 8,
+   "sha256": "a34ec8f6d7f1dc8e1b098161763d5e1aee9bc2a1bf9ed93ee89d84082e32e10f",
+   "slide": 12
+  },
+  {
+   "n_formas": 8,
+   "sha256": "03ab208a3cc03ef94dc67de9e59cd3f322d29c07c18d680c81e0f50e664ae944",
+   "slide": 13
+  }
+ ],
+ "escenario": "glp1_mensual_2026-09",
+ "n_diapositivas": 13,
+ "narrativa": {
+  "conclusiones": [
+   {
+    "regla": "",
+    "texto": "Venta\nMounjaro es la presentación con más venta ($9.20 M, 74% de share, +3% vs agosto, +10% vs el mismo periodo del año anterior).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Dónde y cómo se compra\nCentro aporta 47% de la venta y Tarjeta de Credito 81%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "mayor número de visitas en cada dimensión (edad, sexo, dispositivo)",
+    "texto": "Insights:\nEn septiembre, el interés se concentra en mujer, de 25-34 años y en mobile.",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "mayor caída relativa entre etapas consecutivas del embudo",
+    "texto": "Acción sugerida:\nRevisar el paso «ver producto» a «agregar a carrito» del embudo: es donde se pierde 96% de las sesiones; la conversión final es 0.53%.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "monto negado ≥ 1 % de la venta del periodo (producto sin stock negado a la venta)",
+    "texto": "Abasto:\nLos negados suman $1.92 M, 15% de la venta del periodo: priorizar el abasto de MOUNJARO KWIKPEN MULTIDOSIS 10MG/0.6ML SOL….",
+    "tipo": "recomendacion"
+   }
+  ],
+  "descubrimientos": [
+   {
+    "regla": "Venta = Pacientes × (Piezas/Paciente) × (Venta/Pieza); aporte = ln(factor₁/factor₀) ÷ ln(venta₁/venta₀)",
+    "texto": "Septiembre cierra con una venta de $12.51 M, +2% vs agosto y +7% vs el mismo periodo del año anterior; 2,356 pedidos, 1,966 pacientes y ticket promedio de $5.3 K. El cambio contra el mismo periodo del año anterior se explica principalmente por volumen (92% del cambio).",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "",
+    "texto": "Los negados suman $1.92 M, equivalente a 15% de la venta, concentrados en MOUNJARO KWIKPEN MULTIDOSIS 10MG/0.6ML SOL… (36%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Mobile (dispositivo) sube 16% vs agosto con 73% de las visitas.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Mounjaro concentra 74% de la venta ($9.20 M).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Noreste (región) cae 14% vs agosto con 13% de la venta.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "105 pacientes son nuevos (5% de los pacientes del periodo; +7% vs agosto).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "El embudo convierte 495,144 vistas de producto en 2,643 compras (0.53%), 0 pp más que agosto (0.48%); los carritos abandonados suman 16,240.",
+    "tipo": "hecho"
+   }
+  ],
+  "fuentes": [
+   {
+    "regla": "",
+    "texto": "Fuentes de Tráfico:\ngoogle / organic y facebook / paid_social son las fuentes con mayor volumen de visitas. google / organic registra 24,231 visitas y 19,720 usuarios. facebook / paid_social registra 21,350 visitas y 17,038 usuarios.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "En Add to Cart, facebook / paid_social lidera con 1,232 (-9% en visitas).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Por canal, Pago aporta 37,436 visitas y 2,276 Add to Cart; Orgánico aporta 31,958 visitas y 1,572 Add to Cart.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "Add to Cart ÷ visitas, entre fuentes con 500 visitas o más",
+    "texto": "google / cpc convierte mejor a Add to Cart: 7% de sus visitas.",
+    "tipo": "interpretacion"
+   }
+  ],
+  "funnel": [
+   {
+    "regla": "",
+    "texto": "Patrones de Compra:\nDe 495,144 vistas de producto se generan 18,883 Add to Cart, 11,329 inicios de compra y 2,643 compras. La conversión final queda en 0.53% y los carritos abandonados suman 16,240.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "mayor caída relativa entre etapas consecutivas del embudo",
+    "texto": "La mayor pérdida del embudo ocurre entre «ver producto» y «agregar a carrito»: se pierde 96% de las sesiones.",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "",
+    "texto": "En negados, MOUNJARO KWIKPEN MULTIDOSIS 10MG/0.6ML SOL… concentra 36% del monto negado, con 168 pedidos, 187 piezas y $687.0 K. También aparecen MOUNJARO KWIKPEN MULTIDOSIS 7.5MG/0.6ML SOL… y 3 productos más.",
+    "tipo": "hecho"
+   }
+  ],
+  "pago": [
+   {
+    "regla": "",
+    "texto": "Forma de Pago:\nTarjeta de Credito es la forma de pago más fuerte con 81% de share, 1,906 pedidos y $10.17 M en venta (+2% vs agosto, +8% vs el mismo periodo del año anterior). Tarjeta de Debito +80%, Pendiente por Actualizar en Seus +6%, Pago eCommerce -18%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Modo de Entrega:\nA domicilio concentra 72% de la venta con 1,712 pedidos y $8.96 M (+4%); Recoge en sucursal -1%.",
+    "tipo": "hecho"
+   }
+  ],
+  "producto_sexo": [
+   {
+    "regla": "",
+    "texto": "Mounjaro:\nMujer registra 34,675 visitas, 28,420 usuarios y 1,681 Add to Cart (+22%); hombre tiene 17,215 visitas y 13,656 usuarios (+15%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Wegovy:\nMujer registra 8,085 visitas, 6,688 usuarios y 382 Add to Cart (-7%); hombre tiene 4,250 visitas y 3,427 usuarios (+8%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Saxenda:\nMujer registra 3,782 visitas, 3,150 usuarios y 213 Add to Cart (-13%); hombre tiene 2,099 visitas y 1,703 usuarios (0%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Otros productos:\nRybelsus mujer +9%; Rybelsus hombre -11%; Ozempic mujer +16%; Ozempic hombre +4%; Trulicity mujer -5%; Trulicity hombre 0%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "productos con variación negativa en hombres sobre el total de productos",
+    "texto": "Lectura:\nLa búsqueda cae en hombres en 1 de 6 productos; el comportamiento no es igual en todo el público.",
+    "tipo": "interpretacion"
+   }
+  ],
+  "productos": [
+   {
+    "regla": "",
+    "texto": "Las presentaciones que más venden: Mounjaro (74%, $9.20 M); Wegovy (18%, $2.26 M); Rybelsus (3%, $396.5 K).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Suben: Trulicity +32%, Ozempic +15%, Rybelsus +8%. Bajan: Saxenda -17%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "participación acumulada de las 3 presentaciones con más venta (concentrado si ≥ 50 %)",
+    "texto": "Las tres presentaciones principales suman 95% de la venta: el portafolio está concentrado.",
+    "tipo": "interpretacion"
+   }
+  ],
+  "programas": [
+   {
+    "regla": "",
+    "texto": "Programas de Apoyo\nMas Calidad De Vida es el programa que más sostiene la venta, con 84% de share, 1,969 pedidos, 1,697 pacientes y $10.50 M (+4% vs agosto, +7% vs el mismo periodo del año anterior).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Nuevo Yo Domiciliacion +14% ($275.5 K), Combos Mostrador -28% ($98.6 K), Elililly Enlace -14% ($608.7 K).",
+    "tipo": "hecho"
+   }
+  ],
+  "quien": [
+   {
+    "regla": "",
+    "texto": "Visitas por Edad:\nEl grupo de 25-34 años es el principal perfil de búsqueda, con 23,760 visitas, 18,690 usuarios, 1,031 Add to Cart y 31% de share. Le siguen 45-54 con 22% y 35-44 con 18%. Sube más 18-24 (+11%). Baja más 65+ (-11%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Sexo:\nMujer concentra el interés con 51,260 visitas, 40,702 usuarios, 2,833 Add to Cart y 65% de share (-3% vs agosto, -6% vs el mismo periodo del año anterior); hombre +8%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Dispositivo:\nMobile es el principal punto de entrada: 73% de share, 60,701 visitas y 48,309 usuarios (+16% vs agosto, -2% vs el mismo periodo del año anterior). Desktop aporta 26% con 21,471 visitas.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "mayor número de visitas en cada dimensión (edad, sexo, dispositivo)",
+    "texto": "Lectura:\nEn septiembre, el usuario que más busca GLP1 es mujer, de 25-34 años y desde mobile.",
+    "tipo": "interpretacion"
+   }
+  ],
+  "recomendaciones": [
+   {
+    "regla": "carritos abandonados × 10 % × ticket promedio; escenario ilustrativo, no pronóstico",
+    "texto": "1. [ALTA] Reducir el abandono de carrito: hay 16,240 carritos abandonados. Escenario ilustrativo: cerrar 10% de ellos con el ticket promedio equivale a $8.62 M (69% de la venta). Seguimiento: carritos abandonados y conversión final.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "negado = producto sin stock negado a la venta (definición del negocio); el escenario es ilustrativo, no pronóstico",
+    "texto": "2. [ALTA] Priorizar el abasto de los productos más negados (MOUNJARO KWIKPEN MULTIDOSIS 10MG/0.6ML SOL…): $1.92 M (15% de la venta) corresponden a productos sin stock que se negaron a la venta. Escenario ilustrativo: recuperar 25% equivale a $480.8 K (4% de la venta). Seguimiento: monto y pedidos negados.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "producto con ≥ 50 % de la venta (concentración)",
+    "texto": "3. [ALTA] Proteger Mounjaro: concentra 74% de la venta; asegurar abasto y continuidad. Seguimiento: venta y pacientes de ese producto cada mes.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "segmento con ≥ 10 % de participación y caída ≥ 5 %",
+    "texto": "4. [BAJA] Validar la caída en NORESTE (región): cae 14% vs agosto con 13% de la venta. Seguimiento: venta de ese segmento cada mes.",
+    "tipo": "recomendacion"
+   }
+  ],
+  "region": [
+   {
+    "regla": "",
+    "texto": "Región:\nCentro concentra la mayor venta con 47% de share, $5.88 M, 1,115 pedidos y 1,355 piezas (+5% vs agosto, +11% vs el mismo periodo del año anterior).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Otras regiones con movimiento relevante: Noroeste +18%, Sureste +9%, Noreste -14%.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "En tráfico, Ciudad De México es el principal mercado digital con 19,665 visitas y 15,998 usuarios (-5%).",
+    "tipo": "hecho"
+   }
+  ],
+  "resumen_ejecutivo": [
+   {
+    "regla": "",
+    "texto": "Dónde estamos",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "Venta = Pacientes × (Piezas/Paciente) × (Venta/Pieza); aporte = ln(factor₁/factor₀) ÷ ln(venta₁/venta₀)",
+    "texto": "Septiembre cierra con una venta de $12.51 M, +2% vs agosto y +7% vs el mismo periodo del año anterior; 2,356 pedidos, 1,966 pacientes y ticket promedio de $5.3 K. El cambio contra el mismo periodo del año anterior se explica principalmente por volumen (92% del cambio).",
+    "tipo": "interpretacion"
+   },
+   {
+    "regla": "",
+    "texto": "Descubrimientos del periodo",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "• Los negados suman $1.92 M, equivalente a 15% de la venta, concentrados en MOUNJARO KWIKPEN MULTIDOSIS 10MG/0.6ML SOL… (36%).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "• Mobile (dispositivo) sube 16% vs agosto con 73% de las visitas.",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "• Mounjaro concentra 74% de la venta ($9.20 M).",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "",
+    "texto": "Qué hacer",
+    "tipo": "hecho"
+   },
+   {
+    "regla": "carritos abandonados × 10 % × ticket promedio; escenario ilustrativo, no pronóstico",
+    "texto": "• [ALTA] Reducir el abandono de carrito.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "negado = producto sin stock negado a la venta (definición del negocio); el escenario es ilustrativo, no pronóstico",
+    "texto": "• [ALTA] Priorizar el abasto de los productos más negados.",
+    "tipo": "recomendacion"
+   },
+   {
+    "regla": "producto con ≥ 50 % de la venta (concentración)",
+    "texto": "• [ALTA] Proteger Mounjaro.",
+    "tipo": "recomendacion"
+   }
+  ]
+ },
+ "plantilla": "glp1-mensual/1/template.pptx",
+ "plantilla_sha256": "6bf6abb501fd8ea2e98d1b28477b89c6837d1e1097671d93477f66dd37739c76"
+}
