@@ -12,6 +12,7 @@ from decimal import Decimal
 from lxml import etree
 from pptx.dml.color import RGBColor
 from pptx.oxml.ns import qn
+from pptx.util import Emu
 
 NS_A = "http://schemas.openxmlformats.org/drawingml/2006/main"
 
@@ -152,6 +153,39 @@ def resize_blocks(table, first: int, block_len: int, have: int, needed: int) -> 
 
 def sync_frame_height(shape) -> None:
     shape.height = sum(r.height for r in shape.table.rows)
+
+
+def set_filler_font(table, rows: list[int], cols, size_pt: float) -> None:
+    """Fija el tamaño de letra de las celdas «de relleno» (solo espacios/NBSP) de las filas indicadas. No cambia ningún texto visible:
+    en la plantilla esos NBSP vienen a 18 pt y obligan a la fila a medir más de lo que ocupa su contenido real."""
+    sz = str(int(round(size_pt * 100)))
+    for r in rows:
+        tr = table._tbl.tr_lst[r]
+        for c in cols:
+            tc = tr.tc_lst[c]
+            if "".join(tc.itertext()).replace("\u00a0", "").strip():
+                continue
+            for el in tc.iter(qn("a:rPr"), qn("a:endParaRPr")):
+                el.set("sz", sz)
+
+
+def compact_to_fit(shape, bottom_limit_pt: float, floors: list[float]) -> tuple[float, float] | None:
+    """Si la tabla (con filas clonadas) se pasa de `bottom_limit_pt`, reduce proporcionalmente el ALTO SOBRANTE de cada fila
+    (nunca por debajo de lo que necesita su texto: `floors`). Si ya cabe no toca nada y devuelve None; si compacta,
+    devuelve (alto antes, alto después) en pt. Si ni compactando al mínimo cabe, deja las filas en su mínimo y el QA lo señalará."""
+    rows = list(shape.table.rows)
+    heights = [Emu(r.height).pt for r in rows]
+    avail = bottom_limit_pt - Emu(shape.top).pt
+    total = sum(heights)
+    if total <= avail:
+        return None
+    lows = [min(h, f) for h, f in zip(heights, floors)]
+    slack = sum(h - lo for h, lo in zip(heights, lows))
+    k = 1.0 if slack <= 0 else min(1.0, (total - avail) / slack)
+    for r, h, lo in zip(rows, heights, lows):
+        r.height = Emu(int(round((h - k * (h - lo)) * 12700)))
+    sync_frame_height(shape)
+    return total, sum(Emu(r.height).pt for r in rows)
 
 
 # ----------------------------------------------------------------------------- texto libre
