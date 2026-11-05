@@ -547,3 +547,270 @@ def leer_manifiesto(datos) -> tuple[dict | None, list[str]]:
         return None, [f"JSON inválido o truncado: {str(e)[:120]}"]
     errs = validar_manifiesto(m)
     return (m, []) if not errs else (None, errs)
+
+
+# ======================================================================================================================================
+# Fase 3A-4 · comparación y estados de reproducibilidad (docs/fase3a/ESPECIFICACION_FASE3A_PROCEDENCIA.md §3.1 a §3.5)
+#
+# `comparar` es PURA: no lee archivos, no regenera, no consulta el reloj ni escribe nada. Recibe la evidencia ya reunida (resultado de la
+# verificación de integridad, el manifiesto registrado, el estado ACTUAL, las fuentes aportadas y, si se hizo, el resultado de una regeneración
+# real) y la clasifica. Regla transversal: la ausencia de evidencia NUNCA cuenta como coincidencia.
+# ======================================================================================================================================
+ESQUEMA_COMPARACION = "comparacion/1"
+ESTADOS = ("exacta", "parcial", "no_reproducible", "no_evaluada")
+COMPROBACIONES = ("C1", "C2", "C3a", "C3b", "C4", "C5", "C6", "C7")
+ACTUAL_CAMPOS = ("version_codigo", "version_motor", "version_definiciones", "version_reglas", "version_plantillas", "configuracion", "entorno")
+IGUALDAD_CANONICA = ("El resultado canónico es idéntico (hash_resultado). Esto NO implica igualdad binaria ni visual del PPTX (spec §3.5).")
+MAX_VALOR_DIFF = 200
+
+
+def _recortar(v):
+    if isinstance(v, (dict, list)):
+        v = json.dumps(v, ensure_ascii=False, sort_keys=True)
+    texto = nfc(str(v)) if not isinstance(v, (bool, int)) and v is not None else v
+    return texto[:MAX_VALOR_DIFF] + "…" if isinstance(texto, str) and len(texto) > MAX_VALOR_DIFF else texto
+
+
+def _aplanar(x, ruta: str, out: dict) -> dict:
+    if isinstance(x, dict):
+        if not x:
+            out[ruta] = {}
+        for k in sorted(x):
+            _aplanar(x[k], f"{ruta}.{k}" if ruta else str(k), out)
+    elif isinstance(x, list):
+        if not x:
+            out[ruta] = []
+        for i, v in enumerate(x):
+            _aplanar(v, f"{ruta}[{i}]", out)
+    else:
+        out[ruta] = x
+    return out
+
+
+_AUSENTE = "‹ausente›"
+
+
+def _diferencias(componente: str, registrado, actual) -> list[dict]:
+    """Diferencias hoja por hoja entre dos estructuras JSON (orden determinista). Una hoja presente en un solo lado se informa como ausente."""
+    a, b = _aplanar(registrado, "", {}), _aplanar(actual, "", {})
+    out = []
+    for ruta in sorted(set(a) | set(b)):
+        va, vb = a.get(ruta, _AUSENTE), b.get(ruta, _AUSENTE)
+        if type(va) is not type(vb) or va != vb:
+            out.append({"componente": componente + (f".{ruta}" if ruta and not ruta.startswith("[") else ruta), "registrado": _recortar(va),
+                        "actual": _recortar(vb), "motivo": "difiere"})
+    return out
+
+
+def _comprobacion(resultado: str, *detalle: str) -> dict:
+    return {"resultado": resultado, "detalle": list(detalle)}
+
+
+def _c1_c2(verificacion: dict) -> tuple[dict, dict, str | None]:
+    """(C1, C2, causa_no_reproducible) a partir del resultado de `provenance_verify.verificar` (que ya distingue registro y copia)."""
+    reg = verificacion["registro"]
+    cop = verificacion["copia"]["estado"]
+    estado = reg["estado"]
+    if estado == "presente":
+        c1 = _comprobacion("pasa", "el registro autoritativo existe, es válido y su esquema se conoce")
+        if cop == "alterada":                                    # §3.1 C2 compara los bytes de `procedencia.json` con `manifiesto_sha256`
+            return c1, _comprobacion("falla", "los bytes de procedencia.json difieren del registro autoritativo (copia alterada)"), \
+                "manifiesto alterado: la copia procedencia.json no coincide con el registro (el registro autoritativo está íntegro)"
+        return c1, _comprobacion("pasa", "sha256 del manifiesto = manifiesto_sha256 registrado"), None
+    if estado == "esquema_no_soportado":
+        return (_comprobacion("falla", *reg["detalle"]), _comprobacion("no_evaluada", "sin esquema conocido no se puede verificar"),
+                "esquema de procedencia desconocido")
+    if estado in ("corrupto", "ilegible"):
+        causa = {"corrupto": "manifiesto alterado o inválido en el registro", "ilegible": "no se pudo leer el historial"}[estado]
+        codigos = reg.get("codigos") or []
+        c1_falla = estado == "ilegible" or "invalido" in codigos
+        return (_comprobacion("falla" if c1_falla else "pasa", *(reg["detalle"] if c1_falla else [])),
+                _comprobacion("falla" if estado == "corrupto" else "no_evaluada", *reg["detalle"]), causa)
+    # registro ausente
+    if cop == "sin_registro":
+        return (_comprobacion("pasa", "la copia procedencia.json es válida"),
+                _comprobacion("no_evaluada", "no hay registro autoritativo con el que verificar la integridad (D-B: máximo parcial)"), None)
+    if cop in ("invalida", "ilegible"):
+        return _comprobacion("falla", *verificacion["copia"]["detalle"]), _comprobacion("no_evaluada"), "la única copia de la procedencia no es válida"
+    if verificacion.get("error_de_generacion"):
+        return (_comprobacion("falla", "no hay manifiesto: la procedencia no se pudo generar"), _comprobacion("no_evaluada"),
+                "procedencia no disponible por un error al generarla")
+    return (_comprobacion("falla", "no hay manifiesto"), _comprobacion("no_evaluada"), "sin procedencia (reporte anterior a la Fase 3A: legado)")
+
+
+def _c3(registrado: dict, aportadas) -> tuple[dict, dict, list[dict]]:
+    """(C3a, C3b, diferencias). Una fuente se da por aportada si algún archivo tiene su SHA-256 (el nombre no importa, igual que en el hash)."""
+    difs: list[dict] = []
+    if aportadas is None:
+        faltan = [f for f in registrado["archivos_fuente"]]
+        for f in faltan:
+            difs.append({"componente": f"archivos_fuente.{f['id']}", "registrado": f["sha256"], "actual": _AUSENTE, "motivo": "no aportado"})
+        return (_comprobacion("falla" if faltan else "pasa", *[f"{f['id']} ({f['nombre']}) no fue aportada" for f in faltan]),
+                _comprobacion("no_evaluada", "no se aportó ningún archivo"), difs)
+    shas = {a["sha256"] for a in aportadas}
+    registradas = {f["sha256"] for f in registrado["archivos_fuente"]}
+    faltan, distintos = [], []
+    for f in registrado["archivos_fuente"]:
+        if f["sha256"] in shas:
+            continue
+        misma = [a for a in aportadas if a["nombre"] == f["nombre"]]
+        if misma:
+            distintos.append(f"{f['id']} ({f['nombre']}): el archivo aportado tiene otro contenido")
+            difs.append({"componente": f"archivos_fuente.{f['id']}.sha256", "registrado": f["sha256"], "actual": misma[0]["sha256"],
+                         "motivo": "contenido distinto"})
+        else:
+            faltan.append(f"{f['id']} ({f['nombre']}) no fue aportada")
+            difs.append({"componente": f"archivos_fuente.{f['id']}", "registrado": f["sha256"], "actual": _AUSENTE, "motivo": "no aportado"})
+    ya = {d["actual"] for d in difs}                                    # ya informadas arriba (mismo nombre, otro contenido)
+    for a in sorted(aportadas, key=lambda x: (x["nombre"], x["sha256"])):
+        if a["sha256"] not in registradas and a["sha256"] not in ya:
+            distintos.append(f"«{a['nombre']}» no corresponde a ninguna fuente registrada")
+            difs.append({"componente": "archivos_fuente.aportado", "registrado": _AUSENTE, "actual": a["sha256"], "motivo": "fuente no registrada"})
+    return (_comprobacion("falla" if faltan else "pasa", *faltan), _comprobacion("falla" if distintos else "pasa", *distintos), difs)
+
+
+def _c4(registrado: dict, actual: dict) -> tuple[dict, list[dict]]:
+    act = actual.get("version_plantillas")
+    if act is None:
+        return _comprobacion("falla", "no se aportó la plantilla actual: sin evidencia"), [
+            {"componente": "version_plantillas", "registrado": _recortar(registrado["version_plantillas"]), "actual": _AUSENTE, "motivo": "sin evidencia actual"}]
+    clave = lambda p: sorted(({"id": x["id"], "sha256": x["sha256"]} for x in p), key=lambda d: (d["id"], d["sha256"]))        # noqa: E731
+    difs = _diferencias("version_plantillas", clave(registrado["version_plantillas"]), clave(act))
+    return _comprobacion("falla" if difs else "pasa", *[f"{d['componente']}: registrado {d['registrado']} / actual {d['actual']}" for d in difs]), difs
+
+
+def _c5(registrado: dict, actual: dict) -> tuple[dict, list[dict]]:
+    act = actual.get("version_codigo")
+    reg = registrado["version_codigo"]
+    if act is None:
+        return _comprobacion("falla", "no se aportó la versión actual del código: sin evidencia"), [
+            {"componente": "version_codigo", "registrado": _recortar(reg), "actual": _AUSENTE, "motivo": "sin evidencia actual"}]
+    difs = _diferencias("version_codigo", reg, act)
+    detalle = [f"{d['componente']}: registrado {d['registrado']} / actual {d['actual']}" for d in difs]
+    for lado, c in (("registrado", reg["commit"]), ("actual", act.get("commit"))):
+        if c == "desconocido" or c is None:
+            detalle.append(f"el commit {lado} es desconocido: no se puede demostrar que sea el mismo código")
+        elif isinstance(c, str) and c.endswith("+dirty"):
+            detalle.append(f"el commit {lado} tiene cambios sin confirmar (+dirty): no identifica un código único")
+    return _comprobacion("falla" if detalle else "pasa", *detalle), difs
+
+
+def _c6(registrado: dict, actual: dict) -> tuple[dict, list[dict]]:
+    difs: list[dict] = []
+    detalle: list[str] = []
+    for campo in ("version_motor", "version_definiciones", "version_reglas", "configuracion"):
+        act = actual.get(campo)
+        if act is None:
+            difs.append({"componente": campo, "registrado": _recortar(registrado[campo]), "actual": _AUSENTE, "motivo": "sin evidencia actual"})
+            detalle.append(f"{campo}: no se aportó el valor actual (sin evidencia)")
+            continue
+        for d in _diferencias(campo, registrado[campo], act):
+            difs.append(d)
+            detalle.append(f"{d['componente']}: registrado {d['registrado']} / actual {d['actual']}")
+    return _comprobacion("falla" if detalle else "pasa", *detalle), difs
+
+
+def _c7(registrado: dict, regeneracion) -> tuple[dict, list[dict], dict]:
+    reg_hash = registrado["hash_resultado"]
+    info = {"ejecutada": False, "hash_registrado": reg_hash["valor"], "hash_regenerado": None, "error": None}
+    if regeneracion is None:
+        return _comprobacion("no_evaluada", "no se regeneró: sin regeneración real no existe «exacta» (§3.5)"), [], info
+    info["ejecutada"] = True
+    if not isinstance(regeneracion, dict):
+        info["error"] = "evidencia de regeneración inválida"
+        return _comprobacion("error", info["error"]), [], info
+    if regeneracion.get("error"):
+        info["error"] = nfc(rutas_a_nombre_base(str(regeneracion["error"])))[:500]
+        return _comprobacion("error", "la regeneración falló: " + info["error"]), [], info
+    valor = regeneracion.get("hash_resultado")
+    if not isinstance(valor, str) or not _SHA_MIN.match(valor):
+        info["error"] = "la regeneración no devolvió un hash_resultado válido"
+        return _comprobacion("error", info["error"]), [], info
+    info["hash_regenerado"] = valor
+    if valor != reg_hash["valor"]:
+        return _comprobacion("falla", "el hash_resultado de la regeneración difiere del registrado"), [
+            {"componente": "hash_resultado.valor", "registrado": reg_hash["valor"], "actual": valor, "motivo": "difiere"}], info
+    return _comprobacion("pasa", "el hash_resultado de la regeneración es igual al registrado"), [], info
+
+
+def comparar(*, verificacion: dict, registrado, actual: dict | None, fuentes_aportadas, regeneracion=None) -> dict:
+    """Clasifica la reproducibilidad (spec §3.2). El primer criterio que se cumple gana, en este orden:
+
+    1. `no_reproducible`: C1 falla (sin manifiesto, legado, esquema desconocido) o C2 falla (alterado) o C3b falla (una fuente aportada difiere).
+    2. `parcial`: C3a, C4, C5 o C6 fallan, o no hay registro para verificar C2 (D-B), o C1 a C6 pasan y C7 falla (anomalía de determinismo).
+    3. `exacta`: C1 a C7 pasan; C7 exige una regeneración real.
+    4. `no_evaluada` (no es un estado de la spec): C1 a C6 pasan pero no hay regeneración, o la regeneración falló. Nunca se presenta como `exacta`.
+
+    `verificacion` es el resultado de `provenance_verify.verificar`; `registrado` el manifiesto ya validado (o `None`); `actual` el estado actual
+    (claves de `ACTUAL_CAMPOS`); `fuentes_aportadas` lista de `{"nombre", "sha256"}` o `None`; `regeneracion` `None`, `{"hash_resultado"}` o `{"error"}`.
+    Determinista y sin efectos: el mismo argumento da siempre el mismo resultado."""
+    if not isinstance(verificacion, dict) or "registro" not in verificacion or "copia" not in verificacion:
+        raise ErrorProcedencia("verificacion no es un resultado de provenance_verify.verificar")
+    actual = actual or {}
+    desconocidas = set(actual) - set(ACTUAL_CAMPOS)
+    if desconocidas:
+        raise ErrorProcedencia(f"campos desconocidos en el estado actual: {sorted(desconocidas)}")
+    c1, c2, causa_no_repr = _c1_c2(verificacion)
+    comps = {k: _comprobacion("no_evaluada", "no se evaluó: no hay un manifiesto válido") for k in COMPROBACIONES}
+    comps["C1"], comps["C2"] = c1, c2
+    out = {"esquema": ESQUEMA_COMPARACION, "estado": "no_reproducible", "causa": causa_no_repr, "comprobaciones": comps, "diferencias": [],
+           "notas": [], "alertas": [], "regeneracion": {"ejecutada": False, "hash_registrado": None, "hash_regenerado": None, "error": None},
+           "evidencia": {"run_id": verificacion.get("run_id"), "manifiesto_sha256": verificacion["registro"].get("manifiesto_sha256"),
+                         "integridad": verificacion.get("integridad"), "copia": verificacion["copia"]["estado"]}}
+    if c1["resultado"] == "falla" or c2["resultado"] == "falla":
+        return out
+    if registrado is None or validar_manifiesto(registrado):
+        out["causa"] = "no hay un manifiesto válido que comparar"
+        comps["C1"] = _comprobacion("falla", "no se entregó un manifiesto válido")
+        return out
+    difs: list[dict] = []
+    comps["C3a"], comps["C3b"], d3 = _c3(registrado, fuentes_aportadas)
+    comps["C4"], d4 = _c4(registrado, actual)
+    comps["C5"], d5 = _c5(registrado, actual)
+    comps["C6"], d6 = _c6(registrado, actual)
+    difs += d3 + d4 + d5 + d6
+    if actual.get("entorno") is not None:
+        for d in _diferencias("entorno", registrado["entorno"], actual["entorno"]):
+            out["notas"].append(f"entorno: {d['componente']} registrado {d['registrado']} / actual {d['actual']} (informativo; no decide el estado)")
+    if comps["C3b"]["resultado"] == "falla":
+        out["causa"] = "un archivo fuente aportado difiere del registrado"
+        out["diferencias"] = difs
+        return out
+    sin_c2 = c2["resultado"] != "pasa"
+    fallas = [k for k in ("C3a", "C4", "C5", "C6") if comps[k]["resultado"] == "falla"]
+    if fallas or sin_c2:
+        out["estado"] = "parcial"
+        causas = [f"{k} falla" for k in fallas] + (["integridad no verificable: no hay registro autoritativo (D-B)"] if sin_c2 else [])
+        out["causa"] = "; ".join(causas)
+        out["diferencias"] = difs
+        # la regeneración, si la hubo, se registra para auditoría pero no puede elevar el estado
+        comps["C7"], d7, out["regeneracion"] = _c7(registrado, regeneracion)
+        out["diferencias"] += d7
+        return out
+    comps["C7"], d7, out["regeneracion"] = _c7(registrado, regeneracion)
+    out["diferencias"] = difs + d7
+    r = comps["C7"]["resultado"]
+    if r == "pasa":
+        out["estado"], out["causa"] = "exacta", IGUALDAD_CANONICA
+        if out["notas"]:
+            out["alertas"].append("el entorno difiere: la igualdad es solo del resultado canónico; no se garantiza igualdad binaria ni visual del PPTX")
+    elif r == "falla":
+        out["estado"] = "parcial"
+        out["causa"] = "anomalía de determinismo: C1 a C6 pasan y el hash_resultado regenerado difiere"
+        out["alertas"].append("anomalía de determinismo: mismos insumos y versiones, distinto hash_resultado. Es un defecto del sistema o una entrada "
+                              "no registrada (p. ej. texto editado a mano); primera sospecha: " + ("diferencia de entorno" if out["notas"] else "entradas no registradas"))
+    else:
+        out["estado"] = "no_evaluada"
+        out["causa"] = ("la regeneración falló; no hay evidencia de reproducibilidad" if r == "error"
+                        else "C1 a C6 pasan pero no se regeneró: sin regeneración real no existe «exacta»")
+    return out
+
+
+def serializar_comparacion(resultado: dict) -> bytes:
+    """Bytes deterministas (JSON de claves ordenadas, UTF-8) de un resultado de `comparar`, para conservarlo como evidencia de auditoría."""
+    if not isinstance(resultado, dict) or resultado.get("esquema") != ESQUEMA_COMPARACION:
+        raise ErrorProcedencia("no es un resultado de comparar")
+    try:
+        return (json.dumps(resultado, ensure_ascii=False, sort_keys=True, indent=1, allow_nan=False) + "\n").encode("utf-8")
+    except (TypeError, ValueError) as e:
+        raise ErrorProcedencia(f"la comparación no se puede serializar: {e}") from None

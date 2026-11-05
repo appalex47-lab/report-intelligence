@@ -3,7 +3,7 @@
 
 | | |
 |---|---|
-| Estado | **3A-0, 3A-1 y 3A-2 cerradas** (PR #15 a #18 fusionados; `main` en `c7de4b6`). **3A-3** (manifiesto, tabla autoritativa `procedencia`, captura y verificación de integridad) **implementada y en revisión** en un PR independiente, sin fusionar: ver `docs/fase3a/IMPLEMENTACION_3A3_PROCEDENCIA.md`. **3A-4** conserva la comparación por regeneración y los estados `exacta` / `parcial`; **3A-5** sigue diferida. Cada subfase requiere autorización expresa |
+| Estado | **3A-0 a 3A-3 cerradas** (PR #15 a #19 fusionados; `main` en `e4b2f65`). **3A-4** (comparación por regeneración real y estados `exacta` / `parcial`) **implementada y en revisión** en un PR independiente, sin fusionar: ver `docs/fase3a/IMPLEMENTACION_3A4_COMPARACION.md`. **3A-5** sigue diferida. Cada subfase requiere autorización expresa |
 | Punto de partida | `main` con los PR #11 a #17 fusionados. `version.py` define `APP_VERSION` y `ENGINE_VERSION` (`1.0.0`) desde 3A-1 (antes devolvía `None`) |
 | Fuente que desarrolla | `docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md` §5 (procedencia), §9 (archivos), §11 (T-07, T-08, T-16, V-02), §12 (AC-10, AC-11, AC-12, AC-28) |
 | Relación con la especificación original | Este documento es una **adenda**. No modifica la especificación original; cada diferencia está listada en §2 |
@@ -524,6 +524,7 @@ Detalle de cada subfase:
 - Implementación esperada: `comparar()` con los tres estados (§3.2) sobre la tabla ya existente (§7.2).
 - Pruebas: T-08 con manifiestos sintéticos (coincidente, versión distinta, archivo faltante, sin manifiesto, hash de entrada distinto, manifiesto alterado, anomalía de determinismo, reporte con `procedencia_error.json`); PR-5, PR-10 y PR-11; un historial anterior abre sin migración; las filas son inmutables.
 - Aceptación: AC-11 (0 regeneraciones silenciosas) y AC-12 (legado = `no_reproducible`).
+- **Estado:** implementada (`provenance.comparar` pura, `provenance_compare.py`); interpretaciones I-1 a I-4 documentadas en `IMPLEMENTACION_3A4_COMPARACION.md`.
 
 **3A-5 (diferida)**
 - No se implementa. Si en el futuro autorizas A-5: `release.yml` etiqueta `app-vX.Y.Z` y publica su `app.zip` con su SHA-256 (V-02, AC-28). Mientras tanto, los reportes cuyo código no sea recuperable quedan en `parcial` (§5.3 original).

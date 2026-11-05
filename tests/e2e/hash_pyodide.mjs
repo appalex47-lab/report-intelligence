@@ -3,13 +3,14 @@
 //
 // Preparación (una vez, fuera del repositorio; ver también tools/pyodide_node_check.mjs): una carpeta de trabajo con
 //   node_modules/pyodide (npm i pyodide@0.27.7) y sp/ con openpyxl, et_xmlfile y yaml (paquetes Python puros).
-// Uso: node --experimental-default-type=module hash_pyodide.mjs <carpeta_de_trabajo> <app.zip> <salida.json>
+// Uso: node --experimental-default-type=module hash_pyodide.mjs <carpeta_de_trabajo> <app.zip> <salida.json> [entrada_comparaciones.json]
+// Si se da la entrada, también ejecuta `provenance.comparar` (3A-4, función pura) dentro de Pyodide con esos casos y devuelve sus bytes serializados.
 // Lo invoca tests/e2e/test_hash_pyodide.py.
 import { createRequire } from "module";
 import fs from "fs";
 import path from "path";
 
-const [, , work, appZip, outFile] = process.argv;
+const [, , work, appZip, outFile, inFile] = process.argv;
 const repo = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "..");
 const require = createRequire(path.join(work, "x.js"));
 const { loadPyodide } = require("pyodide");
@@ -18,6 +19,7 @@ const py = await loadPyodide();
 py.mountNodeFS("/host_sp", path.join(work, "sp"));
 py.mountNodeFS("/ej", path.join(repo, "data", "ejemplos"));
 py.unpackArchive(new Uint8Array(fs.readFileSync(appZip)), "zip", { extractDir: "/app" });
+py.globals.set("entrada_json", inFile ? fs.readFileSync(inFile, "utf8") : "");
 const out = await py.runPythonAsync(`
 import sys, json, hashlib
 sys.path.insert(0, "/host_sp"); sys.path.insert(0, "/app")
@@ -45,6 +47,13 @@ muestra = {"conclusiones": [Para("Ventas **+26%** y piezas +16%, año 2026.", "h
                             Para("Nota de calidad solo para narrative.json", "calidad", visible=False)],
            "recomendaciones": [Para("1. [MEDIA] Proteger **AE-A**.", "recomendacion")]}
 res["narrativa_muestra"] = pv.sha256_hex(pv.serializar({"narrativa": pv._narrativa(muestra)}))
+if entrada_json:
+    casos = json.loads(entrada_json)
+    res["comparaciones"] = {}
+    for nombre, c in casos.items():
+        r = pv.comparar(verificacion=c["verificacion"], registrado=c["registrado"], actual=c["actual"], fuentes_aportadas=c["fuentes"],
+                        regeneracion=c["regeneracion"])
+        res["comparaciones"][nombre] = pv.sha256_hex(pv.serializar_comparacion(r))
 json.dumps(res, sort_keys=True)
 `);
 fs.writeFileSync(outFile, out);
