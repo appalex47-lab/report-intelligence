@@ -46,9 +46,19 @@ Las seis categorías del encargo (real, sintético, ejemplo, faltante, inferido,
 
 Las medias de los libros limpios son no verificables y supuestos, no errores de datos. En los libros con defectos, el anexo encuentra cada defecto que el motor ya bloquea (fecha ilegible, SKU fuera del catálogo, id vacío, número ilegible) con el **mismo conteo** (p. ej. 1 fila con fecha ilegible) y agrega los que el motor no reporta (pedidos excluidos por no ser válidos, montos negativos con su fila, columna requerida vacía).
 
-## 4. Qué NO hace
+## 4. Diapositiva final en el PPTX (RQ-19)
+
+**Revisión documental (3.1).** La especificación exige la diapositiva: «Anexo "Calidad de datos y supuestos" al final del deck, sin mover láminas existentes» (§6, punto 7); RQ-19: «Diapositiva final con definiciones, versiones, estados, no verificables, fuentes y limitaciones» (§14); T-11: «anexo presente»; la decisión D5 del deck: «solo agregar el anexo de calidad de datos». También exige que el anexo esté en el panel y en el manifiesto. Conclusión: **opción C (ambas presentaciones)**; la versión anterior de esta fase solo tenía el panel y el JSON.
+
+**Implementación** (`backend/app/deck/anexo.py`): una diapositiva «Calidad de datos y supuestos» **al final**, clonada de la última para conservar barras, logos, pie y tipografías: origen de los datos y su advertencia, conteo de hallazgos, datos no verificables (hasta 4), supuestos (hasta 3), hasta 6 hallazgos principales de severidad alta o media, y la trazabilidad (archivo, prefijo del SHA-256, versiones). Letra ≥ 9 pt; lo que no cabe cede por prioridad y los títulos y el origen nunca se pierden. El contenido completo sigue en el panel y en `anexo_calidad.json`; ninguna cifra del negocio se agrega (cada número impreso sale del JSON del anexo, con prueba).
+
+**Es opt-in**, porque el flag `anexo_calidad` de `reglas.json` sigue desactivado y con los flags apagados la salida debe ser idéntica a la línea base (AC-21; `capture_baseline --check` lo verifica en 8 de 8). Se activa con una casilla en el paso «Generar» o con el flag. Activarlo **por omisión** cambia la línea base de los decks y es una decisión pendiente del usuario.
+
+**Evidencia:** 12 pruebas (`test_anexo_pptx.py`): la diapositiva se agrega al final y las existentes quedan idénticas (texto de cada diapositiva); en los 4 decks reales el deck con anexo = el deck sin anexo + 1 diapositiva, sin hallazgos nuevos de QA, y el QA visual con LibreOffice aprueba sin hallazgos. Revisada visualmente en las 4 plantillas (legible, sin saturar). El manifiesto de procedencia **no** se modificó (su contrato está congelado): el resumen del anexo en el manifiesto que menciona la especificación queda como limitación L-8.
+
+## 5. Qué NO hace
 
 * No valida los datos contra el sistema de origen ni detecta errores de captura que sean valores plausibles.
 * Los libros en formato antiguo (por bloques) no tienen filas de ventas: hasta seis dimensiones quedan «no evaluable» y consta cuáles hallazgos del motor existen.
-* No es una diapositiva del PPTX (limitación L-3 de `IMPLEMENTACION_FASE5.md`).
+* El anexo no se añade al manifiesto de procedencia (contrato 3A congelado, L-8).
 * No mide el rendimiento con libros grandes en el navegador.

@@ -23,9 +23,11 @@ Se ejecuta en cada generación, sobre el `.pptx` ya guardado (también en el nav
 | | `PPTX_SOLAPE_DECLARADO` | warn | dos recuadros de texto que se cubren más de la mitad |
 | | `PPTX_TABLA_VACIA`, `PPTX_DIAPOSITIVA_VACIA`, `PPTX_FORMA_CERO` | warn | tabla sin texto, diapositiva sin contenido, forma con texto de ancho o alto 0 |
 
-**No existe** (limitación L-1 de `IMPLEMENTACION_FASE5.md`): trazabilidad de cada cifra, recálculo de fórmulas, unidades y denominadores. AC-14 es **PARCIAL**.
+Las comprobaciones de **cifras, fórmulas, unidades y denominadores** (`PPTX_CIFRA_NO_TRAZADA`, `PPTX_FORMULA_NO_COINCIDE`, `PPTX_UNIDAD_AMBIGUA`, `PPTX_SIN_DENOMINADOR`, de severidad `warn`) viven en `backend/app/qa/cifras.py` y se documentan en `AC14_CIFRAS_FORMULAS.md`. AC-14 es **PARCIALMENTE CUMPLIDO**.
 
-**Calibración (0 falsos positivos):** 4 decks reales de referencia (AETOPS y GLP-1, mensual y trimestral; libros de ejemplo sintéticos; plantillas locales) → 0 hallazgos, salvo un `info` de la gráfica vacía heredada de la plantilla GLP-1. Sin calibrar con la plantilla, el umbral fijo de 9 pt marcaba 319 letras de GLP-1 como error: de ahí D5-1.
+El anexo de calidad, cuando se pide, agrega una última diapositiva «Calidad de datos y supuestos» (`ANEXO_CALIDAD_DATOS.md` §4): pasa esta revisión sin hallazgos y la de cifras la omite por ser contenido del anexo.
+
+**Calibración (0 falsos positivos):** 4 decks reales de referencia (AETOPS y GLP-1, mensual y trimestral; libros de ejemplo sintéticos; plantillas locales) → 0 hallazgos estructurales, salvo un `info` de la gráfica vacía heredada de la plantilla GLP-1; con la revisión de cifras, 0 en AETOPS y una observación real en GLP-1 (`AC14_CIFRAS_FORMULAS.md` §4). Sin calibrar con la plantilla, el umbral fijo de 9 pt marcaba 319 letras de GLP-1 como error: de ahí D5-1.
 
 ## 2. Revisión visual (`backend/app/qa/visual.py`, `tools/visual_qa.py`)
 

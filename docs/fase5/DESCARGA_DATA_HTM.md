@@ -49,10 +49,12 @@ Ejecutan la función `download()` **real** con respuestas del motor sustituidas:
 
 **Defecto propio hallado por estas pruebas:** mi primera versión admitía extensiones de 2 a 5 letras y `sqlite` tiene 6: el historial se habría llamado `historial.sqlite.bin`. Corregido.
 
+**Archivos reales de cada formato** (auditoría de esta ejecución, `test_los_archivos_reales_de_cada_formato…`): se genera un archivo real —machote `.xlsx` desde el servicio, historial `.sqlite` (se verifica `integrity_check` tras descargarlo), y con plantilla y LibreOffice un `.pptx`, el `.pdf`, un `.png` por diapositiva y `narrative.json`— y se entrega por el `download()` real en Chromium. Resultado: nombre exacto, tipo MIME esperado, contenido idéntico byte a byte, el `.xlsx` y el `.pptx` se abren, la base SQLite pasa `integrity_check`.
+
 Además sigue vigente la prueba de punta a punta con el motor real (`tests/e2e/test_descarga_pptx.py`): descarga un `.pptx` real, ZIP íntegro, firma `504b0304`, se abre con python-pptx.
 
 ## 6. Límites
 
 * La causa original **sigue sin explicarse**; si reaparece hay que abrir una incidencia con navegador, versión del sistema y el paso exacto.
-* Solo se automatizó Chromium. Firefox, Safari y WebViews reales no se probaron (H4 y H5).
+* Solo se automatizó Chromium. **Este entorno solo trae Chromium** (`/opt/pw-browsers`: chromium, chromium_headless_shell, ffmpeg): Firefox, WebKit (Safari) y WebViews reales **no se pudieron probar** (H4 y H5). Para cubrirlos hay que instalarlos (`npx playwright install firefox webkit`) y repetir `tests/e2e/test_descarga_regresion.py` parametrizando el navegador; o probar a mano en un teléfono Android con la aplicación abierta desde un WebView.
 * El aviso de navegador integrado se basa en el agente de usuario, que puede no delatar a todos.
