@@ -1,0 +1,62 @@
+name: Release de la aplicación (app-vX.Y.Z)
+
+# Fase 3A-5 (A-5). Etiqueta `app-vX.Y.Z` (X.Y.Z = APP_VERSION) y publica su `app.zip` con su SHA-256, para poder recuperar el código con el que se
+# generó un reporte (docs/fase3a/IMPLEMENTACION_3A5_RELEASES.md). Solo se ejecuta A MANO: ningún push ni PR publica nada.
+# `publicar` vale false por omisión: sin marcarlo, el workflow construye y valida (ensayo) y deja los archivos como artefacto, sin crear etiqueta ni release.
+on:
+  workflow_dispatch:
+    inputs:
+      publicar:
+        description: "Crear la etiqueta y la release (si no se marca, solo se construye y se valida)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Solo desde main: la etiqueta debe apuntar a un commit que ya pasó revisión.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Construir el sitio (el mismo paquete que publica Pages)
+        run: python tools/build_site.py --out _site
+      - name: Validar el paquete y preparar los archivos de la release
+        id: preparar
+        run: python tools/release_app.py --zip _site/app.zip --commit "$GITHUB_SHA" --out _release | tee -a "$GITHUB_OUTPUT"
+      - name: La etiqueta no debe existir (una release nunca se reescribe)
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${{ steps.preparar.outputs.etiqueta }}" >/dev/null 2>&1; then
+            echo "La etiqueta ${{ steps.preparar.outputs.etiqueta }} ya existe. Sube APP_VERSION (docs/fase3a, política SemVer) antes de publicar." >&2
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.preparar.outputs.etiqueta }}
+          path: _release
+          if-no-files-found: error
+      - name: Crear la etiqueta y la release
+        if: ${{ inputs.publicar }}
+        run: |
+          gh release create "${{ steps.preparar.outputs.etiqueta }}" _release/app.zip _release/app.zip.sha256 \
+            --target "$GITHUB_SHA" --title "Aplicación ${{ steps.preparar.outputs.version }}" --notes-file _release/NOTAS.md
+      - name: Verificar el asset publicado (SHA-256 descargado = SHA-256 calculado)
+        if: ${{ inputs.publicar }}
+        run: |
+          mkdir _verificar && cd _verificar
+          gh release download "${{ steps.preparar.outputs.etiqueta }}" --pattern app.zip --pattern app.zip.sha256
+          sha256sum -c app.zip.sha256
+          test "$(cut -d' ' -f1 app.zip.sha256)" = "${{ steps.preparar.outputs.sha256 }}"

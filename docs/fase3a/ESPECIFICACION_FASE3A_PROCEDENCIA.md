@@ -3,13 +3,13 @@
 
 | | |
 |---|---|
-| Estado | **3A-0 a 3A-3 cerradas** (PR #15 a #19 fusionados; `main` en `e4b2f65`). **3A-4** (comparación por regeneración real y estados `exacta` / `parcial`) **implementada y en revisión** en un PR independiente, sin fusionar: ver `docs/fase3a/IMPLEMENTACION_3A4_COMPARACION.md`. **3A-5** sigue diferida. Cada subfase requiere autorización expresa |
+| Estado | **3A-0 a 3A-4 cerradas** (PR #15 a #20 fusionados; `main` en `8d1bbc7`). **3A-5** (`release.yml`: etiqueta `app-vX.Y.Z` y publica su `app.zip` con su SHA-256, A-5) **implementada y en revisión** en un PR independiente, sin fusionar: ver `docs/fase3a/IMPLEMENTACION_3A5_RELEASES.md`. **No se ha publicado ninguna release** y V-02 (ejecución real del workflow) no se ha ejecutado. Cada subfase requiere autorización expresa |
 | Punto de partida | `main` con los PR #11 a #17 fusionados. `version.py` define `APP_VERSION` y `ENGINE_VERSION` (`1.0.0`) desde 3A-1 (antes devolvía `None`) |
 | Fuente que desarrolla | `docs/fase1/ESPECIFICACION_FASE1_REPORT_INTELLIGENCE_FINAL.md` §5 (procedencia), §9 (archivos), §11 (T-07, T-08, T-16, V-02), §12 (AC-10, AC-11, AC-12, AC-28) |
 | Relación con la especificación original | Este documento es una **adenda**. No modifica la especificación original; cada diferencia está listada en §2 |
 | Decisiones del usuario incorporadas | H-1 a H-8 y los puntos 9 a 12 de la instrucción de 3A-0 |
 
-**Fuera de alcance (expreso):** Fase 3B (linaje y auditoría del reporte), Fase 4, Fase 5, interfaz (`frontend/`), conexión o ejecución del motor de reglas, `release.yml`, etiquetas y releases (A-5 sin autorización), cambios en fórmulas, cifras, plantillas o láminas.
+**Fuera de alcance (expreso):** Fase 3B (linaje y auditoría del reporte), Fase 4, Fase 5, interfaz (`frontend/`), conexión o ejecución del motor de reglas, publicar releases por iniciativa propia (el workflow de 3A-5 existe, pero nada lo ejecuta salvo orden manual), cambios en fórmulas, cifras, plantillas o láminas.
 
 ---
 
@@ -24,7 +24,7 @@
 | H-3 | Los párrafos editados a mano forman parte del resultado canónico y cambian el hash | §6 |
 | H-4 | Se registra expresamente que el motor de reglas **no** se ejecutó; la versión del catálogo se registra como metadato | §2, §5 |
 | H-5 | Versiones de Pyodide, Python y python-pptx como información de entorno, **fuera** del hash | §3.4, §5 |
-| H-6 | A-5 sin autorización: no se crea `release.yml`, etiquetas ni publicaciones | §10 (3A-5 diferida) |
+| H-6 | A-5: `release.yml` solo se creó al autorizarse 3A-5; no se crea ninguna etiqueta ni release sin ejecutar el workflow a mano | §10 (3A-5) |
 | H-7 | La Fase 3B no se diseña ni implementa | §0 |
 | H-8 | La interfaz queda fuera de 3A | §8, §13 (L-1) |
 
@@ -498,7 +498,7 @@ Cada subfase requiere tu autorización antes de empezar. Ninguna está autorizad
 | **3A-2** | Resultado canónico y `hash_resultado` | `provenance.py` (solo funciones puras), pruebas | 3A-1 |
 | **3A-3** | Manifiesto `procedencia.json`, entorno, escritura junto al reporte **y tabla autoritativa `procedencia` con verificación de integridad** (adelantada desde 3A-4 por instrucción expresa) | `provenance.py`, `provenance_capture.py`, `provenance_verify.py`, `history/store.py`, `build.py` (llamada aditiva), `web/service.py`, pruebas | 3A-2 |
 | **3A-4** | Comparación por regeneración real y estados `exacta` / `parcial` | `provenance.py`, pruebas | 3A-3 |
-| **3A-5** | `release.yml` y etiquetas (A-5) | `.github/workflows/release.yml` | **Diferida: A-5 sin autorización** |
+| **3A-5** | `release.yml` y etiquetas (A-5) | `.github/workflows/release.yml` (+ `tools/release_app.py` y pruebas, ver §10 3A-5) | 3A-4 |
 
 Detalle de cada subfase:
 
@@ -526,8 +526,9 @@ Detalle de cada subfase:
 - Aceptación: AC-11 (0 regeneraciones silenciosas) y AC-12 (legado = `no_reproducible`).
 - **Estado:** implementada (`provenance.comparar` pura, `provenance_compare.py`); interpretaciones I-1 a I-4 documentadas en `IMPLEMENTACION_3A4_COMPARACION.md`.
 
-**3A-5 (diferida)**
-- No se implementa. Si en el futuro autorizas A-5: `release.yml` etiqueta `app-vX.Y.Z` y publica su `app.zip` con su SHA-256 (V-02, AC-28). Mientras tanto, los reportes cuyo código no sea recuperable quedan en `parcial` (§5.3 original).
+**3A-5**
+- Implementación esperada: `release.yml` etiqueta `app-vX.Y.Z` y publica su `app.zip` con su SHA-256 (V-02, AC-28).
+- **Estado:** implementada (autorización expresa de 3A-5): `.github/workflows/release.yml`, más `tools/release_app.py` (decisión técnica: validación y SHA-256 probables en CI) y `tests/unit/test_release_app.py`. **El workflow no se ha ejecutado en GitHub: no existe ninguna etiqueta `app-v*` ni release (V-02 sin ejecutar, AC-28 no demostrado).** Mientras no exista una release, los reportes cuyo código no sea recuperable quedan en `parcial` (§5.3 original). Ver `IMPLEMENTACION_3A5_RELEASES.md`.
 
 ---
 
@@ -557,7 +558,7 @@ Detalle de cada subfase:
 | AC-11 | Los tres estados de §3.2 se producen y se muestran correctamente; 0 regeneraciones silenciosas con versiones distintas; `exacta` solo tras una regeneración real con `hash_resultado` coincidente, sin afirmar igualdad binaria ni visual del PPTX (§3.5) |
 | AC-12 | Los reportes previos a la 3A se muestran como `no_reproducible (legado)` |
 | AC-13A (nuevo, de esta fase) | Ante cualquier fallo de procedencia el reporte se genera sin cambios; nunca existe un `procedencia.json` incompleto; el fallo queda en `procedencia_error.json` asociado al reporte y el reporte no se declara reproducible (§8.4) |
-| AC-28 | **Fuera de alcance** mientras A-5 no se autorice |
+| AC-28 | **Workflow implementado, no demostrado:** `release.yml` existe y su lógica está probada; la publicación real (V-02) no se ha ejecutado, así que AC-28 sigue sin cumplirse hasta ejecutar el workflow con `publicar` activado |
 | Generales | 0 pruebas fallidas; CI en verde; `capture_baseline --check` sin diferencias; `archivos_protegidos --check` limpio con los nuevos autorizados; las pruebas de las Fases 1, 2A y 2B sin cambios |
 
 ---
@@ -574,7 +575,8 @@ Detalle de cada subfase:
 | `backend/app/history/store.py` | protegido | 3A-3 | **Autorizado en 3A-3** (antes previsto en 3A-4): tabla nueva `procedencia` |
 | `backend/app/version.py` | fuera del manifiesto (creado en Fase 1) | 3A-1 | Se revisa por diff |
 | `backend/app/provenance.py` | nuevo | 3A-2 | Archivo nuevo |
-| `frontend/*`, `.github/workflows/*`, plantillas, importadores, `calc/`, `deck/`, `narrative/` | protegidos | — | **No se tocan** |
+| `.github/workflows/release.yml` y `tools/release_app.py` | nuevos | 3A-5 | Archivos nuevos; no están en el manifiesto de protegidos |
+| `frontend/*`, `.github/workflows/pages.yml`, `pdf.yml` y `tests.yml`, plantillas, importadores, `calc/`, `deck/`, `narrative/` | protegidos | — | **No se tocan** |
 
 Cada autorización se registra con `tools/archivos_protegidos.py --write --autorizar ruta="motivo"`, igual que en cambios anteriores, y se acompaña de un comentario de motivo en la revisión.
 
@@ -603,7 +605,7 @@ Cada autorización se registra con `tools/archivos_protegidos.py --write --autor
 | **L-1** | **Limitación (D-D, aprobada):** no hay botón de descarga ni cambio de interfaz. `procedencia.json` existe en el directorio del reporte y en el historial, y el backend podrá servirlo (permiso en `service.py`, §12.1), pero la persona usuaria no podrá descargarlo desde pantalla hasta una fase de interfaz | Documentada; decisión D-D |
 | R-8 | Confundir «exacta» con igualdad del archivo o de su aspecto | §3.5: tres igualdades distintas; los mensajes dicen siempre «resultado canónico» (PR-10) |
 | R-9 | Un fallo de procedencia produzca un registro incompleto o parezca un reporte reproducible | §8.4: escritura atómica, sin manifiesto parcial, `no_reproducible` ante error, `procedencia_error.json` asociado (PR-6, PR-8, PR-9) |
-| L-2 | Reproducir con código anterior sigue sin ser posible mientras A-5 no se autorice | Estado `parcial` documentado |
+| L-2 | Reproducir con código anterior sigue sin ser posible hasta que exista al menos una release `app-vX.Y.Z` publicada (el workflow existe desde 3A-5, pero no se ha ejecutado) | Estado `parcial` documentado |
 | L-3 | La comparación (3A-4) solo existe en backend; no hay pantalla que la muestre | Fase de interfaz posterior |
 
 ---
@@ -622,7 +624,7 @@ Cada autorización se registra con `tools/archivos_protegidos.py --write --autor
 | Subfase **3A-1** | **Cerrada.** Implementada y fusionada en `main` (PR #16, commit de fusión `81966d8`). Quedan vigentes las limitaciones declaradas en §4 (digest acotado a los resultados de referencia; wheels locales fuera de la detección `dirty`) |
 | Subfase **3A-2** | **Implementada; en revisión (PR independiente, no fusionado).** `backend/app/provenance.py` con `canonico()`, `serializar()`, `hash_resultado()`, `calcular()`; sin conexión a `build.py`, historial ni interfaz. Documentación: `IMPLEMENTACION_3A2_HASH_CANONICO.md` |
 | Subfases 3A-3 y 3A-4 | No autorizadas; cada una requiere su propia autorización |
-| 3A-5 (`release.yml`, etiquetas) | Diferida: A-5 sin autorización |
+| 3A-5 (`release.yml`, etiquetas) | Implementada y en revisión; sin releases publicadas |
 | Fase 3B, Fase 4, Fase 5, interfaz, conexión del motor de reglas | Fuera de alcance |
 
 Hasta que se autorice 3A-1 no se escribe código de la Fase 3A, no se modifica ningún archivo de implementación y no se alteran las fases anteriores, sus reglas, fórmulas, plantillas ni pruebas.
