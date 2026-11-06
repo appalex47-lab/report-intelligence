@@ -52,21 +52,27 @@ def _leer_archivo(p: Path) -> tuple[bytes | None, str | None]:
     return datos, None
 
 
-def _verificar_registro(fila: dict) -> tuple[str, list[str], dict | None]:
-    """(estado, detalle, manifiesto) de una fila de `procedencia`: «presente» | «corrupto» | «esquema_no_soportado»."""
+def _verificar_registro(fila: dict, codigos: list | None = None) -> tuple[str, list[str], dict | None]:
+    """(estado, detalle, manifiesto) de una fila de `procedencia`: «presente» | «corrupto» | «esquema_no_soportado». Si se pasa `codigos`, se
+    llena con las causas estructuradas («sha», «invalido», «esquema_fila», «hash_fila») para que la comparación (3A-4) no lea texto."""
     detalle: list[str] = []
+    codigos = codigos if codigos is not None else []
     if fila["esquema"] != pv.ESQUEMA:
         return "esquema_no_soportado", [f"esquema {fila['esquema']!r}: solo se entiende {pv.ESQUEMA!r}"], None
     if hashlib.sha256(fila["manifiesto"]).hexdigest() != fila["manifiesto_sha256"]:
         detalle.append("el SHA-256 de los bytes del manifiesto no coincide con manifiesto_sha256")
+        codigos.append("sha")
     m, errs = pv.leer_manifiesto(fila["manifiesto"])
     if m is None:
         detalle += [f"manifiesto no válido: {e}" for e in errs[:4]]
+        codigos.append("invalido")
     else:
         if m["esquema"] != fila["esquema"]:
             detalle.append("el esquema de la fila no coincide con el del manifiesto")
+            codigos.append("esquema_fila")
         if m["hash_resultado"]["valor"] != fila["hash_resultado"]:
             detalle.append("hash_resultado de la fila no coincide con el del manifiesto")
+            codigos.append("hash_fila")
     return ("corrupto" if detalle else "presente"), detalle, m
 
 
@@ -92,9 +98,10 @@ def verificar(origen, run_id: int, carpeta=None) -> dict:
         res["registro"] = {"estado": "ilegible", "detalle": [f"no se pudo leer la base: {type(e).__name__}"], "esquema": None,
                            "manifiesto_sha256": None, "hash_resultado": None}
     if fila is not None:
-        estado, detalle, manifiesto_registro = _verificar_registro(fila)
+        codigos: list[str] = []
+        estado, detalle, manifiesto_registro = _verificar_registro(fila, codigos)
         res["registro"] = {"estado": estado, "detalle": detalle, "esquema": fila["esquema"], "manifiesto_sha256": fila["manifiesto_sha256"],
-                           "hash_resultado": fila["hash_resultado"]}
+                           "hash_resultado": fila["hash_resultado"], "codigos": codigos}
         bytes_registro = fila["manifiesto"]
 
     copia_valida = None

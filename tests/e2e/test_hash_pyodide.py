@@ -68,7 +68,10 @@ def test_el_hash_en_pyodide_coincide_con_el_de_cpython(tmp_path):
             (wheels / n).write_bytes(b"x")
     subprocess.run([sys.executable, str(ROOT / "tools" / "build_site.py"), "--out", str(site), "--wheels", str(wheels)], check=True, cwd=ROOT, capture_output=True)
     salida = tmp_path / "pyodide.json"
-    r = subprocess.run(["node", "--experimental-default-type=module", str(SCRIPT), str(work), str(site / "app.zip"), str(salida)],
+    casos = _casos_comparacion()
+    entrada = tmp_path / "comparaciones.json"
+    entrada.write_text(json.dumps(casos), encoding="utf-8")
+    r = subprocess.run(["node", "--experimental-default-type=module", str(SCRIPT), str(work), str(site / "app.zip"), str(salida), str(entrada)],
                        capture_output=True, text=True, timeout=900)
     assert r.returncode == 0 and salida.exists(), (r.stdout[-500:], r.stderr[-1500:])
     en_pyodide = json.loads(salida.read_text(encoding="utf-8"))
@@ -84,3 +87,36 @@ def test_el_hash_en_pyodide_coincide_con_el_de_cpython(tmp_path):
                                 Para("Nota de calidad solo para narrative.json", "calidad", visible=False)],
                "recomendaciones": [Para("1. [MEDIA] Proteger **AE-A**.", "recomendacion")]}
     assert en_pyodide["narrativa_muestra"] == pv.sha256_hex(pv.serializar({"narrativa": pv._narrativa(muestra)}))
+
+    # Fase 3A-4: `provenance.comparar` es pura; dentro de Pyodide clasifica igual que en CPython (mismos bytes de evidencia serializada)
+    from backend.app import provenance as pv2
+    for nombre, c in casos.items():
+        esperado_c = pv2.comparar(verificacion=c["verificacion"], registrado=c["registrado"], actual=c["actual"], fuentes_aportadas=c["fuentes"],
+                                  regeneracion=c["regeneracion"])
+        assert en_pyodide["comparaciones"][nombre] == pv2.sha256_hex(pv2.serializar_comparacion(esperado_c)), nombre
+    assert {pv2.comparar(verificacion=c["verificacion"], registrado=c["registrado"], actual=c["actual"], fuentes_aportadas=c["fuentes"],
+                         regeneracion=c["regeneracion"])["estado"] for c in casos.values()} == {"exacta", "parcial", "no_reproducible", None}
+
+
+def _casos_comparacion() -> dict:
+    """Casos sintéticos (sin I/O) que cubren los cuatro estados de `comparar`."""
+    import copy
+    from tests.proc_util import manifiesto_valido
+    m = manifiesto_valido()
+    h = m["hash_resultado"]["valor"]
+    verif = {"run_id": 1, "registro": {"estado": "presente", "detalle": [], "esquema": "procedencia/1", "manifiesto_sha256": "c" * 64,
+                                      "hash_resultado": h, "codigos": []}, "copia": {"estado": "integra", "detalle": []}, "error_de_generacion": None,
+             "integridad": "verificada"}
+    actual = {k: copy.deepcopy(m[k]) for k in ("version_codigo", "version_motor", "version_definiciones", "version_reglas", "version_plantillas",
+                                                 "configuracion", "entorno")}
+    fuentes = [{"nombre": "input.xlsx", "sha256": m["archivos_fuente"][0]["sha256"]}]
+    base = {"verificacion": verif, "registrado": m, "actual": actual, "fuentes": fuentes, "regeneracion": {"hash_resultado": h}}
+    distinto = copy.deepcopy(base)
+    distinto["actual"]["version_motor"] = {"engine": "2.0.0"}
+    legado = copy.deepcopy(base)
+    legado["verificacion"]["registro"]["estado"] = "ausente"
+    legado["verificacion"]["copia"]["estado"] = "ausente"
+    legado["registrado"] = None
+    sin_regen = copy.deepcopy(base)
+    sin_regen["regeneracion"] = None
+    return {"exacta": base, "parcial": distinto, "no_reproducible": legado, "sin_clasificar": sin_regen}
