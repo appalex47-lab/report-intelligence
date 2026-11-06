@@ -109,11 +109,17 @@ jobs:
           python tools/release_app.py etiqueta-libre --tag "$ETIQUETA" --refs "$RUNNER_TEMP/refs.json" --releases "$RUNNER_TEMP/releases.txt"
       - name: Crear la release como BORRADOR (todavía no existe la etiqueta)
         run: |
-          gh release create "$ETIQUETA" _release/app.zip _release/app.zip.sha256 --draft --target "$SHA" \
-            --title "Aplicación $VERSION" --notes-file _release/NOTAS.md
+          url=$(gh release create "$ETIQUETA" _release/app.zip _release/app.zip.sha256 --draft --target "$SHA" \
+            --title "Aplicación $VERSION" --notes-file _release/NOTAS.md)
+          printf '%s\n' "$url" > "$RUNNER_TEMP/url_borrador.txt"
+          echo "Borrador creado: $url"
+      # GitHub tarda unos segundos en devolver el borrador recién creado en el listado (run 42308811022: «hay 0» a 1 s de crearlo). Se reintenta con
+      # espera progresiva (2, 4, 8, 16 s…; máximo 90 s en total) SOLO por retraso de propagación; duplicados, otra release o assets inesperados fallan al instante.
+      - name: Esperar el borrador creado y leerlo por su identificador
+        run: |
+          python tools/release_app.py esperar-borrador --repo "$REPO" --tag "$ETIQUETA" --url-file "$RUNNER_TEMP/url_borrador.txt" --out "$RUNNER_TEMP/release.json"
       - name: Verificar el borrador (assets descargados de GitHub, SHA-256 y zip)
         run: |
-          gh api --paginate "repos/$REPO/releases" --jq '.[] | select(.tag_name == env.ETIQUETA)' > "$RUNNER_TEMP/release.json"
           rm -rf "$RUNNER_TEMP/dl" && mkdir "$RUNNER_TEMP/dl"
           for fila in $(jq -r '.assets[] | "\(.id):\(.name)"' "$RUNNER_TEMP/release.json"); do
             id="${fila%%:*}"; nombre="${fila#*:}"
@@ -129,10 +135,11 @@ jobs:
           gh api -X PATCH "repos/$REPO/releases/$id" -F draft=false
       - name: Verificar la release publicada (etiqueta → commit → artefacto → SHA-256)
         run: |
-          gh api --paginate "repos/$REPO/releases" --jq '.[] | select(.tag_name == env.ETIQUETA)' > "$RUNNER_TEMP/release.json"
-          gh api "repos/$REPO/git/ref/tags/$ETIQUETA" > "$RUNNER_TEMP/ref.json"
-          if [ "$(jq -r '.object.type' "$RUNNER_TEMP/ref.json")" = "tag" ]; then
-            gh api "repos/$REPO/git/tags/$(jq -r '.object.sha' "$RUNNER_TEMP/ref.json")" > "$RUNNER_TEMP/tagobj.json"
+          id=$(jq -er '.id' "$RUNNER_TEMP/release.json")
+          case "$id" in ''|*[!0-9]*) echo "id de release no válido" >&2; exit 1;; esac
+          python tools/release_app.py esperar-publicada --repo "$REPO" --tag "$ETIQUETA" --id "$id" \
+            --out "$RUNNER_TEMP/release.json" --ref-out "$RUNNER_TEMP/ref.json" --tag-obj-out "$RUNNER_TEMP/tagobj.json"
+          if [ -f "$RUNNER_TEMP/tagobj.json" ]; then
             ANOTADA=(--tag-obj "$RUNNER_TEMP/tagobj.json")
           else
             ANOTADA=()

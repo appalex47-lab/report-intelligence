@@ -24,7 +24,9 @@ import hashlib
 import json
 import re
 import stat
+import subprocess
 import sys
+import time
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -49,6 +51,11 @@ MAX_JSON = 5_000_000                                # respuestas de la API: más
 RUTA_TESTS = ".github/workflows/tests.yml"          # CI requerido para publicar (decisión T-11: la spec no lista los checks obligatorios)
 RUTA_RELEASE = ".github/workflows/release.yml"      # el propio workflow de release se excluye de la comprobación del CI
 CONCLUSIONES_ACEPTABLES = frozenset({"success", "skipped", "neutral"})
+# Espera por consistencia eventual de GitHub (listado de releases, etiqueta recién creada): espera progresiva con tope y límite TOTAL.
+# 2 + 4 + 8 + 16 + 16 + 16 + 16 = 78 s ≤ 90 s: nunca más de 90 s de espera acumulada, y no más de 8 consultas.
+ESPERA_INICIAL, ESPERA_FACTOR, ESPERA_MAXIMA, ESPERA_LIMITE = 2.0, 2.0, 16.0, 90.0
+_REPO = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
+_URL_BORRADOR = re.compile(r"https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/releases/tag/untagged-[0-9a-f]{8,64}")
 
 
 class ErrorRelease(Exception):
@@ -349,6 +356,157 @@ def verificar_release(release, carpeta_descargas: Path, version: str, commit: st
     return resultado
 
 
+# ------------------------------------------------------------------------------------------------------------------- consistencia eventual
+# GitHub puede tardar unos segundos en devolver, en el LISTADO de releases, un borrador recién creado (el run 42308811022 lo consultó 1 s después y
+# obtuvo «hay 0»). Se distingue entre: (a) RETRASO DE PROPAGACIÓN —el recurso aún no aparece o aún no está completo—, que se reintenta con espera
+# progresiva hasta un límite, y (b) DEFECTO REAL —duplicados, otra release con la etiqueta, assets inesperados, estado equivocado—, que falla de
+# inmediato sin esperar. Las funciones reciben las consultas a GitHub como argumentos, de modo que las pruebas reproducen el retraso sin red.
+def esperas(inicial: float = ESPERA_INICIAL, factor: float = ESPERA_FACTOR, maxima: float = ESPERA_MAXIMA, limite: float = ESPERA_LIMITE):
+    """Esperas sucesivas (progresivas, con tope por espera); la suma nunca supera `limite`."""
+    total, e = 0.0, float(inicial)
+    while total + min(e, maxima) <= limite:
+        yield min(e, maxima)
+        total += min(e, maxima)
+        e *= factor
+
+
+def _esperar(consulta, descripcion: str, *, dormir=None, inicial=ESPERA_INICIAL, factor=ESPERA_FACTOR, maxima=ESPERA_MAXIMA, limite=ESPERA_LIMITE):
+    """`consulta()` devuelve `(listo, valor)`; si no está listo, `valor` es el motivo. Un `ErrorRelease` de `consulta` (defecto real) no se reintenta."""
+    dormir = dormir or time.sleep                               # se resuelve al llamar (permite sustituirlo sin dormir de verdad)
+    esperado, intentos, motivo = 0.0, 0, ""
+    for pausa in esperas(inicial, factor, maxima, limite):
+        intentos += 1
+        listo, valor = consulta()
+        if listo:
+            return valor
+        motivo = valor
+        dormir(pausa)
+        esperado += pausa
+    listo, valor = consulta()                                    # última consulta tras la última espera
+    intentos += 1
+    if listo:
+        return valor
+    raise ErrorRelease(f"{descripcion} no apareció tras {intentos} consultas y {esperado:g} s de espera (límite {limite:g} s): {valor or motivo}. "
+                       "No es un retraso de propagación esperable: revísese la ejecución y el estado real en GitHub")
+
+
+def esperar_borrador(listar, obtener, tag: str, url: str, **espera) -> dict:
+    """Espera el borrador creado por ESTA ejecución y devuelve su JSON completo, leído directamente por su identificador.
+
+    Identidad: la `html_url` (`…/releases/tag/untagged-…`) que imprimió `gh release create`; una release distinta —aunque comparta etiqueta o nombre
+    parecido— nunca se acepta. `listar()` -> lista de releases; `obtener(id)` -> JSON de la release o `None` si GitHub aún responde 404."""
+    def consulta():
+        releases = listar()
+        if not isinstance(releases, list):
+            raise ErrorRelease("el listado de releases no tiene el formato esperado")
+        validas = [r for r in releases if isinstance(r, dict)]
+        con_tag = [r for r in validas if r.get("tag_name") == tag]
+        con_url = [r for r in validas if r.get("html_url") == url]
+        if len(con_tag) > 1:
+            raise ErrorRelease(f"hay {len(con_tag)} releases con la etiqueta {tag}: defecto real, no un retraso")
+        if len(con_url) > 1:
+            raise ErrorRelease("hay varias releases con la URL del borrador creado: defecto real, no un retraso")
+        if con_tag and not con_url:
+            raise ErrorRelease(f"existe una release con la etiqueta {tag} que no es el borrador creado por esta ejecución")
+        if not con_url:
+            return False, "el borrador todavía no aparece en el listado de GitHub"
+        r = con_url[0]
+        if con_tag and con_tag[0].get("id") != r.get("id"):
+            raise ErrorRelease(f"la etiqueta {tag} pertenece a otra release distinta del borrador creado")
+        rid = r.get("id")
+        if isinstance(rid, bool) or not isinstance(rid, int) or rid <= 0:
+            raise ErrorRelease("el borrador listado no tiene un identificador válido")
+        if r.get("tag_name") != tag:
+            return False, f"el borrador aparece con tag_name {r.get('tag_name')!r}, todavía no {tag!r}"
+        d = obtener(rid)
+        if d is None:
+            return False, f"GitHub aún no devuelve la release {rid} al consultarla por su identificador"
+        if not isinstance(d, dict) or d.get("id") != rid:
+            raise ErrorRelease("la consulta por identificador devolvió otra release")
+        if d.get("tag_name") != tag:
+            return False, f"la release {rid} todavía no tiene la etiqueta {tag!r} (tiene {d.get('tag_name')!r})"
+        if d.get("draft") is not True:
+            raise ErrorRelease("la release creada no es un borrador: defecto real")
+        if d.get("prerelease") is not False:
+            raise ErrorRelease("la release no debe ser una pre-release")
+        assets = d.get("assets")
+        if not isinstance(assets, list) or not all(isinstance(a, dict) for a in assets):
+            raise ErrorRelease("la lista de assets no tiene el formato esperado")
+        nombres = [a.get("name") for a in assets]
+        if len(nombres) != len(set(nombres)):
+            raise ErrorRelease("hay assets con el mismo nombre: defecto real")
+        sobran = sorted(map(str, set(nombres) - ASSETS_ESPERADOS))
+        if sobran:
+            raise ErrorRelease(f"assets inesperados en el borrador: {sobran}")
+        faltan = sorted(ASSETS_ESPERADOS - set(nombres))
+        if faltan:
+            return False, f"todavía faltan assets: {faltan}"
+        pendientes = sorted(str(a.get("name")) for a in assets if a.get("state") != "uploaded")
+        if pendientes:
+            return False, f"assets aún sin terminar de subirse: {pendientes}"
+        return True, d
+    return _esperar(consulta, f"El borrador de {tag}", **espera)
+
+
+def esperar_publicada(obtener, obtener_ref, obtener_tag, rid: int, tag: str, **espera):
+    """Tras publicar el borrador: espera a que la release (consultada por id) figure publicada y a que exista la etiqueta; devuelve
+    `(release, ref, tag_anotada | None)`. `obtener_*` devuelven `None` si GitHub aún responde 404."""
+    def consulta():
+        d = obtener(rid)
+        if d is None:
+            return False, f"GitHub aún no devuelve la release {rid}"
+        if not isinstance(d, dict) or d.get("id") != rid:
+            raise ErrorRelease("la consulta por identificador devolvió otra release")
+        if d.get("tag_name") != tag:
+            raise ErrorRelease(f"la release {rid} tiene la etiqueta {d.get('tag_name')!r}, no {tag!r}")
+        if d.get("draft") is not False:
+            return False, "la release todavía figura como borrador"
+        ref = obtener_ref(tag)
+        if ref is None:
+            return False, f"la etiqueta {tag} todavía no existe en GitHub"
+        anotada = None
+        obj = ref.get("object") if isinstance(ref, dict) else None
+        if not isinstance(obj, dict):
+            raise ErrorRelease("la referencia de la etiqueta no tiene el formato esperado")
+        if obj.get("type") == "tag":
+            anotada = obtener_tag(obj.get("sha"))
+            if anotada is None:
+                return False, "el objeto de la etiqueta anotada todavía no se puede leer"
+        return True, (d, ref, anotada)
+    return _esperar(consulta, f"La release publicada {tag}", **espera)
+
+
+def _gh(args) -> str | None:
+    """`gh api …` -> stdout; `None` si GitHub responde 404; cualquier otro fallo se muestra tal cual (no se oculta ningún error de GitHub)."""
+    r = subprocess.run(["gh", "api", *args], capture_output=True, text=True, timeout=120)
+    if r.returncode != 0:
+        if "HTTP 404" in (r.stderr or ""):
+            return None
+        raise ErrorRelease(f"gh api {' '.join(args)[:100]} falló: {(r.stderr or r.stdout).strip()[:400]}")
+    if len(r.stdout) > MAX_JSON:
+        raise ErrorRelease("la respuesta de GitHub excede el tamaño esperado")
+    return r.stdout
+
+
+def _json(texto: str | None):
+    if texto is None:
+        return None
+    try:
+        return json.loads(texto)
+    except ValueError as e:
+        raise ErrorRelease(f"respuesta de GitHub no válida: {str(e)[:80]}") from None
+
+
+def _validar_repo(repo: str) -> str:
+    if not _REPO.fullmatch(repo or ""):
+        raise ErrorRelease(f"repositorio no válido: {repo!r}")
+    return repo
+
+
+def _escribir_json(ruta: Path, valor) -> None:
+    Path(ruta).write_text(json.dumps(valor, ensure_ascii=False), encoding="utf-8")
+
+
 # ------------------------------------------------------------------------------------------------------------------- entrada/salida
 def _leer_json(ruta: Path):
     ruta = Path(ruta)
@@ -415,6 +573,18 @@ def main(argv=None) -> int:
     p.add_argument("--modo", choices=("borrador", "publicada"), required=True)
     p.add_argument("--ref", type=Path)
     p.add_argument("--tag-obj", type=Path)
+    p = sub.add_parser("esperar-borrador")
+    p.add_argument("--repo", required=True)
+    p.add_argument("--tag", required=True)
+    p.add_argument("--url-file", type=Path, required=True, help="archivo con la URL que imprimió `gh release create`")
+    p.add_argument("--out", type=Path, required=True, help="aquí se escribe el JSON de la release (un solo objeto)")
+    p = sub.add_parser("esperar-publicada")
+    p.add_argument("--repo", required=True)
+    p.add_argument("--tag", required=True)
+    p.add_argument("--id", type=int, required=True)
+    p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--ref-out", type=Path, required=True)
+    p.add_argument("--tag-obj-out", type=Path, required=True, help="solo se crea si la etiqueta es anotada")
     a = ap.parse_args(argv)
     try:
         commit = getattr(a, "commit", "").strip().lower()      # `etiqueta-libre` no recibe commit
@@ -432,6 +602,49 @@ def main(argv=None) -> int:
             if not a.tag.startswith(PREFIJO_ETIQUETA):
                 raise ErrorRelease(f"etiqueta no válida: {a.tag!r}")
             verificar_carpeta(a.dir, a.tag[len(PREFIJO_ETIQUETA):], commit, a.sha256.strip().lower(), a.tag)
+        elif a.cmd == "esperar-borrador":
+            repo = _validar_repo(a.repo)
+            if not a.tag.startswith(PREFIJO_ETIQUETA):
+                raise ErrorRelease(f"etiqueta no válida: {a.tag!r}")
+            texto = a.url_file.read_text(encoding="utf-8") if a.url_file.is_file() else ""
+            url = texto.strip()
+            m = _URL_BORRADOR.fullmatch(url)
+            if not m or m.group(1).lower() != repo.lower() or "\n" in url:
+                raise ErrorRelease(f"la URL del borrador no es la esperada de {repo}: {url[:120]!r}")
+
+            def listar():
+                texto_ = _gh(["--paginate", f"repos/{repo}/releases", "--jq", ".[]"])
+                if texto_ is None:
+                    raise ErrorRelease("GitHub respondió 404 al listar las releases")
+                dec, i, out = json.JSONDecoder(), 0, []
+                while True:
+                    while i < len(texto_) and texto_[i].isspace():
+                        i += 1
+                    if i >= len(texto_):
+                        return out
+                    try:
+                        v, i = dec.raw_decode(texto_, i)
+                    except ValueError as e:
+                        raise ErrorRelease(f"respuesta de GitHub no válida: {str(e)[:80]}") from None
+                    out.append(v)
+            d = esperar_borrador(listar, lambda rid: _json(_gh([f"repos/{repo}/releases/{rid}"])), a.tag, url)
+            _escribir_json(a.out, d)
+            print(f"borrador {d['id']} listo")
+        elif a.cmd == "esperar-publicada":
+            repo = _validar_repo(a.repo)
+            if not a.tag.startswith(PREFIJO_ETIQUETA) or a.id <= 0:
+                raise ErrorRelease("etiqueta o identificador no válidos")
+            a.tag_obj_out.unlink(missing_ok=True)
+            d, ref, anotada = esperar_publicada(
+                lambda rid: _json(_gh([f"repos/{repo}/releases/{rid}"])),
+                lambda t: _json(_gh([f"repos/{repo}/git/ref/tags/{t}"])),
+                lambda sha: _json(_gh([f"repos/{repo}/git/tags/{sha}"])) if isinstance(sha, str) and _SHA_COMMIT.fullmatch(sha) else None,
+                a.id, a.tag)
+            _escribir_json(a.out, d)
+            _escribir_json(a.ref_out, ref)
+            if anotada is not None:
+                _escribir_json(a.tag_obj_out, anotada)
+            print(f"release {d['id']} publicada")
         else:
             objs = _leer_objetos_json(a.release)
             if len(objs) != 1:
