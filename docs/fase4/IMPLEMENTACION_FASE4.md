@@ -80,7 +80,7 @@ Se muestran sin truncar ni ajustar, con el aviso de §8.2 (no afirma una causa),
 | Archivo | Cambio |
 |---|---|
 | `backend/app/escenarios.py` | **nuevo**: cálculo y presentación (solo lectura) |
-| `backend/app/web/service.py` | **protegido, autorizado**: `analyze()` agrega la clave `escenarios_indicador` mediante `_escenarios()` (+16 líneas) |
+| `backend/app/web/service.py` | **protegido, autorizado**: `analyze()` agrega la clave `escenarios_indicador` mediante `_escenarios()` (+11 líneas) |
 | `frontend/index.html` | **protegido, autorizado**: panel `escenariosHtml` en `vValidate` (solo se agrega) |
 | `tests/regression/protegidos.json` | hashes y motivos de los dos archivos autorizados (motivos anteriores conservados) |
 | `tests/unit/test_escenarios.py` | **nuevo**: pruebas del módulo y del servicio |
