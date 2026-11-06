@@ -1,8 +1,14 @@
 name: Release de la aplicación (app-vX.Y.Z)
 
-# Fase 3A-5 (A-5). Etiqueta `app-vX.Y.Z` (X.Y.Z = APP_VERSION) y publica su `app.zip` con su SHA-256, para poder recuperar el código con el que se
-# generó un reporte (docs/fase3a/IMPLEMENTACION_3A5_RELEASES.md). Solo se ejecuta A MANO: ningún push ni PR publica nada.
-# `publicar` vale false por omisión: sin marcarlo, el workflow construye y valida (ensayo) y deja los archivos como artefacto, sin crear etiqueta ni release.
+# Fase 3A-5 (A-5). Etiqueta `app-vX.Y.Z` (X.Y.Z = APP_VERSION) y publica su `app.zip` con su SHA-256, para poder recuperar el código con el que se generó un
+# reporte (docs/fase3a/IMPLEMENTACION_3A5_RELEASES.md). Solo se ejecuta A MANO: ningún push ni PR publica nada.
+#
+# Dos jobs separados:
+#   construir  (permisos de solo lectura): construye, valida el paquete, comprueba que el commit exacto pasó el CI y que la etiqueta no existe, y guarda el artefacto.
+#              Con `publicar` sin marcar (valor por omisión) el workflow termina aquí: es un ensayo que no crea etiqueta ni release.
+#   publicar   (único con permiso de escritura): solo con `publicar` marcado y solo si `construir` tuvo éxito. Vuelve a comprobar todo, crea la release como
+#              BORRADOR (sin etiqueta todavía), verifica lo subido, la publica y verifica que la etiqueta apunta al commit exacto.
+# Cadena verificada: versión → etiqueta → commit → build → artefacto → SHA-256 (tools/release_app.py). Todas las comprobaciones fallan ante la duda.
 on:
   workflow_dispatch:
     inputs:
@@ -11,24 +17,33 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
-  release:
+  construir:
     # Solo desde main: la etiqueta debe apuntar a un commit que ya pasó revisión.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      actions: read
     env:
       GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ github.sha }}
+    outputs:
+      etiqueta: ${{ steps.preparar.outputs.etiqueta }}
+      version: ${{ steps.preparar.outputs.version }}
+      sha256: ${{ steps.preparar.outputs.sha256 }}
+      commit: ${{ steps.preparar.outputs.commit }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -36,27 +51,98 @@ jobs:
         run: python tools/build_site.py --out _site
       - name: Validar el paquete y preparar los archivos de la release
         id: preparar
-        run: python tools/release_app.py --zip _site/app.zip --commit "$GITHUB_SHA" --out _release | tee -a "$GITHUB_OUTPUT"
-      - name: La etiqueta no debe existir (una release nunca se reescribe)
+        run: python tools/release_app.py preparar --zip _site/app.zip --commit "$SHA" --out _release | tee -a "$GITHUB_OUTPUT"
+      - name: El commit exacto debe haber superado el CI
         run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/${{ steps.preparar.outputs.etiqueta }}" >/dev/null 2>&1; then
-            echo "La etiqueta ${{ steps.preparar.outputs.etiqueta }} ya existe. Sube APP_VERSION (docs/fase3a, política SemVer) antes de publicar." >&2
-            exit 1
-          fi
+          gh api "repos/$REPO/actions/runs?head_sha=$SHA&per_page=100" > "$RUNNER_TEMP/runs.json"
+          python tools/release_app.py verificar-ci --runs "$RUNNER_TEMP/runs.json" --commit "$SHA"
+      - name: La etiqueta no debe existir (una release nunca se reescribe)
+        env:
+          ETIQUETA: ${{ steps.preparar.outputs.etiqueta }}
+        run: |
+          gh api "repos/$REPO/git/matching-refs/tags/$ETIQUETA" > "$RUNNER_TEMP/refs.json"
+          gh api --paginate "repos/$REPO/releases" --jq '.[].tag_name' > "$RUNNER_TEMP/releases.txt"
+          python tools/release_app.py etiqueta-libre --tag "$ETIQUETA" --refs "$RUNNER_TEMP/refs.json" --releases "$RUNNER_TEMP/releases.txt"
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ steps.preparar.outputs.etiqueta }}
           path: _release
           if-no-files-found: error
-      - name: Crear la etiqueta y la release
-        if: ${{ inputs.publicar }}
+
+  publicar:
+    # Solo con «publicar» marcado, solo desde main y solo si «construir» tuvo éxito (needs). El único job con permiso de escritura.
+    needs: construir
+    if: ${{ inputs.publicar && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ github.sha }}
+      ETIQUETA: ${{ needs.construir.outputs.etiqueta }}
+      VERSION: ${{ needs.construir.outputs.version }}
+      SHA256: ${{ needs.construir.outputs.sha256 }}
+      COMMIT: ${{ needs.construir.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-${{ needs.construir.outputs.etiqueta }}
+          path: _release
+      - name: La carpeta recibida es exactamente la que construyó el job anterior
         run: |
-          gh release create "${{ steps.preparar.outputs.etiqueta }}" _release/app.zip _release/app.zip.sha256 \
-            --target "$GITHUB_SHA" --title "Aplicación ${{ steps.preparar.outputs.version }}" --notes-file _release/NOTAS.md
-      - name: Verificar el asset publicado (SHA-256 descargado = SHA-256 calculado)
-        if: ${{ inputs.publicar }}
+          test "$COMMIT" = "$SHA"
+          python tools/release_app.py verificar-carpeta --dir _release --commit "$SHA" --sha256 "$SHA256" --tag "$ETIQUETA"
+      - name: Volver a comprobar el CI del commit exacto y que la etiqueta (o un borrador) no existe
         run: |
-          mkdir _verificar && cd _verificar
-          gh release download "${{ steps.preparar.outputs.etiqueta }}" --pattern app.zip --pattern app.zip.sha256
-          sha256sum -c app.zip.sha256
-          test "$(cut -d' ' -f1 app.zip.sha256)" = "${{ steps.preparar.outputs.sha256 }}"
+          gh api "repos/$REPO/actions/runs?head_sha=$SHA&per_page=100" > "$RUNNER_TEMP/runs.json"
+          python tools/release_app.py verificar-ci --runs "$RUNNER_TEMP/runs.json" --commit "$SHA"
+          gh api "repos/$REPO/git/matching-refs/tags/$ETIQUETA" > "$RUNNER_TEMP/refs.json"
+          gh api --paginate "repos/$REPO/releases" --jq '.[].tag_name' > "$RUNNER_TEMP/releases.txt"
+          python tools/release_app.py etiqueta-libre --tag "$ETIQUETA" --refs "$RUNNER_TEMP/refs.json" --releases "$RUNNER_TEMP/releases.txt"
+      - name: Crear la release como BORRADOR (todavía no existe la etiqueta)
+        run: |
+          gh release create "$ETIQUETA" _release/app.zip _release/app.zip.sha256 --draft --target "$SHA" \
+            --title "Aplicación $VERSION" --notes-file _release/NOTAS.md
+      - name: Verificar el borrador (assets descargados de GitHub, SHA-256 y zip)
+        run: |
+          gh api --paginate "repos/$REPO/releases" --jq '.[] | select(.tag_name == env.ETIQUETA)' > "$RUNNER_TEMP/release.json"
+          rm -rf "$RUNNER_TEMP/dl" && mkdir "$RUNNER_TEMP/dl"
+          for fila in $(jq -r '.assets[] | "\(.id):\(.name)"' "$RUNNER_TEMP/release.json"); do
+            id="${fila%%:*}"; nombre="${fila#*:}"
+            case "$id" in ''|*[!0-9]*) echo "id de asset no válido" >&2; exit 1;; esac
+            case "$nombre" in app.zip|app.zip.sha256) ;; *) echo "asset inesperado: $nombre" >&2; exit 1;; esac
+            gh api -H "Accept: application/octet-stream" "repos/$REPO/releases/assets/$id" > "$RUNNER_TEMP/dl/$nombre"
+          done
+          python tools/release_app.py verificar-release --modo borrador --release "$RUNNER_TEMP/release.json" --dir "$RUNNER_TEMP/dl" --commit "$SHA" --sha256 "$SHA256"
+      - name: Publicar el borrador (GitHub crea la etiqueta en el commit exacto)
+        run: |
+          id=$(jq -er '.id' "$RUNNER_TEMP/release.json")
+          case "$id" in ''|*[!0-9]*) echo "id de release no válido" >&2; exit 1;; esac
+          gh api -X PATCH "repos/$REPO/releases/$id" -F draft=false
+      - name: Verificar la release publicada (etiqueta → commit → artefacto → SHA-256)
+        run: |
+          gh api --paginate "repos/$REPO/releases" --jq '.[] | select(.tag_name == env.ETIQUETA)' > "$RUNNER_TEMP/release.json"
+          gh api "repos/$REPO/git/ref/tags/$ETIQUETA" > "$RUNNER_TEMP/ref.json"
+          if [ "$(jq -r '.object.type' "$RUNNER_TEMP/ref.json")" = "tag" ]; then
+            gh api "repos/$REPO/git/tags/$(jq -r '.object.sha' "$RUNNER_TEMP/ref.json")" > "$RUNNER_TEMP/tagobj.json"
+            ANOTADA=(--tag-obj "$RUNNER_TEMP/tagobj.json")
+          else
+            ANOTADA=()
+          fi
+          rm -rf "$RUNNER_TEMP/dl" && mkdir "$RUNNER_TEMP/dl"
+          for fila in $(jq -r '.assets[] | "\(.id):\(.name)"' "$RUNNER_TEMP/release.json"); do
+            id="${fila%%:*}"; nombre="${fila#*:}"
+            case "$id" in ''|*[!0-9]*) echo "id de asset no válido" >&2; exit 1;; esac
+            case "$nombre" in app.zip|app.zip.sha256) ;; *) echo "asset inesperado: $nombre" >&2; exit 1;; esac
+            gh api -H "Accept: application/octet-stream" "repos/$REPO/releases/assets/$id" > "$RUNNER_TEMP/dl/$nombre"
+          done
+          python tools/release_app.py verificar-release --modo publicada --release "$RUNNER_TEMP/release.json" --ref "$RUNNER_TEMP/ref.json" "${ANOTADA[@]}" \
+            --dir "$RUNNER_TEMP/dl" --commit "$SHA" --sha256 "$SHA256"

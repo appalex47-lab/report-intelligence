@@ -1,7 +1,7 @@
 """Fase 3A-5 (A-5) · `tools/release_app.py` y `.github/workflows/release.yml`. Se ejecuta en CI.
 
-Qué cubre: la lógica de validación y preparación de la release (con zips sintéticos y con el `app.zip` REAL de `build_site.py`) y la estructura de
-seguridad del workflow (solo manual, ensayo por omisión, solo desde main, permisos mínimos, nunca reescribe etiquetas). Qué NO cubre, y se dice
+Qué cubre: la lógica de validación y preparación de la release (con zips sintéticos y con el `app.zip` REAL de `build_site.py`). La verificación de
+etiqueta/CI/release está en test_release_publicacion.py y la estructura del workflow en test_release_workflow.py. Qué NO cubre, y se dice
 expresamente: la ejecución del workflow en GitHub (V-02) —requiere publicar una release de verdad— no se prueba aquí."""
 import hashlib
 import importlib.util
@@ -13,7 +13,6 @@ import zipfile
 from pathlib import Path
 
 import pytest
-import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("release_app", ROOT / "tools" / "release_app.py")
@@ -176,12 +175,12 @@ def test_preparar_con_version_del_repositorio_distinta_a_la_empaquetada(tmp_path
 
 def test_cli_exito_y_error(tmp_path):
     z = zip_sintetico(tmp_path / "app.zip")
-    ok = subprocess.run([sys.executable, str(ROOT / "tools/release_app.py"), "--zip", str(z), "--commit", SHA, "--out", str(tmp_path / "o")],
+    ok = subprocess.run([sys.executable, str(ROOT / "tools/release_app.py"), "preparar", "--zip", str(z), "--commit", SHA, "--out", str(tmp_path / "o")],
                         capture_output=True, text=True)
     assert ok.returncode == 0
     clave = dict(l.split("=", 1) for l in ok.stdout.strip().splitlines())
     assert set(clave) == {"etiqueta", "version", "sha256", "commit"} and clave["commit"] == SHA
-    mal = subprocess.run([sys.executable, str(ROOT / "tools/release_app.py"), "--zip", str(z), "--commit", "b" * 40, "--out", str(tmp_path / "p")],
+    mal = subprocess.run([sys.executable, str(ROOT / "tools/release_app.py"), "preparar", "--zip", str(z), "--commit", "b" * 40, "--out", str(tmp_path / "p")],
                          capture_output=True, text=True)
     assert mal.returncode == 1 and mal.stdout == "" and "ERROR:" in mal.stderr and not (tmp_path / "p").exists()
 
@@ -221,101 +220,120 @@ def test_el_app_zip_real_empaqueta_la_version_del_repositorio_y_se_prepara_compl
         ra.preparar(sitio_real, "c" * 40, tmp_path / "x")
 
 
-# ----------------------------------------------------------------------------------------------------------------- estructura del workflow
-WF = ROOT / ".github" / "workflows" / "release.yml"
-PINS = {"actions/checkout": "v4", "actions/setup-python": "v5", "actions/upload-artifact": "v4"}
+# ----------------------------------------------------------------------------------------------------------------- endurecimiento del zip
+def _zip_con(ruta, entradas, modo_symlink=()):
+    import stat as _st
+    import warnings
+    with zipfile.ZipFile(ruta, "w") as z, warnings.catch_warnings():
+        warnings.simplefilter("ignore")                       # el módulo avisa de los nombres duplicados; justo lo que se quiere probar
+        z.writestr(ra.BUILD_INFO, json.dumps({"esquema": "build_info/1", "commit": SHA}))
+        z.writestr(ra.VERSION_PY, VERSION_PY)
+        for nombre, datos in entradas:
+            if nombre in modo_symlink:
+                zi = zipfile.ZipInfo(nombre)
+                zi.external_attr = (_st.S_IFLNK | 0o777) << 16
+                z.writestr(zi, datos)
+            else:
+                z.writestr(nombre, datos)
+    return ruta
 
 
-def problemas_workflow(texto: str) -> list[str]:
-    """Garantías de seguridad del workflow. Devuelve la lista de incumplimientos (vacía = correcto)."""
-    p = []
-    d = yaml.safe_load(texto)
-    on = d.get("on", d.get(True))
-    if not isinstance(on, dict) or set(on) != {"workflow_dispatch"}:
-        p.append("debe dispararse solo con workflow_dispatch")
-    entrada = ((on or {}).get("workflow_dispatch") or {}).get("inputs", {}).get("publicar") if isinstance(on, dict) else None
-    if not entrada or entrada.get("type") != "boolean" or entrada.get("default") is not False:
-        p.append("la entrada «publicar» debe ser booleana y valer false por omisión (ensayo)")
-    if d.get("permissions") != {"contents": "read"}:
-        p.append("los permisos globales deben ser solo contents: read")
-    job = d["jobs"]["release"]
-    if job.get("permissions") != {"contents": "write"}:
-        p.append("el job debe pedir solo contents: write")
-    if job.get("if") != "github.ref == 'refs/heads/main'":
-        p.append("el job debe limitarse a refs/heads/main")
-    if (d.get("concurrency") or {}).get("cancel-in-progress") is not False:
-        p.append("la concurrencia no debe cancelar una publicación en curso")
-    pasos = job["steps"]
-    for s in pasos:
-        u = s.get("uses")
-        if u:
-            nombre, _, ver = u.partition("@")
-            if PINS.get(nombre) != ver:
-                p.append(f"acción sin la versión fijada esperada: {u}")
-    crear = [s for s in pasos if "gh release create" in s.get("run", "")]
-    if len(crear) != 1 or crear[0].get("if") != "${{ inputs.publicar }}":
-        p.append("gh release create debe existir una vez y solo bajo inputs.publicar")
-    elif "--target \"$GITHUB_SHA\"" not in crear[0]["run"]:
-        p.append("la etiqueta debe apuntar a $GITHUB_SHA")
-    idx = {s.get("name", s.get("uses", "")): i for i, s in enumerate(pasos)}
-    orden = [i for i, s in enumerate(pasos) if "tools/build_site.py" in s.get("run", "")] + \
-            [i for i, s in enumerate(pasos) if "tools/release_app.py" in s.get("run", "")] + \
-            [i for i, s in enumerate(pasos) if "ls-remote" in s.get("run", "")] + [i for i, s in enumerate(pasos) if "gh release create" in s.get("run", "")]
-    if len(orden) != 4 or orden != sorted(orden):
-        p.append("el orden debe ser: construir → validar → comprobar etiqueta → publicar")
-    prohibidos = ("--clobber", "release delete", "tag -f", "tag --force", "push --force", "push -f", "--prerelease", "git push", "secrets.")
-    for pr in prohibidos:
-        if pr in texto:
-            p.append(f"no debe contener «{pr}»")
-    if not any("sha256sum -c" in s.get("run", "") for s in pasos if s.get("if") == "${{ inputs.publicar }}"):
-        p.append("tras publicar debe verificarse el SHA-256 del asset descargado")
-    del idx
-    return p
+@pytest.mark.parametrize("nombre", ["../evil.py", "backend/../../evil.py", "/etc/passwd", "C:/Windows/x", "a\\b.py", "backend//x.py", "./x.py",
+                                    "backend/./x.py"])    # (un NUL en el nombre no es construible: `zipfile` lo trunca al escribir)
+def test_rutas_peligrosas_en_el_zip_se_rechazan(tmp_path, nombre):
+    with pytest.raises(ra.ErrorRelease, match="ruta no permitida"):
+        ra.validar_zip(_zip_con(tmp_path / "z.zip", [(nombre, b"x")]), "1.0.0", SHA)
 
 
-def test_el_workflow_cumple_todas_las_garantias():
-    assert problemas_workflow(WF.read_text(encoding="utf-8")) == []
+def test_entradas_duplicadas_se_rechazan(tmp_path):
+    with pytest.raises(ra.ErrorRelease, match="duplicada"):
+        ra.validar_zip(_zip_con(tmp_path / "z.zip", [("backend/app/otro.py", b"1"), ("backend/app/otro.py", b"2")]), "1.0.0", SHA)
+    with pytest.raises(ra.ErrorRelease, match="duplicada"):                       # y duplicar un archivo de identificación: dos versiones del mismo
+        ra.validar_zip(_zip_con(tmp_path / "y.zip", [(ra.VERSION_PY, b'APP_VERSION = "9.9.9"\n')]), "1.0.0", SHA)
 
 
-def test_el_workflow_usa_las_mismas_versiones_de_acciones_que_pages():
-    pages = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
-    for nombre, ver in (("actions/checkout", "v4"), ("actions/setup-python", "v5")):
-        assert f"{nombre}@{ver}" in pages and f"{nombre}@{ver}" in WF.read_text(encoding="utf-8")
+def test_enlaces_simbolicos_se_rechazan(tmp_path):
+    z = _zip_con(tmp_path / "z.zip", [("backend/app/enlace", b"/etc/passwd")], modo_symlink=("backend/app/enlace",))
+    with pytest.raises(ra.ErrorRelease, match="enlace simbólico"):
+        ra.validar_zip(z, "1.0.0", SHA)
 
 
-def test_el_workflow_usa_el_script_del_repositorio_con_argumentos_existentes():
-    texto = WF.read_text(encoding="utf-8")
-    assert (ROOT / "tools/release_app.py").is_file() and (ROOT / "tools/build_site.py").is_file()
-    helpv = subprocess.run([sys.executable, str(ROOT / "tools/release_app.py"), "--help"], capture_output=True, text=True).stdout
-    for flag in re.findall(r"tools/release_app\.py((?: --[a-z]+ \S+)+)", texto)[0].split():
-        if flag.startswith("--"):
-            assert flag in helpv, flag
+def test_demasiadas_entradas_y_tamano_descomprimido(tmp_path, monkeypatch):
+    z = _zip_con(tmp_path / "z.zip", [(f"backend/app/f{i}.py", b"x") for i in range(10)])
+    monkeypatch.setattr(ra, "MAX_ENTRADAS", 5)
+    with pytest.raises(ra.ErrorRelease, match="demasiadas entradas"):
+        ra.validar_zip(z, "1.0.0", SHA)
+    monkeypatch.setattr(ra, "MAX_ENTRADAS", 5000)
+    monkeypatch.setattr(ra, "MAX_DESCOMPRIMIDO", 50)
+    with pytest.raises(ra.ErrorRelease, match="descomprimido"):
+        ra.validar_zip(z, "1.0.0", SHA)
 
 
-@pytest.mark.parametrize("mutacion,reemplazo", [
-    ("workflow_dispatch:\n    inputs:", "push:\n      branches: [main]\n  workflow_dispatch:\n    inputs:"),
-    ("        default: false", "        default: true"),
-    ("permissions:\n  contents: read\n\nconcurrency", "permissions:\n  contents: write\n\nconcurrency"),
-    ("    if: github.ref == 'refs/heads/main'", "    if: always()"),
-    ("        if: ${{ inputs.publicar }}\n        run: |\n          gh release create", "        run: |\n          gh release create"),
-    ("--target \"$GITHUB_SHA\"", "--target main"),
-    ("--notes-file _release/NOTAS.md", "--notes-file _release/NOTAS.md --clobber"),
-    ("actions/checkout@v4", "actions/checkout@main"),
-    ("          sha256sum -c app.zip.sha256\n", ""),
-    ("cancel-in-progress: false", "cancel-in-progress: true"),
-    ("GH_TOKEN: ${{ github.token }}", "GH_TOKEN: ${{ secrets.PAT }}"),
-])
-def test_mutaciones_deliberadas_del_workflow_son_detectadas(mutacion, reemplazo):
-    texto = WF.read_text(encoding="utf-8")
-    assert texto.count(mutacion) == 1, mutacion
-    assert problemas_workflow(texto.replace(mutacion, reemplazo)), mutacion
+def test_archivos_de_identificacion_vacios_se_rechazan(tmp_path):
+    for vacio in (ra.BUILD_INFO, ra.VERSION_PY):
+        z = tmp_path / f"{Path(vacio).name}.zip"
+        with zipfile.ZipFile(z, "w") as zz:
+            zz.writestr(ra.BUILD_INFO, b"" if vacio == ra.BUILD_INFO else json.dumps({"esquema": "build_info/1", "commit": SHA}))
+            zz.writestr(ra.VERSION_PY, b"" if vacio == ra.VERSION_PY else VERSION_PY)
+        with pytest.raises(ra.ErrorRelease, match="vacío"):
+            ra.validar_zip(z, "1.0.0", SHA)
 
 
-def test_el_workflow_no_se_dispara_con_push_ni_pr_ni_programacion():
-    on = yaml.safe_load(WF.read_text(encoding="utf-8")).get("on") or yaml.safe_load(WF.read_text(encoding="utf-8"))[True]
-    assert list(on) == ["workflow_dispatch"]
+def test_directorios_y_archivos_normales_no_se_confunden_con_rutas_peligrosas(tmp_path):
+    z = _zip_con(tmp_path / "z.zip", [("backend/app/web/", b""), ("profiles/aetops/mensual.yaml", b"a: 1"), ("frontend/index.html", b"<html>"),
+                                      ("backend/app/.oculto", b"x"), ("tools/make_machotes.py", b"x")])
+    ra.validar_zip(z, "1.0.0", SHA)
 
 
-def test_release_yml_no_se_empaqueta_en_el_sitio():
-    import tools.build_site as bs
-    assert ".github/workflows/release.yml" not in bs.PACKAGED          # añadirlo cambiaría el cálculo de «dirty» y tools/build_site.py es protegido
+def test_el_app_zip_real_pasa_la_revision_de_entradas(sitio_real):
+    with zipfile.ZipFile(sitio_real) as z:
+        ra._revisar_entradas(z)
+
+
+# ----------------------------------------------------------------------------------------------------------------- verificar_carpeta (job de construcción → job de publicación)
+def _carpeta(tmp_path, **kw):
+    z = zip_sintetico(tmp_path / "app.zip", **kw)
+    return ra.preparar(z, SHA, tmp_path / "rel")
+
+
+def test_la_carpeta_recibida_es_la_construida(tmp_path):
+    r = _carpeta(tmp_path)
+    ra.verificar_carpeta(tmp_path / "rel", r["version"], SHA, r["sha256"], r["etiqueta"])
+
+
+@pytest.mark.parametrize("que", ["zip_distinto", "sha_distinto", "linea_sha", "notas", "falta", "sobra", "tag_distinta", "commit_distinto"])
+def test_la_carpeta_alterada_se_rechaza(tmp_path, que):
+    r = _carpeta(tmp_path)
+    d, sha, commit, tag = tmp_path / "rel", r["sha256"], SHA, r["etiqueta"]
+    if que == "zip_distinto":
+        zip_sintetico(d / "app.zip", extra={"backend/app/mas.py": "x"})
+    elif que == "sha_distinto":
+        sha = "0" * 64
+    elif que == "linea_sha":
+        (d / "app.zip.sha256").write_text(f"{'0' * 64}  app.zip\n", encoding="utf-8")
+    elif que == "notas":
+        (d / "NOTAS.md").write_text("otra cosa", encoding="utf-8")
+    elif que == "falta":
+        (d / "NOTAS.md").unlink()
+    elif que == "sobra":
+        (d / "extra.txt").write_text("x")
+    elif que == "tag_distinta":
+        tag = "app-v9.9.9"
+    elif que == "commit_distinto":
+        commit = "b" * 40
+    with pytest.raises(ra.ErrorRelease):
+        ra.verificar_carpeta(d, r["version"], commit, sha, tag)
+
+
+def test_la_carpeta_con_sha256_malformado_o_inexistente(tmp_path):
+    r = _carpeta(tmp_path)
+    for sha in ("", "abc", "G" * 64, None, "A" * 64):
+        with pytest.raises(ra.ErrorRelease):
+            ra.verificar_carpeta(tmp_path / "rel", r["version"], SHA, sha)
+    with pytest.raises(ra.ErrorRelease, match="no existe"):
+        ra.verificar_carpeta(tmp_path / "nada", r["version"], SHA, r["sha256"])
+
+
+def test_la_salida_de_la_cli_nunca_trae_saltos_de_linea_dentro_de_un_valor(tmp_path):
+    with pytest.raises(ra.ErrorRelease, match="salto de línea"):
+        ra._imprimir({"etiqueta": "app-v1.0.0\nmalicioso=1"}, ("etiqueta",))
