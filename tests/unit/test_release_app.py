@@ -316,6 +316,6 @@ def test_el_workflow_no_se_dispara_con_push_ni_pr_ni_programacion():
     assert list(on) == ["workflow_dispatch"]
 
 
-def test_no_se_modifican_los_workflows_existentes_ni_se_empaqueta_release_en_el_sitio():
+def test_release_yml_no_se_empaqueta_en_el_sitio():
     import tools.build_site as bs
     assert ".github/workflows/release.yml" not in bs.PACKAGED          # añadirlo cambiaría el cálculo de «dirty» y tools/build_site.py es protegido
