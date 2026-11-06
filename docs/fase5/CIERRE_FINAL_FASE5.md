@@ -15,7 +15,7 @@ RQ-13/14/15/19: QA estructural, de cifras y visual del PPTX exportado, anexo de 
 | Narrativa GLP-1 «Mounjaro (74 %, $9.20 M)» | Intacta; sin denominador explícito; requiere decisión A-3 | L-9, `PENDIENTES_POSTERIORES.md` §3 |
 
 ## 3. Alcance ejecutado y cambios
-34 archivos de la Fase 5 en el PR (23 nuevos, 11 modificados, 0 eliminados) más 4 documentos de este cierre. Detalle en `IMPLEMENTACION_FASE5.md`. Esta ronda no cambió código: la revisión de AC-14, QA estructural/visual y descarga se hizo ejecutando de nuevo las pruebas sobre el código final y no halló defectos nuevos.
+36 archivos en el PR (25 nuevos, 11 modificados, 0 eliminados), incluidos los documentos de este cierre (`CIERRE_FINAL_FASE5.md`, `PENDIENTES_POSTERIORES.md`). Detalle en `IMPLEMENTACION_FASE5.md`. Esta ronda no cambió código: la revisión de AC-14, QA estructural/visual y descarga se hizo ejecutando de nuevo las pruebas sobre el código final y no halló defectos nuevos.
 
 ## 4. Criterios de aceptación (estado definitivo antes de la fusión)
 | ID | Estado | Nota |
