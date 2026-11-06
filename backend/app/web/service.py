@@ -4,6 +4,7 @@ Una corrida = carpeta `runs/<uuid>/` con `run.json` (estado), `input.xlsx` y `ou
 propia: el historial inmutable (SQLite) es el de `history/store.py`. Todo lo calculado sale del motor; aquí solo se orquesta."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -206,9 +207,23 @@ def _escenarios(run_id: str, st: dict, res) -> dict:
         return {"esquema": esc.ESQUEMA, "no_disponible": f"No se pudo construir el panel de escenarios ({type(e).__name__}).", "escenarios": [], "ind01": None}
 
 
+def _anexo(run_id: str, st: dict, res, esc: dict | None) -> dict:
+    """Anexo de calidad de datos (Fase 5, RQ-19). Solo lee; si falla lo declara y el análisis continúa (S-3)."""
+    from .. import calidad, escenarios as e
+    try:
+        p, per = _input(run_id), period_of(st)
+        crudo = is_raw_workbook(p)
+        ctx = e.contexto_cacheado(p, per) if crudo else None
+        libro = {"nombre": st.get("filename"), "bytes": p.stat().st_size, "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
+        return calidad.construir(res, st["unit"], per, ctx, libro, esc)
+    except Exception as ex:                                                  # noqa: BLE001 — el anexo informa; no puede impedir el análisis
+        return {"esquema": calidad.ESQUEMA, "no_disponible": f"No se pudo construir el anexo de calidad de datos ({type(ex).__name__}).", "dimensiones": []}
+
+
 def analyze(run_id: str) -> dict:
     st = _load(run_id)
     res = _run_engine(run_id, st)
+    panel_esc = _escenarios(run_id, st, res)
     findings = [_finding(f) for f in res.findings]
     att = []
     if st["unit"] == "aetops" and res.tables:
@@ -216,7 +231,7 @@ def analyze(run_id: str) -> dict:
                 "brecha": float(a.gap), "estado": a.status} for a in attainment(res, _targets(st))]
     gen_ok = _has_template(st)
     return {"run": public(st), "can_generate": res.can_generate and gen_ok, "findings": findings,
-            "kpis": _kpis(res, st), "cumplimiento": att, "escenarios_indicador": _escenarios(run_id, st, res),
+            "kpis": _kpis(res, st), "cumplimiento": att, "escenarios_indicador": panel_esc, "anexo_calidad": _anexo(run_id, st, res, panel_esc),
             "targets_required": st["unit"] == "aetops", "targets_lines": [],
             "generator_available": gen_ok,
             "template_key": f"{st['unit']}-{st['periodicity']}", "template_label": TEMPLATE_KEYS.get(f"{st['unit']}-{st['periodicity']}", ""),
@@ -320,23 +335,28 @@ def history_runs(unit: str | None = None) -> list[dict]:
 OUT_FILES = {"pptx", "pdf"}
 
 
-def generate(run_id: str) -> dict:
+def generate(run_id: str, anexo: bool | None = None) -> dict:
+    """`anexo`: True/False = petición expresa de incluir (o no) el anexo de calidad como última diapositiva; None = lo decide el flag `anexo_calidad`."""
+    from .. import calidad
     st = _load(run_id)
     res = _run_engine(run_id, st)
     out = _dir(run_id) / "out"
     shutil.rmtree(out, ignore_errors=True)
+    anexo_d = _anexo(run_id, st, res, _escenarios(run_id, st, res))
+    en_deck = anexo_d if calidad.anexo_activado(anexo) else None
     try:
         if st["unit"] == "glp1":
             b = build_glp1(res, period_of(st), template_path(st), out, narrative=st["edits"] or None, sources=[_input(run_id)],
                            context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB, render=RENDER,
-                           discovery=st.get("discovery"), ia=_ia_info(run_id, st))
+                           discovery=st.get("discovery"), ia=_ia_info(run_id, st), anexo=en_deck)
             st["generated"] = True
             _save(run_id, st)
             _copy_ia_log(run_id)
+            _escribir_anexo(anexo_d, out)
             return result_info(run_id, b.qa.passed)
         b = build_aetops(res, period_of(st), template_path(st), out, narrative=st["edits"] or None,
                          context=st["context"] or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st),
-                         render=RENDER, discovery=st.get("discovery"), ia=_ia_info(run_id, st))
+                         render=RENDER, discovery=st.get("discovery"), ia=_ia_info(run_id, st), anexo=en_deck)
     except ReportBlocked as e:
         raise ServiceError(f"No se genera: hay hallazgos bloqueantes ({e}).", 409) from None
     except (DataMissing, TemplateMismatch) as e:
@@ -344,7 +364,14 @@ def generate(run_id: str) -> dict:
     st["generated"] = True
     _save(run_id, st)
     _copy_ia_log(run_id)
+    _escribir_anexo(anexo_d, out)
     return result_info(run_id, b.qa.passed)
+
+
+def _escribir_anexo(anexo: dict, out: Path) -> None:
+    """Deja `anexo_calidad.json` junto al reporte. Si no se pudo construir, no se escribe nada (no se inventa un anexo vacío)."""
+    if not anexo.get("no_disponible"):
+        (out / "anexo_calidad.json").write_text(json.dumps(anexo, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 def _ia_info(run_id: str, st: dict) -> dict:
@@ -380,7 +407,7 @@ def file_path(run_id: str, name: str) -> Path:
     out = _dir(run_id) / "out"
     if not out.is_dir():
         raise ServiceError("Aún no se ha generado el reporte.", 404)
-    if name in ("qa_report.json", "narrative.json", "manifest.json", "trends.json", "ia_log.json", "procedencia.json", "procedencia_error.json") \
+    if name in ("qa_report.json", "narrative.json", "manifest.json", "trends.json", "ia_log.json", "procedencia.json", "procedencia_error.json", "anexo_calidad.json") \
             or name.lower().endswith((".pptx", ".pdf")):
         p, base = out / name, out
     elif re.fullmatch(r"[\w\-]+\.png", name):

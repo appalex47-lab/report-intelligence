@@ -578,3 +578,13 @@ def test_el_contexto_se_lee_una_vez_por_archivo_y_se_vuelve_a_leer_si_cambia(tmp
     E.construir_desde_libro(res, "glp1", PER_G, p, False)                                       # libro no crudo: no se lee nada
     assert len(llamadas) == 2
     E._CACHE_CTX.clear()
+
+
+def test_ninguna_variable_inventa_una_moneda(glp1, aet):
+    """Hallazgo de la Fase 5: el panel rotulaba los montos como «MXN», pero ningún libro declara la moneda (unidad inventada)."""
+    for o in (glp1[2], aet[1]):
+        assert "MXN" not in " ".join(textos(o))
+        for e in o["escenarios"]:
+            for v in e["variables"]:
+                if v["unidad"] == "moneda":
+                    assert "moneda no está declarada" in v["nota"]

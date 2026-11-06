@@ -11,6 +11,7 @@ from pptx import Presentation
 
 from .deck.aetops_mensual import FillReport, fill_aetops_mensual
 from .deck.aetops_trimestral import fill_aetops_trimestral
+from .deck.anexo import add_quality_annex
 from .deck.extras import add_discovery_slide, add_executive_slides
 from .deck.glp1_mensual import DECORATIVE, fill_glp1
 from .history import store as hist
@@ -22,7 +23,7 @@ from .narrative.writer import Para, fit, to_paragraphs, verify_all, verify_edite
 from .models import Period
 from .pipeline import GlpResult, Result
 from .provenance_capture import ejecutar as registrar_procedencia
-from .qa import checks
+from .qa import checks, cifras, pptx_export
 from .render import convert_to_pdf, pdf_to_pngs
 
 
@@ -48,11 +49,26 @@ def _sha(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
+def _revisar_cifras(qa, pptx: Path, result, fill, anexo_idx: int | None = None) -> None:
+    """Fase 5 (AC-14): trazabilidad de cifras, fórmulas, unidades y denominadores del PPTX guardado, contra los valores del motor y la narrativa verificada.
+    Son advertencias (heurísticas sobre texto): no bloquean; si la revisión falla, lo declara y la generación continúa."""
+    try:
+        nums = {c for ps in fill.narrative.values() for p in ps for c in p.nums}
+        for i in cifras.revisar(pptx, cifras.recolectar_valores(result), nums, omitir={anexo_idx} if anexo_idx else ()):
+            qa.add(i.id, i.severity, i.slide, i.message)
+    except Exception as e:                                          # noqa: BLE001
+        qa.add("PPTX_CIFRAS_NO_EJECUTADA", "warn", None, f"No se pudo ejecutar la revisión de cifras ({type(e).__name__}).")
+
+
 def _render_and_check(pptx: Path, template: Path, out_dir: Path, slide_map, qa, render: bool, decorative=None):
     """QA del PPTX. Con `render` (LibreOffice disponible): PDF + comprobaciones visuales completas. Sin él (navegador): solo QA
     estructural y estimación geométrica; no hay PDF ni vista previa. Devuelve (pdf|None, pngs, carpeta temporal|None)."""
     checks.check_editable_and_static(pptx, template, qa, slide_map, decorative)
     checks.check_geometry(pptx, qa, template, slide_map)
+    try:                                                            # Fase 5 (RQ-13): re-lectura estructural del archivo ya guardado
+        pptx_export.agregar_a(qa, pptx, template)
+    except Exception as e:                                          # noqa: BLE001 — la revisión no puede impedir generar
+        qa.add("PPTX_REVISION_NO_EJECUTADA", "warn", None, f"No se pudo ejecutar la revisión estructural ({type(e).__name__}).")
     if not render:
         qa.add("QA_VISUAL_OMITIDO", "info", None,
                "QA estructural (sin render): no se generó PDF ni se comprobó el desborde visual; revisa el PPTX antes de distribuirlo.")
@@ -101,7 +117,7 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
                          fix_titles: bool = True, executive: bool = True,
                  context: list[str] | None = None, history_db: Path | None = None,
                  sources: list[Path] | None = None, targets=None, render: bool = True, discovery: dict | None = None,
-                 ia: dict | None = None) -> BuildResult:
+                 ia: dict | None = None, anexo: dict | None = None) -> BuildResult:
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
     if blockers and not allow_blockers:
@@ -119,6 +135,10 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     if executive:                                   # resumen ejecutivo (inicio) + recomendaciones (final)
         slide_map = _exec_slides(prs, build_executive(result, period, att=att), fill, context, ed_res, ed_rec)
     slide_map = _discovery_slide(prs, discovery, fill, slide_map, n_template)
+    anexo_idx = None
+    if anexo and not anexo.get("no_disponible"):          # Fase 5 (RQ-19): última diapositiva, solo si se pidió (flag anexo_calidad o petición expresa)
+        slide_map = add_quality_annex(prs, anexo, slide_map, n_template)
+        anexo_idx = len(prs.slides)
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_AETOP_{stem}_{period.year}.pptx"
     prs.save(pptx)
@@ -126,6 +146,7 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     qa = checks.QAReport()
     pdf, pngs, tpl_dir = _render_and_check(pptx, template, out_dir, slide_map, qa, render)
     checks.check_stale(fill, qa)
+    _revisar_cifras(qa, pptx, result, fill, anexo_idx)
     for prob in fill.narrative_problems:
         qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")
     for prob in fill.edited_unverified:
@@ -200,7 +221,7 @@ def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sou
 def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path, narrative: dict | None = None,
                allow_blockers: bool = False, sources: list[Path] | None = None, executive: bool = True,
                context: list[str] | None = None, targets=None, history_db: Path | None = None, render: bool = True,
-               discovery: dict | None = None, ia: dict | None = None) -> BuildResult:
+               discovery: dict | None = None, ia: dict | None = None, anexo: dict | None = None) -> BuildResult:
     """GLP-1 mensual: rellena la plantilla, convierte a PDF y aplica el QA (sin resumen ejecutivo ni metas por ahora)."""
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
@@ -217,12 +238,17 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
     if executive:
         slide_map = _exec_slides(prs, build_executive_glp1(result.blocks, result.funnel, period, att=att), fill, context, ed_res, ed_rec)
     slide_map = _discovery_slide(prs, discovery, fill, slide_map, n_template)
+    anexo_idx = None
+    if anexo and not anexo.get("no_disponible"):          # Fase 5 (RQ-19): última diapositiva, solo si se pidió (flag anexo_calidad o petición expresa)
+        slide_map = add_quality_annex(prs, anexo, slide_map, n_template)
+        anexo_idx = len(prs.slides)
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_GLP1_{stem}_{period.year}.pptx"
     prs.save(pptx)
     qa = checks.QAReport()
     pdf, pngs, tpl_dir = _render_and_check(pptx, template, out_dir, slide_map, qa, render, DECORATIVE)
     checks.check_stale(fill, qa)
+    _revisar_cifras(qa, pptx, result, fill, anexo_idx)
     for prob in fill.narrative_problems:
         qa.add("NARRATIVE_UNVERIFIED", "error", None, f"Narrativa sin evidencia: {prob}")
     for prob in fill.edited_unverified:
