@@ -42,6 +42,8 @@ No se detectó contradicción entre fuentes del mismo nivel que obligue a elegir
 
 Estados: **CUMPLIDO**, **PARCIALMENTE CUMPLIDO**, **INCUMPLIDO**, **NO VERIFICABLE**, **REQUIERE AUTORIZACIÓN**. Las pruebas están en `tests/unit/test_procedencia_{comparacion,evaluar,revision_3a4}.py` (abreviadas **CMP**, **EVA**, **REV**), `tests/regression/test_procedencia_regeneracion.py` (**REG**, solo con plantillas locales) y `tests/e2e/test_hash_pyodide.py` (**PYO**).
 
+**Alcance temporal de la matriz.** Los estados de las tablas 5.1 a 5.4 son los de la **evaluación original** de esta auditoría, emitida sobre el código y las pruebas anteriores a la resolución de D-01 a D-07. No se reescriben retroactivamente. El único requisito cuyo estado cambió después es **R-09**, que estaba PARCIALMENTE CUMPLIDO en la evaluación original y pasó a CUMPLIDO tras resolver D-07 (ver §14.5).
+
 ### 5.1 Requisitos normativos (spec)
 
 | ID | Fuente · sección | Requisito (paráfrasis fiel) | Implementación | Prueba | Estado | Riesgo / acción |
@@ -97,7 +99,7 @@ Estados: **CUMPLIDO**, **PARCIALMENTE CUMPLIDO**, **INCUMPLIDO**, **NO VERIFICAB
 | R-06 | §3 (I-2) | Ocho casos de fuentes aportadas | `_c3`; `evaluar` entrega solo fuentes verificadas | REV `TestI2FuentesAportadas` (12); M03, M14, M16 (muertas) | CUMPLIDO | — |
 | R-07 | §3 criterio | Ningún archivo distinto se ignora en silencio; no rechazar flujos legítimos | `_c3`; no existe flujo con archivos auxiliares (una sola fuente por reporte) | REV `test_ningun_archivo_distinto…`, `test_no_hay_un_flujo_legitimo…` | CUMPLIDO | Supuesto: una fuente por reporte; si cambia la arquitectura debe revisarse |
 | R-08 | §4 (I-3) | Separar reproducibilidad / evaluación / regeneración | `comparar` | REV `TestI3TresConceptos` (17) | CUMPLIDO | — |
-| R-09 | §4 | Pruebas obligatorias: sin solicitar, solicitada, termina bien, falla, resultado incompleto, hash distinto, idéntico | CMP/EVA/REV | idem | PARCIALMENTE CUMPLIDO | Cumplido a nivel `comparar` y `evaluar`. **«Resultado incompleto» a nivel del regenerador** (fallo de `build_*`) no tiene prueba: D-07 |
+| R-09 | §4 | Pruebas obligatorias: sin solicitar, solicitada, termina bien, falla, resultado incompleto, hash distinto, idéntico | CMP/EVA/REV | idem | PARCIALMENTE CUMPLIDO | Cumplido a nivel `comparar` y `evaluar`. **«Resultado incompleto» a nivel del regenerador** (fallo de `build_*`) no tiene prueba: D-07. **Estado vigente tras resolver D-07: CUMPLIDO** (§14.5); el valor de esta fila es el de la evaluación original |
 | R-10 | §4 criterio | Nunca `exacta` sin regeneración real y C1–C7; fallo ≠ éxito parcial; representación inequívoca; si la spec no define, documentar y **pedir autorización antes de modificar el contrato** | `null` + `evaluacion` + `regeneracion` | REV | CUMPLIDO | La autorización llegó en el documento `a734c424` §7 con seis condiciones; se verifican en el §7 de esta auditoría |
 | R-11 | §5 (I-4) | Determinismo, serialización, integridad, validación posterior, referencias, historial intacto, sin persistencia | `serializar_comparacion`, `validar_comparacion`, `leer_comparacion` | REV `TestI4SinPersistencia` (10); M10, M11, M12 (muertas) | CUMPLIDO | Determinismo **entre procesos** sin prueba directa (D-08) |
 | R-12 | §5 | «Consumir desde el servicio existente» | El resultado es JSON puro; el servicio no tiene endpoint (L-3) y `service.py` es protegido | REV `test_el_resultado_es_json_plano…` | PARCIALMENTE CUMPLIDO | Solo se demuestra compatibilidad de formato. Un endpoint requeriría tocar `service.py` (protegido): **REQUIERE AUTORIZACIÓN** si se desea |
@@ -210,9 +212,11 @@ Clasificación: **D** = defecto real (comportamiento o documentación que contra
 * No hay requisitos INCUMPLIDOS ni regresiones: suite 995/0/35, CI verde, baseline y hashes intactos, ningún archivo protegido tocado, las seis condiciones de la autorización sobre `comparacion/1` se cumplen y 19 de 20 defectos inyectados fueron detectados.
 * Sí hay defectos **demostrables y de gravedad baja** (D-01 a D-07): comentarios obsoletos, cifras y una referencia normativa incorrectas, una afirmación de la documentación que se demostró falsa para un caso, dos pruebas engañosas y un escenario obligatorio sin prueba.
 * El balance de la matriz es: 5 requisitos PARCIALMENTE CUMPLIDOS (N-11, N-17, R-05, R-09, R-12), 3 NO VERIFICABLES (I-06 por depender de la fusión, R-02 y R-13 por el texto perdido), 0 INCUMPLIDOS y ninguno marcado REQUIERE AUTORIZACIÓN (R-12 lo requeriría solo si se quisiera un endpoint).
+* Ese balance corresponde a la evaluación original. **Estado vigente tras resolver D-07:** R-09 pasa a CUMPLIDO, de modo que quedan 4 PARCIALMENTE CUMPLIDOS (N-11, N-17, R-05, R-12), 3 NO VERIFICABLES (I-06, R-02, R-13) y 0 INCUMPLIDOS (§14.5). Esto no modifica el dictamen.
 * **Este dictamen no declara un cierre satisfactorio**: quedan asuntos no verificables y defectos demostrables que lo impiden.
 * No se emite **A** porque existen esos defectos y porque el cumplimiento de las dos observaciones perdidas no puede demostrarse. No se emite **C** porque no hay ambigüedad normativa que impida juzgar el alcance verificable: lo que falta solo impide verificar las dos observaciones.
 * Cuando se apliquen las correcciones y el usuario decida sobre las observaciones perdidas, el dictamen pasaría a **A** si ninguna de ellas revela un defecto adicional.
+* El dictamen **B se conserva** tras la resolución de D-01 a D-07 (§14): siguen existiendo las dos observaciones técnicas originales NO VERIFICABLES y los defectos D-08 a D-12, pendientes y fuera del alcance de esas correcciones.
 
 ## 14. Nota de resolución posterior (D-01 a D-07)
 
@@ -254,4 +258,16 @@ Gravedad **Baja** para los siete defectos. Justificación: `evaluar` captura tod
 
 ### 14.5 Efecto sobre la matriz de la sección 5
 
-Sin reescribir sus filas: R-09 deja de tener el vacío que citaba (D-07 resuelto) y su estado pasa a CUMPLIDO; R-05 sigue PARCIALMENTE CUMPLIDO (el límite de integridad es real, ahora descrito con precisión); N-11, N-17 y R-12 no cambian; R-02, R-13 e I-06 siguen NO VERIFICABLES. El dictamen global de la sección 13 sigue siendo **B** hasta que el usuario revise esta nota y decida sobre las observaciones perdidas y sobre D-08 a D-12.
+La matriz de la sección 5 es la **evaluación original** y se conserva sin reescribirse. Este apartado fija el estado **vigente** de lo que cambió después, de forma que cada requisito tenga una sola interpretación vigente:
+
+| Requisito | Evaluación original (§5.3) | Estado vigente | Motivo |
+|---|---|---|---|
+| **R-09** | PARCIALMENTE CUMPLIDO | **CUMPLIDO** | La parte que faltaba («resultado incompleto» a nivel del regenerador, fallo de `build_*`) quedó cubierta al resolver D-07: pruebas de los escenarios A, B y C en `tests/unit/test_procedencia_regenerador.py` (commit `d790877`, CI run 46 en success) |
+
+El estado actualizado de R-09 **no reescribe retroactivamente** la evaluación original: la fila de §5.3 sigue mostrando el valor de entonces y lleva una indicación del estado vigente.
+
+Los demás requisitos **no cambian**: R-05 sigue PARCIALMENTE CUMPLIDO (el límite de integridad es real, ahora descrito con precisión); N-11, N-17 y R-12 no cambian; R-02, R-13 e I-06 siguen NO VERIFICABLES (las dos observaciones técnicas originales siguen sin recuperarse).
+
+**Balance vigente:** 4 PARCIALMENTE CUMPLIDOS (N-11, N-17, R-05, R-12), 3 NO VERIFICABLES (I-06, R-02, R-13), 0 INCUMPLIDOS y ninguno marcado REQUIERE AUTORIZACIÓN.
+
+El dictamen global de la sección 13 **sigue siendo B** y no se modifica: continúan las observaciones técnicas originales NO VERIFICABLES y los defectos D-08 a D-12, pendientes y fuera del alcance de esta resolución. Queda a la espera de la revisión del usuario.
