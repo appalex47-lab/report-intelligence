@@ -98,12 +98,12 @@
    "sha256": "4960e01ccb49112c434b50a03c26142879d4461a4438b8aaa0a1e259455e2fa2"
   },
   "backend/app/web/service.py": {
-   "motivo": "Fase 3A-3: pasa la declaración de uso de IA a la generación y permite descargar procedencia.json y procedencia_error.json",
-   "sha256": "0fb3fbf89afff4c14d9d8be28882c4aa6a6ebeed5b4c8355171b7f740ec52566"
+   "motivo": "Fase 4: añade la clave escenarios_indicador al análisis (solo lectura; el panel falla sin bloquear). Antes — Fase 3A-3: pasa la declaración de uso de IA a la generación y permite descargar procedencia.json y procedencia_error.json",
+   "sha256": "bdba1800d1f47db935215278795426d83a72a31565783409bd1ae1ec11b9d3d1"
   },
   "frontend/index.html": {
-   "motivo": "Cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",
-   "sha256": "e38973788d1b2ca37f3314242dd55e10817ce50d2e53532bc9d8f0e68a766347"
+   "motivo": "Fase 4: panel de escenarios E1/E2 e IND-01 en el paso Validar (solo se agrega; no cambia cifras ni láminas). Antes — cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",
+   "sha256": "cb5f24e119118a8f528ca092499528ef9161846395de69bc8bb1cb741ffdc6ae"
   },
   "frontend/worker.js": {
    "motivo": "Cambio del usuario (commit 67fd179): nombre de archivo de respaldo",

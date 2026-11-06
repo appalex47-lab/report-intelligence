@@ -505,6 +505,69 @@ async function upload(f){
   }catch(e){ toast(e.message) }
 }
 
+/* ---------------------------------------------------------------- Fase 4 · escenarios E1/E2 e IND-01 (panel de lectura; no cambia cifras ni láminas) */
+const TIPO_TXT = { observado: "Observado", calculado: "Calculado", supuesto_heredado: "Supuesto heredado, no validado", no_verificable: "No verificable" };
+const fmtN = (v, d = 2) => v == null ? "—" : Number(v).toLocaleString("es-MX", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtMon = v => v == null ? "—" : `$${fmtN(v, 0)}`;
+const valVar = x => x.valor == null ? "—" : x.unidad === "fracción" ? `${fmtN(Number(x.valor) * 100, 0)} %` : x.unidad === "MXN" ? fmtMon(x.valor) : fmtN(x.valor, 0);
+const tipoChip = t => `<span class="chip ${t === "supuesto_heredado" ? "recomendacion" : t === "observado" ? "hecho" : t === "calculado" ? "contexto" : "info_insuficiente"}">${esc(TIPO_TXT[t] || t)}</span>`;
+const lista = a => (a && a.length) ? `<ul>${a.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
+function escenarioHtml(e) {
+  if (e.estado === "no_aplica") return `<div class="card" data-esc="${esc(e.id)}"><strong>${esc(e.id)} · ${esc(e.nombre)}</strong><div class="sub">${esc(e.lectura)}</div></div>`;
+  const vars = e.variables.map(x => `<tr><td><b>${esc(x.clave)}</b> · ${esc(x.nombre)}</td><td>${esc(valVar(x))}</td><td>${tipoChip(x.tipo)}</td><td class="sub">${esc(x.fuente)}${x.nota ? `<br>${esc(x.nota)}` : ""}</td></tr>`).join("");
+  const res = e.resultado
+    ? `<div class="kv"><span>Monto ilustrativo ${tipoChip("calculado")}</span><b>${fmtMon(e.resultado.ingreso_ilustrativo)}</b></div><div class="kv"><span>Proporción de la venta</span><b>${fmtN(Number(e.resultado.proporcion_venta) * 100)} %</b></div>`
+    : `<div class="warnline">No verificable · ${e.faltante.map(f => esc(`${f.archivo}: ${f.columna}`)).join("; ")}</div>`;
+  return `<div class="card grid" data-esc="${esc(e.id)}"><div class="row"><strong>${esc(e.id)} · ${esc(e.nombre)}</strong><span class="chip recomendacion">${esc(e.etiqueta)}</span></div>
+    ${e.denominacion_historica ? `<div class="sub">${esc(e.denominacion_historica)}</div>` : ""}
+    <div class="sub">${esc(e.objetivo)}</div><div class="sub"><b>Fórmula:</b> ${esc(e.formula)}</div>
+    <table><tr><th>Variable</th><th>Valor</th><th>Naturaleza</th><th>Fuente</th></tr>${vars}</table>${res}
+    <div>${esc(e.lectura)}</div>${e.efecto_supuesto ? `<div class="sub"><b>Cómo afecta el supuesto:</b> ${esc(e.efecto_supuesto)}</div>` : ""}
+    ${e.aclaracion_metrica ? `<div class="warnline">${esc(e.aclaracion_metrica)}</div>` : ""}
+    <div class="sub">Variantes conservadora y optimista: ${esc(e.variantes.conservador)}.</div>
+    <details><summary class="sub" style="cursor:pointer">Qué es confiable y qué necesita validación</summary><div class="sub"><b>Confiable:</b>${lista(e.confiable)}<b>Necesita validación:</b>${lista(e.requiere_validacion)}<b>Limitaciones:</b>${lista(e.limitaciones)}</div></details></div>`;
+}
+function ind01Html(i) {
+  if (!i) return "";
+  if (i.estado === "no_aplica" || (i.estado === "no_calculable" && !i.resultados.length))
+    return `<div class="card" data-ind="IND-01"><strong>IND-01 · ${esc(i.nombre)}</strong><div class="sub">${esc(i.motivo || "")}</div></div>`;
+  const items = i.resultados.map(r => {
+    const m = r.mayor_100;
+    return `<div class="card grid" data-fuente="${esc(r.fuente_pedidos)}"><div class="row"><strong>${esc(r.nombre)}</strong><span class="chip ${r.estado === "calculable" ? "hecho" : r.estado === "no_calculable" ? "info_insuficiente" : "contexto"}">${esc(r.estado.replaceAll("_", " "))}</span></div>
+      ${r.relacion != null ? `<div class="kv"><span>Relación ${tipoChip("calculado")}</span><b>${fmtN(r.relacion)} %</b></div>` : `<div class="warnline">No calculable · ${(r.faltante || []).map(f => esc(`${f.archivo}: ${f.columna}`)).join("; ")}</div>`}
+      <div class="kv"><span>${esc(r.numerador.nombre)} (${esc(r.numerador.fuente)}) ${tipoChip(r.numerador.tipo)}</span><b>${fmtN(r.numerador.valor, 0)}</b></div>
+      <div class="kv"><span>Carritos agregados · unidad: ${esc(r.carritos.unidad)} ${tipoChip(r.carritos.tipo)}</span><b>${fmtN(r.carritos.valor, 0)}</b></div>
+      <div class="sub">${esc(r.interpretacion || "")}</div>${lista(r.limitaciones)}
+      ${m ? `<div class="banner warn"><div><strong>Relación superior a 100 %: ${esc(fmtN(m.valor_original))} % (se muestra sin modificar)</strong><span class="sub">${esc(m.aviso)}</span>
+        <span class="sub"><b>${m.clasificacion === "anomalia_matematica" ? "Anomalía matemática" : "Limitación metodológica"}:</b> ${esc(m.explicacion_clasificacion)}</span></div></div>
+        <details open><summary class="sub" style="cursor:pointer">Qué puede originarlo (lo que se pudo comprobar)</summary><table><tr><th>Posible causa</th><th>Estado</th><th>Detalle</th></tr>${m.causas_posibles.map(c => `<tr><td>${esc(c.causa)}</td><td>${esc(c.estado.replaceAll("_", " "))}</td><td class="sub">${esc(c.detalle)}</td></tr>`).join("")}</table></details>` : ""}</div>`;
+  }).join("");
+  const f = i.fuentes_pedidos, u = i.unidad_carritos;
+  return `<div class="card grid" data-ind="IND-01"><div class="row"><strong>IND-01 · ${esc(i.nombre)}</strong><span class="chip info_insuficiente">${esc(i.estado_validacion)}</span></div>
+    <div class="sub"><b>Fórmula:</b> ${esc(i.formula)}</div><div class="sub">${esc(i.naturaleza)} Periodo ${esc(i.periodo || "")}; universo: ${esc(i.universo || "")}.</div>
+    ${i.nota_comparabilidad ? `<div class="warnline">${esc(i.nota_comparabilidad)}</div>` : ""}
+    <div class="grid g2">${items}</div>
+    ${f ? `<details open><summary><strong>Pedidos del sistema de ventas y compras GA4 (fuentes distintas)</strong></summary><div class="grid g2" style="margin-top:8px">
+      ${[f.sistema_ventas, f.ga4_compras].map(x => `<div class="card"><div class="kv"><span>${esc(x.nombre)} ${tipoChip(x.tipo)}</span><b>${fmtN(x.valor, 0)}</b></div><div class="sub">${esc(x.definicion)}</div></div>`).join("")}</div>
+      ${f.brecha_texto ? `<div class="sub">${esc(f.brecha_texto)}</div>` : ""}<div class="warnline">${esc(f.equivalencia)}</div><div class="sub">${esc(f.no_se_suman)}</div>
+      <table><tr><th>Diferencia</th><th>Detalle</th></tr>${f.diferencias_documentadas.map(d => `<tr><td>${esc(d.aspecto)}</td><td class="sub">${esc(d.detalle)}</td></tr>`).join("")}</table></details>` : ""}
+    ${u ? `<details open><summary><strong>Unidad de los carritos: ${esc(u.estado)}</strong></summary><div class="sub" style="margin-top:8px">${esc(u.evidencia)}</div>
+      ${u.advertencia ? `<div class="warnline">${esc(u.advertencia)}</div>` : ""}<div class="sub">${esc(u.no_se_convierte)}</div></details>` : ""}</div>`;
+}
+function escenariosHtml(x) {
+  if (!x) return "";
+  if (x.no_disponible) return `<div class="card"><strong>Escenarios e indicador</strong><div class="sub">${esc(x.no_disponible)}</div></div>`;
+  const c = x.comparacion;
+  return `<details class="card grid" id="escPanel" open><summary><strong>Escenarios E1 y E2 e indicador IND-01</strong> <span class="sub">· cálculos de lectura; no cambian la presentación</span></summary>
+    <div class="grid" style="margin-top:10px"><div class="warnline">Los porcentajes de recuperación (${esc(fmtN(Number(x.supuestos.r.valor) * 100, 0))} % en E1 y ${esc(fmtN(Number(x.supuestos.c.valor) * 100, 0))} % en E2) son <b>supuestos heredados, no validados</b>: los montos son ilustrativos, no pronósticos ni resultados observados.</div>
+    <div class="sub">${["observado", "calculado", "supuesto_heredado", "no_verificable"].map(t => `${tipoChip(t)} ${esc(x.leyenda[t])}`).join(" · ")}</div>
+    <div class="grid g2">${x.escenarios.map(escenarioHtml).join("")}</div>
+    <div class="card grid" data-cmp="E1-E2"><strong>Comparación E1 vs. E2</strong><table><tr><th>Aspecto</th><th>E1</th><th>E2</th></tr>${c.filas.map(f => `<tr><td>${esc(f.aspecto)}</td><td>${esc(f.e1)}</td><td>${esc(f.e2)}</td></tr>`).join("")}</table>
+      <div class="warnline">${esc(c.no_sumar)}</div><div class="sub"><b>Conclusiones confiables:</b>${lista(c.conclusiones_confiables)}<b>Requieren validación:</b>${lista(c.conclusiones_requieren_validacion)}</div></div>
+    ${ind01Html(x.ind01)}
+    <details><summary class="sub" style="cursor:pointer">Pendientes de validación</summary>${lista(x.pendientes_validacion)}</details></div></details>`;
+}
+
 function vValidate(box){
   const a = S.analysis; if(!a){ box.innerHTML = `<div class="card grid"><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div></div>`; return }
   const blocks = a.findings.filter(f=>f.severity==="block"), real = blocks.filter(f=>f.id!=="TARGETS_MISSING");
@@ -514,7 +577,7 @@ function vValidate(box){
     : `<div class="banner ok"><div><strong>Datos válidos</strong><span class="sub">${warns.length} advertencia(s) para tu revisión.</span></div><button class="btn primary" id="tg">Continuar →</button></div>`;
   const list = (arr, title) => arr.length ? `<div class="card"><strong>${title} (${arr.length})</strong>${arr.map(f=>`<div class="find"><span class="sev ${f.severity}">${f.severity.toUpperCase()}</span><div><code>${esc(f.id)}</code> ${esc(f.message)}<div class="sub">${esc(f.evidence||"")}</div></div></div>`).join("")}</div>` : "";
   const kp = a.kpis.length ? `<div class="card"><strong>Lectura rápida del motor</strong><table><tr><th>Métrica</th><th>Valor</th><th>Δ YoY</th></tr>${a.kpis.map(k=>`<tr><td>${k.metrica}</td><td>${k.metrica==="Venta"||k.metrica==="Ticket"?fmtM(k.valor):Math.round(k.valor).toLocaleString("es-MX")}</td><td>${fmtP(k.delta)}</td></tr>`).join("")}</table></div>` : "";
-  box.innerHTML = banner + (a.message?`<div class="banner warn"><div>${esc(a.message)}</div></div>`:"") + kp + list(real,"Bloqueos") + list(warns,"Advertencias") + list(infos,"Información");
+  box.innerHTML = banner + (a.message?`<div class="banner warn"><div>${esc(a.message)}</div></div>`:"") + kp + escenariosHtml(a.escenarios_indicador) + list(real,"Bloqueos") + list(warns,"Advertencias") + list(infos,"Información");
   $("#reload")?.addEventListener("click",()=>{S.step=0;render()}); $("#tg")?.addEventListener("click",()=>go(2));
 }
 
