@@ -298,7 +298,8 @@ def test_ind01_no_aplica_en_aetops_y_no_calculable_en_libro_no_crudo(aet):
     assert aet[1]["ind01"]["estado"] == "no_aplica" and "sin hoja `trafico`" in aet[1]["ind01"]["motivo"] and aet[1]["ind01"]["resultados"] == []
     j = ind(None, "glp1")
     assert j["estado"] == "no_calculable" and j["faltante"] and "libro no es de datos crudos" in j["motivo"]
-    assert ind(ctx_sintetico(10, 100, trafico=False))["estado"] == "no_aplica"                   # GLP-1 sin hoja trafico
+    sin = ind(ctx_sintetico(10, 100, trafico=False))                                             # GLP-1 sin hoja trafico: es un faltante, no una inaplicabilidad
+    assert sin["estado"] == "no_calculable" and sin["faltante"][0]["archivo"] == "trafico" and "no se calcula ni se sustituye" in sin["motivo"]
 
 
 def test_ind01_no_usa_identificadores_de_carrito_transaccion_o_sesion():
@@ -406,3 +407,174 @@ def test_el_panel_no_cambia_los_hallazgos_ni_la_generacion(servicio):
     solo = {k: v for k, v in a.items() if k != "escenarios_indicador"}
     from backend.app.web import service as S
     assert json.dumps(solo, sort_keys=True) == json.dumps({k: v for k, v in S.analyze(rid).items() if k != "escenarios_indicador"}, sort_keys=True)
+
+
+# --------------------------------------------------------------------------------------------- auditoría independiente (PR #23): defectos hallados y su corrección
+def test_ind01_estado_global_es_calculable_si_todos_lo_son(monkeypatch):
+    """Hallazgo A-04: con unidad declarada y sin otras limitaciones el estado global no puede decir «con limitación»."""
+    from backend.app.validator import motor
+    orig = motor.catalogo
+
+    def con_unidad(*a, **k):
+        cat = orig(*a, **k)
+        d = cat["R-COBERTURA-ATC"]
+        cat["R-COBERTURA-ATC"] = type(d)(d.datos, {**d.parametros, "unidad_carritos": "eventos"}, d.validacion)
+        return cat
+    monkeypatch.setattr(motor, "catalogo", con_unidad)
+    i = ind(ctx_sintetico(250, 1000, compras="300"))
+    assert [r["estado"] for r in i["resultados"]] == ["calculable", "calculable"] and i["estado"] == "calculable"
+    monkeypatch.undo()                                                                          # de aquí en adelante la unidad vuelve a «no declarada»
+    assert ind(ctx_sintetico(250, 1000))["estado"] == "calculable_con_limitacion"              # unidad no declarada
+    c = ctx_sintetico(250, 1000)
+    c.trafico_sitio = {(2026, 1): {"add_to_cart": D(1000), "compras": None, "visitas": D(1)}}
+    assert ind(c)["estado"] == "calculable_con_limitacion"                                      # uno calculable y otro no
+    assert ind(ctx_sintetico(0, 0))["estado"] == "no_calculable"                                # ninguno calculable
+
+
+def test_e1_celdas_vacias_de_negados_se_declaran_y_no_se_presentan_como_dato_completo(tmp_path):
+    """Hallazgo A-05: la presentación suma las celdas vacías como 0; el panel hace lo mismo (misma cifra) pero lo advierte."""
+    import shutil
+    import openpyxl
+    p = tmp_path / "l.xlsx"
+    shutil.copy(GLP1, p)
+    wb = openpyxl.load_workbook(p)
+    ws = wb["negados"]
+    j = [c.value for c in ws[1]].index("monto_negado") + 1
+    ws.cell(2, j).value = None
+    wb.save(p)
+    res = run_glp1_raw(p, PER_G)
+    o = E.construir(res, "glp1", PER_G, construir_contexto(p, PER_G))
+    e1 = o["escenarios"][0]
+    assert e1["estado"] == "calculable" and len(e1["advertencias"]) == 1 and "subestimado" in e1["advertencias"][0]
+    assert D(e1["resultado"]["ingreso_ilustrativo"]) == sum((r.values["monto_negado"].v or 0) for r in res.blocks["negados"].rows) * RULES.recovery_scenario
+    limpio = E.construir(run_glp1_raw(GLP1, PER_G), "glp1", PER_G, None)["escenarios"][0]
+    assert limpio["advertencias"] == []
+
+
+def test_los_textos_de_supuestos_siguen_el_valor_realmente_aplicado(monkeypatch):
+    """Hallazgo A-03: ningún texto fija «25 %» o «10 %»; se deriva del valor aplicado (si cambia, el texto cambia y se declara la inconsistencia)."""
+    import dataclasses
+    monkeypatch.setattr(E, "RULES", dataclasses.replace(RULES, recovery_scenario=D("0.30"), cart_recovery_scenario=D("0.15")))
+    res = run_glp1_raw(GLP1, PER_G)
+    o = E.construir(res, "glp1", PER_G, None)
+    texto = " ".join(textos(o))
+    assert "r = 30 %" in texto and "c = 15 %" in texto and "r = 25 %" not in texto and "c = 10 %" not in texto
+    assert o["supuestos"]["r"]["inconsistencia_configuracion"] is True and o["supuestos"]["c"]["inconsistencia_configuracion"] is True
+
+
+def test_no_existe_el_campo_en_presentacion(glp1):
+    """Hallazgo A-06: el campo afirmaba que el escenario «está en la presentación», pero la narrativa conserva como máximo N recomendaciones."""
+    assert "en_presentacion" not in set(claves(glp1[2]))
+
+
+@pytest.mark.parametrize("hoja,e1,e2,ind_estado", [("trafico", "calculable", "no_verificable", "no_calculable"),
+                                                    ("negados", "no_verificable", "calculable", "calculable_con_limitacion")])
+def test_libros_glp1_sin_hoja_opcional_degradan_sin_inventar(tmp_path, hoja, e1, e2, ind_estado):
+    import openpyxl
+    p = tmp_path / "l.xlsx"
+    wb = openpyxl.load_workbook(GLP1)
+    del wb[hoja]
+    wb.save(p)
+    res = run_glp1_raw(p, PER_G)
+    o = E.construir(res, "glp1", PER_G, construir_contexto(p, PER_G))
+    assert (o["escenarios"][0]["estado"], o["escenarios"][1]["estado"], o["ind01"]["estado"]) == (e1, e2, ind_estado)
+    for e in o["escenarios"]:
+        assert (e["estado"] != "no_verificable") or (e["resultado"] is None and e["faltante"])
+
+
+def test_aetops_sin_hoja_negados_no_calcula_e1(tmp_path):
+    import openpyxl
+    p = tmp_path / "a.xlsx"
+    wb = openpyxl.load_workbook(AET)
+    del wb["negados"]
+    wb.save(p)
+    o = E.construir(run_aetops_raw(p, PER_A), "aetops", PER_A, None)
+    assert o["escenarios"][0]["estado"] == "no_verificable" and o["escenarios"][0]["resultado"] is None and o["escenarios"][1]["estado"] == "no_aplica"
+
+
+def test_libro_en_formato_antiguo_sin_ventas_no_inventa_escenarios():
+    from backend.app.pipeline import run_glp1
+    res = run_glp1(EJEMPLOS.parent / "GLP1_sintetico_limpio.xlsx", "mensual", PER_G)
+    o = E.construir(res, "glp1", PER_G, None)
+    assert [e["estado"] for e in o["escenarios"]] == ["no_verificable", "no_verificable"] and o["ind01"]["estado"] == "no_calculable"
+    assert all(e["resultado"] is None for e in o["escenarios"]) and json.dumps(o)
+
+
+def test_el_panel_no_altera_hash_resultado_ni_el_resultado_original(glp1):
+    """El panel solo lee: construirlo no modifica los bloques del motor ni el resultado canónico que alimenta `hash_resultado`."""
+    from backend.app import provenance as pv
+    res, ctx, _ = glp1
+    antes = repr(res.blocks), repr(res.funnel), pv.canonico(PER_G, [], res)["valores"] if hasattr(pv, "canonico") else None
+    for _ in range(2):
+        E.construir(res, "glp1", PER_G, ctx)
+    despues = repr(res.blocks), repr(res.funnel), pv.canonico(PER_G, [], res)["valores"] if hasattr(pv, "canonico") else None
+    assert antes == despues
+
+
+def test_t14_escenarios_no_usa_red_escritura_procesos_ni_ia():
+    """Garantía T-14 también para este módulo: solo lee; no depende de la IA ni de `service`; el servicio no importa el motor."""
+    src = (Path(__file__).resolve().parents[2] / "backend/app/escenarios.py").read_text(encoding="utf-8")
+    prohibido = re.compile(r"\b(requests|httpx|urllib|socket|http\.client|ftplib|smtplib|subprocess|os\.system)\b|\.write_text|\.write_bytes|open\([^)]*['\"][wa]", re.I)
+    assert prohibido.search(src) is None
+    assert not re.search(r"cohere|ia_log|verify_rewrite|web\.service|from \.web|import service", src, re.I)
+    servicio = (Path(__file__).resolve().parents[2] / "backend/app/web/service.py").read_text(encoding="utf-8")
+    assert not re.search(r"validator\.(motor|rules_conc|rules_datos|normalizar|operandos)|from \.\.validator import motor|config\.cargar", servicio)
+
+
+def ctx_trimestral(meses: dict, pedidos_por_mes: int):
+    """Q1 2026 sintético: `meses` = {mes: (add_to_cart, compras)} (None = mes sin dato)."""
+    c = Contexto("GLP1", Period("GLP1", "trimestral", 2026, 1), "sintetico.xlsx")
+    c.columnas = {"ventas": set(COLS_V), "catalogo": {"sku", "producto", "categoria"}, "trafico": {"mes", "vista", "valor", "sku", "visitas", "add_to_cart", "compras"}}
+    c.catalogo = {"S1": {"sku": "S1", "categoria": "A"}}
+    n = 0
+    for m in (1, 2, 3):
+        for i in range(pedidos_por_mes):
+            n += 1
+            c.lineas.append(Linea(n + 1, f"P{n}", f"X{n}", dt.date(2026, m, 10), "S1", D(100), D(1),
+                                  {"id_pedido": f"P{n}", "id_paciente": f"X{n}", "fecha_pedido": f"2026-{m:02d}-10", "sku": "S1", "canal": "WEB", "monto_venta": "100", "piezas": "1"}))
+    c.trafico_sitio = {(2026, m): {"add_to_cart": D(a), "compras": D(b), "visitas": D(1)} for m, (a, b) in meses.items() if a is not None}
+    return c
+
+
+def test_ind01_trimestral_suma_los_tres_meses_y_un_mes_faltante_no_se_completa():
+    ok = por_fuente(ind(ctx_trimestral({1: (400, 50), 2: (300, 60), 3: (300, 90)}, 100)))      # 300 pedidos; 1 000 carritos; 200 compras
+    assert D(ok["sistema_ventas"]["relacion"]) == D(30) and D(ok["ga4_compras"]["relacion"]) == D(20)
+    assert ok["sistema_ventas"]["carritos"]["periodo"] == "2026-01..03"
+    falta = por_fuente(ind(ctx_trimestral({1: (400, 50), 3: (300, 90)}, 100)))                 # falta febrero: no se completa con 0
+    assert falta["sistema_ventas"]["estado"] == "no_calculable" and falta["sistema_ventas"]["relacion"] is None and falta["ga4_compras"]["estado"] == "no_calculable"
+
+
+def test_el_catalogo_de_definiciones_respalda_el_texto_sobre_la_unidad_de_carritos():
+    """Hallazgo A-07: lo que el panel dice sobre `add_to_cart` debe coincidir con el catálogo aprobado, no contradecirlo."""
+    defs = {d["id"]: d for d in config.cargar("definiciones")["definiciones"]}
+    assert "add_to_cart" in defs["evento"]["descripcion"] and defs["evento"]["unidad"] == "eventos" and "carrito individual" in defs["evento"]["descripcion"]
+    assert defs["carritos_agregados"]["unidad"] is None and "no está declarada" in " ".join(defs["carritos_agregados"]["limitaciones"])
+    u = ind(ctx_sintetico(250, 1000))["unidad_carritos"]
+    assert "catálogo de definiciones" in u["evidencia"] and "métrica de eventos" in u["evidencia"] and u["estado"] == "NO VERIFICABLE"
+    assert "NO define" not in u["evidencia"]                                                     # la versión inicial contradecía al catálogo
+
+
+def test_el_contexto_se_lee_una_vez_por_archivo_y_se_vuelve_a_leer_si_cambia(tmp_path, monkeypatch):
+    """Hallazgo A-08 (rendimiento): el panel duplicaba el costo de cada análisis; ahora la lectura se reutiliza mientras el archivo no cambie."""
+    import shutil
+    from backend.app.validator import normalizar
+    llamadas = []
+    real = normalizar.construir_contexto
+    monkeypatch.setattr(normalizar, "construir_contexto", lambda *a, **k: (llamadas.append(1), real(*a, **k))[1])
+    E._CACHE_CTX.clear()
+    p = tmp_path / "l.xlsx"
+    shutil.copy(GLP1, p)
+    res = run_glp1_raw(p, PER_G)
+    a = E.construir_desde_libro(res, "glp1", PER_G, p, True)
+    b = E.construir_desde_libro(res, "glp1", PER_G, p, True)
+    assert len(llamadas) == 1 and json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+    with open(p, "ab") as f:                                                                    # el archivo cambia (tamaño y fecha): se vuelve a leer
+        f.write(b"\0")
+    try:
+        E.construir_desde_libro(res, "glp1", PER_G, p, True)
+    except Exception:                                                                           # un libro alterado puede no abrirse: lo que importa es que NO se reutilizó el anterior
+        pass
+    assert len(llamadas) == 2
+    E.construir_desde_libro(res, "glp1", PER_G, p, False)                                       # libro no crudo: no se lee nada
+    assert len(llamadas) == 2
+    E._CACHE_CTX.clear()

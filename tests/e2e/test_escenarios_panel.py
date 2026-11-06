@@ -85,3 +85,14 @@ def test_panel_aetops_declara_que_e2_e_ind01_no_aplican_sin_trafico(sitio, tmp_p
     t = res["panel_texto"]
     assert res["escenarios"] == ["E1", "E2"] and res["fuentes"] == []
     assert t.lower().count("sin hoja `trafico`") >= 2 and "Supuesto heredado, no validado" in t
+
+
+def test_panel_con_libros_en_formato_antiguo_no_inventa_cifras(sitio, tmp_path):
+    """Formato por bloques (no crudo): el panel aparece, no rompe el flujo y declara lo que no puede calcular."""
+    from tests.fixtures import build_base
+    res = _correr(sitio, tmp_path, "glp1", ROOT / "data" / "GLP1_sintetico_limpio.xlsx")
+    t = res["panel_texto"]
+    assert res["escenarios"] == ["E1", "E2"] and res["fuentes"] == [] and res["tiene_comparacion"] == 1
+    assert "No verificable" in t and "no es de datos crudos" in t and "Supuesto heredado, no validado" in t
+    res2 = _correr(sitio, tmp_path, "aetops", build_base(tmp_path / "base_antigua.xlsx"))
+    assert res2["escenarios"] == ["E1", "E2"] and res2["fuentes"] == [] and "sin hoja `trafico`" in res2["panel_texto"].lower()

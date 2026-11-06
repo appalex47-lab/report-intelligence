@@ -522,6 +522,7 @@ function escenarioHtml(e) {
     ${e.denominacion_historica ? `<div class="sub">${esc(e.denominacion_historica)}</div>` : ""}
     <div class="sub">${esc(e.objetivo)}</div><div class="sub"><b>Fórmula:</b> ${esc(e.formula)}</div>
     <table><tr><th>Variable</th><th>Valor</th><th>Naturaleza</th><th>Fuente</th></tr>${vars}</table>${res}
+    ${(e.advertencias || []).map(a => `<div class="warnline">${esc(a)}</div>`).join("")}
     <div>${esc(e.lectura)}</div>${e.efecto_supuesto ? `<div class="sub"><b>Cómo afecta el supuesto:</b> ${esc(e.efecto_supuesto)}</div>` : ""}
     ${e.aclaracion_metrica ? `<div class="warnline">${esc(e.aclaracion_metrica)}</div>` : ""}
     <div class="sub">Variantes conservadora y optimista: ${esc(e.variantes.conservador)}.</div>

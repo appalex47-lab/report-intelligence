@@ -71,25 +71,26 @@ def _entradas(res, unidad: str) -> dict:
         g = lambda k: (P[k].v if k in P and P[k] is not None else None)          # noqa: E731
         neg = res.blocks.get("negados")
         m_neg = sum(((r.values["monto_negado"].v or Decimal(0)) for r in neg.rows), Decimal(0)) if neg and neg.rows else None
+        sin_monto = sum(1 for r in (neg.rows if neg else []) if r.values["monto_negado"].v is None)
         emb = next((r for r in (res.funnel.rows if res.funnel else []) if r.key == "carritos abandonados"), None)
         derivado = bool(emb and emb.values.get("conteo") is not None and "derivado" in (emb.values["conteo"].note or ""))
-        return {"venta": g("monto"), "m_neg": m_neg, "negados_hoja": neg is not None and bool(neg.rows), "abandonados": g("carritos_abandonados"),
+        return {"venta": g("monto"), "m_neg": m_neg, "negados_sin_monto": sin_monto, "negados_hoja": neg is not None and bool(neg.rows), "abandonados": g("carritos_abandonados"),
                 "ticket": g("ticket"), "pedidos": g("pedidos"), "embudo_derivado": derivado, "tiene_embudo": res.funnel is not None}
     from .narrative.aetops import val                                              # AETOPS: misma lectura que executive.py
     T = res.tables
     py = T["aetops.panorama.yoy"].groups[0] if "aetops.panorama.yoy" in T and T["aetops.panorama.yoy"].groups else None
     alta = res.negados.get("aetops.negados.alta") if getattr(res, "negados", None) else None
     return {"venta": val(py.current, "monto") if py else None, "m_neg": alta.total.v if alta is not None and alta.total is not None else None,
-            "negados_hoja": alta is not None, "abandonados": None, "ticket": None, "pedidos": None, "embudo_derivado": False, "tiene_embudo": False}
+            "negados_sin_monto": 0, "negados_hoja": alta is not None, "abandonados": None, "ticket": None, "pedidos": None, "embudo_derivado": False, "tiene_embudo": False}
 
 
 # ------------------------------------------------------------------------------------------------ E1
-def escenario_e1(venta, m_neg, r, hay_hoja_negados: bool) -> dict:
+def escenario_e1(venta, m_neg, r, hay_hoja_negados: bool, negados_sin_monto: int = 0) -> dict:
     """F-09: Ingreso_ilustrativo = M_neg × r;  Proporción = Ingreso_ilustrativo / Venta_total."""
     sup = supuestos()["r"]
     base = {"id": "E1", "nombre": "Recuperación de negados", "unidades": ["GLP-1", "AETOPS"],
             "formula": "Ingreso ilustrativo = M_neg × r;  Proporción de la venta = Ingreso ilustrativo ÷ Venta total   (F-09)",
-            "etiqueta": ETIQUETA_SUPUESTO, "variantes": sup["variantes"],
+            "etiqueta": ETIQUETA_SUPUESTO, "variantes": sup["variantes"], "advertencias": [],
             "objetivo": "Ilustrar el monto que equivaldría recuperar una fracción de lo negado por falta de stock."}
     faltan = []
     if m_neg is None:
@@ -106,13 +107,15 @@ def escenario_e1(venta, m_neg, r, hay_hoja_negados: bool) -> dict:
     if faltan:
         return base | {"estado": "no_verificable", "faltante": faltan, "variables": variables, "resultado": None,
                        "lectura": "No verificable: faltan datos para calcular el escenario. No se sustituye por otra fuente ni se muestra 0.",
-                       "efecto_supuesto": None, "en_presentacion": False,
+                       "efecto_supuesto": None,
                        "confiable": [], "requiere_validacion": ["Disponer de negados.monto_negado y de la venta total del periodo."],
                        "limitaciones": _lim_e1()}
     ingreso = m_neg * r
     prop = ingreso / venta
     ratio = m_neg / venta
-    return base | {
+    avisos = ([f"{negados_sin_monto} fila(s) de negados no traen monto_negado: la presentación las suma como 0 y este panel hace lo mismo para "
+               "coincidir con ella. El monto negado puede estar subestimado: complete el libro."] if negados_sin_monto else [])
+    return base | {"advertencias": avisos,
         "estado": "calculable", "faltante": [], "variables": variables,
         "resultado": {"ingreso_ilustrativo": _s(ingreso), "proporcion_venta": _s(prop), "negados_sobre_venta": _s(ratio), "tipo": "calculado"},
         "lectura": (f"Escenario ilustrativo: recuperar {_n(r * 100, 0)} % de {_n(m_neg)} negados equivaldría a {_n(ingreso)} "
@@ -120,7 +123,6 @@ def escenario_e1(venta, m_neg, r, hay_hoja_negados: bool) -> dict:
         "efecto_supuesto": (f"El resultado es proporcional a r: cada punto porcentual de r equivale a {_n(m_neg / 100)} (= M_neg × 1 %). "
                             f"Con otro valor de r el resultado cambia en la misma proporción; el {_n(r * 100, 0)} % es el heredado y no hay "
                             "otro valor aprobado."),
-        "en_presentacion": bool(ratio >= RULES.materiality),
         "confiable": [f"El monto negado ({_n(m_neg)}) y la venta total ({_n(venta)}) provienen del libro.",
                       f"Los negados equivalen a {_n(ratio * 100)} % de la venta (cálculo directo sobre los dos datos observados)."],
         "requiere_validacion": [f"Que el {_n(r * 100, 0)} % de recuperación sea alcanzable (supuesto heredado, no validado).",
@@ -142,11 +144,11 @@ def escenario_e2(unidad: str, venta, abandonados, ticket, c, derivado_en_embudo:
     base = {"id": "E2", "nombre": "Recuperación de abandono", "unidades": ["GLP-1"],
             "denominacion_historica": "La denominación «Recuperación de abandono» es histórica y no demuestra abandono individual.",
             "formula": "Ingreso ilustrativo = A × c × T;  Proporción de la venta = Ingreso ilustrativo ÷ Venta total   (F-10, F-11)",
-            "etiqueta": ETIQUETA_SUPUESTO, "variantes": sup["variantes"], "aclaracion_metrica": ACLARACION_ABANDONADOS,
+            "etiqueta": ETIQUETA_SUPUESTO, "variantes": sup["variantes"], "aclaracion_metrica": ACLARACION_ABANDONADOS, "advertencias": [],
             "objetivo": "Ilustrar el monto equivalente a cerrar una fracción de la métrica heredada «carritos_abandonados»."}
     if unidad != "glp1":
         return base | {"estado": "no_aplica", "faltante": [], "variables": [], "resultado": None, "lectura": SIN_TRAFICO + " (AETOPS no tiene tráfico).",
-                       "efecto_supuesto": None, "en_presentacion": False, "confiable": [], "requiere_validacion": [], "limitaciones": _lim_e2()}
+                       "efecto_supuesto": None, "confiable": [], "requiere_validacion": [], "limitaciones": _lim_e2()}
     variables = [
         _var("A", "carritos_abandonados (métrica agregada heredada)", abandonados, "observado" if abandonados else "no_verificable",
              "trafico.carritos_abandonados (nivel sitio, periodo)", "conteo de la fuente", ACLARACION_ABANDONADOS),
@@ -170,7 +172,7 @@ def escenario_e2(unidad: str, venta, abandonados, ticket, c, derivado_en_embudo:
                 "condición vigente `A > 0` sobre el dato de la fuente, por lo que no se muestra." if (tiene_embudo and not abandonados and derivado_en_embudo) else
                 "No verificable: faltan datos. No se sustituye por IND-01 ni por otra fuente.")
         return base | {"estado": "no_verificable", "faltante": faltan, "variables": variables, "resultado": None, "lectura": nota,
-                       "efecto_supuesto": None, "en_presentacion": False, "confiable": [],
+                       "efecto_supuesto": None, "confiable": [],
                        "requiere_validacion": ["Disponer de carritos_abandonados, ticket y venta total del periodo."], "limitaciones": _lim_e2()}
     ingreso = abandonados * c * ticket
     prop = ingreso / venta
@@ -181,7 +183,6 @@ def escenario_e2(unidad: str, venta, abandonados, ticket, c, derivado_en_embudo:
                     f"ticket promedio ({_n(ticket)}) equivaldría a {_n(ingreso)} ({_n(prop * 100)} % de la venta). No es un pronóstico ni un resultado observado."),
         "efecto_supuesto": (f"El resultado es proporcional a c: cada punto porcentual de c equivale a {_n(abandonados * ticket / 100)} (= A × T × 1 %). "
                             f"El {_n(c * 100, 0)} % es el heredado y no hay otro valor aprobado."),
-        "en_presentacion": True,
         "confiable": [f"La métrica carritos_abandonados ({_n(abandonados, 0)}) y la venta total ({_n(venta)}) provienen del libro; el ticket es un cociente de datos observados."],
         "requiere_validacion": [f"Que el {_n(c * 100, 0)} % de cierre sea alcanzable (supuesto heredado, no validado).",
                                 "Qué cuenta exactamente la fuente como «carritos_abandonados» (definición de la herramienta de analítica no verificable con el libro).",
@@ -196,6 +197,12 @@ def _lim_e2() -> list[str]:
 
 
 # ------------------------------------------------------------------------------------------------ comparación E1 vs E2
+def _dep(e1: dict, e2: dict) -> str:
+    """«r = 25 % y c = 10 %» con los valores que realmente se aplican (no un texto fijo)."""
+    partes = [f"{v['clave']} = {_n(Decimal(v['valor']) * 100, 0)} %" for e in (e1, e2) for v in e["variables"] if v["tipo"] == "supuesto_heredado" and v["valor"]]
+    return " y ".join(partes) or "los supuestos heredados"
+
+
 def comparar(e1: dict, e2: dict) -> dict:
     """Lado a lado, sin ocultar diferencias metodológicas. NO suma los montos: no se ha verificado que no se solapen."""
     def monto(e):
@@ -216,7 +223,7 @@ def comparar(e1: dict, e2: dict) -> dict:
             "diferencias_metodologicas": ["E1 parte de un monto observado en negados; E2 parte de una métrica agregada heredada de tráfico.",
                                           "Los dos dependen de un porcentaje heredado, no validado, y de ningún modo son resultados observados."],
             "conclusiones_confiables": ["Los datos de entrada observados (con su fuente) y las proporciones calculadas directamente sobre ellos."],
-            "conclusiones_requieren_validacion": ["Cualquier monto «recuperable»: depende de r = 25 % y c = 10 %, heredados y no validados."]}
+            "conclusiones_requieren_validacion": [f"Cualquier monto «recuperable»: depende de {_dep(e1, e2)}, heredados y no validados."]}
 
 
 # ------------------------------------------------------------------------------------------------ IND-01
@@ -270,8 +277,12 @@ def ind01(ctx, unidad: str = "glp1") -> dict:
         return base | {"estado": "no_calculable", "resultados": [], "fuentes_pedidos": None, "unidad_carritos": None,
                        "motivo": "El libro no es de datos crudos (ventas por pedido y tráfico): IND-01 no se calcula.",
                        "faltante": [{"archivo": "ventas / trafico", "columna": "libro de datos crudos", "granularidad": "libro"}]}
-    if ctx.unidad != "GLP1" or not operandos.tiene_trafico(ctx):
+    if ctx.unidad != "GLP1":
         return base | {"estado": "no_aplica", "resultados": [], "fuentes_pedidos": None, "unidad_carritos": None, "motivo": SIN_TRAFICO + ".", "faltante": []}
+    if not operandos.tiene_trafico(ctx):                    # GLP-1 SÍ debe traer `trafico` (§8.2): su ausencia es un faltante, no una inaplicabilidad
+        return base | {"estado": "no_calculable", "resultados": [], "fuentes_pedidos": None, "unidad_carritos": None,
+                       "motivo": "Falta la hoja `trafico` (columnas add_to_cart y compras) que IND-01 necesita en GLP-1: no se calcula ni se sustituye.",
+                       "faltante": [{"archivo": "trafico", "columna": "add_to_cart / compras", "granularidad": "mes"}]}
     d = motor.catalogo()["R-COBERTURA-ATC"]
     resultados = rpc.calcular(ctx, d)
     unidad_texto, lim_unidad = rpc.etiqueta_unidad(d.p("unidad_carritos"))
@@ -331,12 +342,20 @@ def ind01(ctx, unidad: str = "glp1") -> dict:
                    {"aspecto": "Temporalidad", "detalle": "Se comparan por mes calendario (fecha del pedido frente al mes de tráfico); la fecha del evento y la del pedido pueden no coincidir."},
                    {"aspecto": "Limitaciones de medición", "detalle": "GA4 depende de consentimiento, bloqueadores y etiquetado; el sistema de ventas no. El libro no cuantifica esos efectos."}]}
     unidad = {"declarada": unidad_texto if declarada else "no_declarada", "texto": unidad_texto,
-              "evidencia": ("El contrato de datos define `visitas` como sesiones, pero NO define qué cuenta `add_to_cart`: eventos, sesiones, usuarios u otra unidad."),
+              "evidencia": ("El catálogo de definiciones del proyecto clasifica `add_to_cart` como métrica de eventos de analítica (un evento no es una persona, "
+                            "una sesión ni un carrito individual), definición no validada con datos reales. La unidad con la que la fuente reporta los carritos "
+                            "agregados no está declarada en los libros ni en la configuración y los datos no permiten comprobarla. El contrato de datos define "
+                            "`visitas` como sesiones."),
               "estado": "DECLARADA" if declarada else "NO VERIFICABLE",
               "advertencia": (None if declarada else "Unidad de carritos no declarada: no se asume que un evento de carrito equivalga a un carrito distinto; la interpretación es limitada."),
               "no_se_convierte": "Los eventos no se convierten automáticamente en carritos individuales."}
-    estados = {i["estado"] for i in items}
-    estado = ("calculable_con_limitacion" if any(e in ("calculable_con_limitacion", "calculable") for e in estados) and not estados <= {"no_calculable"} else "no_calculable")
+    estados = [i["estado"] for i in items]
+    if all(e == "no_calculable" for e in estados):
+        estado = "no_calculable"
+    elif all(e == "calculable" for e in estados):
+        estado = "calculable"
+    else:
+        estado = "calculable_con_limitacion"                # al menos un resultado calculable y alguna limitación o un resultado no calculable
     return base | {"estado": estado, "resultados": items, "fuentes_pedidos": fuentes, "unidad_carritos": unidad, "motivo": None, "faltante": [],
                    "periodo": ctx.etiqueta_periodo(), "universo": "nivel sitio (vista=general, sku vacío)",
                    "nota_comparabilidad": "Con la unidad de carritos sin declarar, todo resultado nace «calculable con limitación»." if not declarada else None}
@@ -347,7 +366,7 @@ def construir(res, unidad: str, period, ctx=None) -> dict:
     """Estructura completa del panel. `res` = resultado del motor (`GlpResult`/`Result`); `ctx` = Contexto de datos crudos (o None)."""
     sup = supuestos()
     ent = _entradas(res, unidad)
-    e1 = escenario_e1(ent["venta"], ent["m_neg"], sup["r"]["valor"], ent["negados_hoja"])
+    e1 = escenario_e1(ent["venta"], ent["m_neg"], sup["r"]["valor"], ent["negados_hoja"], ent["negados_sin_monto"])
     e2 = escenario_e2(unidad, ent["venta"], ent["abandonados"], ent["ticket"], sup["c"]["valor"], ent["embudo_derivado"], ent["tiene_embudo"])
     out = {"esquema": ESQUEMA, "unidad": unidad, "periodo": f"{period.year}-{period.index:02d} ({period.periodicity})",
            "leyenda": {"observado": "Dato del libro", "calculado": "Aritmética sobre datos observados", "supuesto_heredado": ETIQUETA_SUPUESTO,
@@ -356,18 +375,32 @@ def construir(res, unidad: str, period, ctx=None) -> dict:
                              "validacion_operacional": v["validacion_operacional"], "inconsistencia_configuracion": v["inconsistencia_configuracion"],
                              "variantes": v["variantes"]} for k, v in sup.items()},
            "escenarios": [e1, e2], "comparacion": comparar(e1, e2), "ind01": ind01(ctx, unidad),
-           "pendientes_validacion": ["r = 25 % (E1) y c = 10 % (E2): supuestos heredados, no validados con datos reales.",
+           "pendientes_validacion": [f"r = {_n(sup['r']['valor'] * 100, 0)} % (E1) y c = {_n(sup['c']['valor'] * 100, 0)} % (E2): supuestos heredados, no validados con datos reales.",
                                      "Equivalencia entre pedidos del sistema de ventas y compras GA4: no validada.",
                                      "Unidad de los carritos agregados: no verificable con el libro.",
                                      "Reglas del motor y IND-01: no validadas con datos reales (validación sintética)."]}
     return out
 
 
+_CACHE_CTX: dict = {}
+
+
+def _contexto(ruta, period):
+    """Lee el libro crudo UNA vez por (archivo, tamaño, fecha de modificación, periodo): el análisis se pide varias veces por reporte y la lectura
+    duplicaba su costo. Solo se guardan los últimos 4; el contexto es de solo lectura (las pruebas verifican que no se muta)."""
+    from pathlib import Path
+    from .validator.normalizar import construir_contexto
+    st = Path(ruta).stat()
+    clave = (str(ruta), st.st_mtime_ns, st.st_size, period.unit, period.periodicity, period.year, period.index)
+    if clave not in _CACHE_CTX:
+        if len(_CACHE_CTX) >= 4:
+            _CACHE_CTX.pop(next(iter(_CACHE_CTX)))
+        _CACHE_CTX[clave] = construir_contexto(ruta, period)
+    return _CACHE_CTX[clave]
+
+
 def construir_desde_libro(res, unidad: str, period, ruta, es_libro_crudo: bool) -> dict:
     """Punto de entrada del servicio: lee el contexto de datos crudos (solo GLP-1 y solo si el libro es crudo) y arma el panel. Así el servicio no
     importa el motor de reglas (garantía T-14: el módulo expuesto a la IA no depende del motor ni lo modifica)."""
-    ctx = None
-    if unidad == "glp1" and es_libro_crudo:
-        from .validator.normalizar import construir_contexto
-        ctx = construir_contexto(ruta, period)
+    ctx = _contexto(ruta, period) if (unidad == "glp1" and es_libro_crudo) else None
     return construir(res, unidad, period, ctx)

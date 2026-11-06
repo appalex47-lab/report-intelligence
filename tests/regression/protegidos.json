@@ -102,8 +102,8 @@
    "sha256": "bdba1800d1f47db935215278795426d83a72a31565783409bd1ae1ec11b9d3d1"
   },
   "frontend/index.html": {
-   "motivo": "Fase 4: panel de escenarios E1/E2 e IND-01 en el paso Validar (solo se agrega; no cambia cifras ni láminas). Antes — cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",
-   "sha256": "cb5f24e119118a8f528ca092499528ef9161846395de69bc8bb1cb741ffdc6ae"
+   "motivo": "Fase 4: panel de escenarios E1/E2 e IND-01 en el paso Validar (solo se agrega; no cambia cifras ni láminas); avisos del escenario (auditoría independiente). Antes — cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",
+   "sha256": "e710ed83c3084f5fefa0458c127c718d9177530637b310a0b5e25c36daaa72e3"
   },
   "frontend/worker.js": {
    "motivo": "Cambio del usuario (commit 67fd179): nombre de archivo de respaldo",
