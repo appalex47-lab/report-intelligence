@@ -63,16 +63,16 @@ Para poder comprobarlo se permitió el host `appalex47-lab.github.io` en la red 
 
 ## 13. Release
 * Ensayo (`publicar=false`), run 42308725556: **success** (paquete válido, CI del commit exacto, etiqueta libre; `publicar` omitido; no creó nada).
-* Publicación (`publicar=true`), run 42308811022: **failure** en «Verificar el borrador»: `ERROR: debe haber exactamente una release para la etiqueta y hay 0`. La verificación consultó el listado de releases ≈1 s después de crear el borrador (creado 23:00:35, consulta 23:00:36) y no lo vio todavía; poco después el borrador sí aparece con `tag_name: app-v1.0.0`. Es una **condición de carrera del workflow** (nunca se había ejecutado de verdad: V-02 de la 3A-5), no un defecto del paquete.
+* Publicación (`publicar=true`), run 42308811022: **failure** en «Verificar el borrador»: `ERROR: debe haber exactamente una release para la etiqueta y hay 0`. La verificación consultó el listado de releases ≈1 s después de crear el borrador (creado 23:00:35, consulta 23:00:36) y no lo vio todavía; poco después el borrador sí aparece con `tag_name: app-v1.0.0`. Es consistente con **consistencia eventual de GitHub** (el workflow asumía lectura inmediata; era su primera ejecución real, V-02 de la 3A-5): es una inferencia a partir de esos tiempos, no una causa observada directamente. El paquete no presentó ningún defecto.
 * Estado resultante, fallido de forma segura: borrador `app-v1.0.0` (id 437146660, no publicado), `target_commitish` = `428ecee`, assets `app.zip` (264 195 B) y `app.zip.sha256`; el SHA-256 del `app.zip` del borrador (`671a02b92ffde5a9bf4e3c56e0f9a19b491ddf68799092b9a0236119abdbc9c1`) coincide con su `.sha256`; su contenido es idéntico al `app.zip` publicado en el sitio (83 entradas, 0 diferencias). **No existe etiqueta git ni release publicada.**
-* No se forzó ni se publicó por otra vía. El borrador bloquea un nuevo intento (`etiqueta-libre` incluye borradores); el permiso para eliminarlo fue denegado por el entorno, por lo que queda a decisión del usuario.
-* **Qué falta:** (a) eliminar el borrador 437146660; (b) corregir `release.yml` con una espera/reintento tras crear el borrador (cambio en un workflow protegido: requiere autorización y PR propio); (c) volver a ejecutar `publicar=true`. Mientras tanto el release **no está publicado**.
+* No se forzó ni se publicó por otra vía. El borrador bloquea un nuevo intento (`etiqueta-libre` incluye borradores); el borrado fue denegado primero por el clasificador de permisos y, tras la autorización expresa del usuario, por la propia API (`HTTP 403: Creating, editing, or deleting releases is not permitted for this session type`). No se eludió. Queda pendiente de eliminarse desde fuera de esta sesión (interfaz de GitHub).
+* **Qué falta:** (a) eliminar el borrador 437146660; (b) corregir `release.yml` con una espera/reintento tras crear el borrador (PR propio, ver el PR de corrección de `release.yml`); (c) volver a ejecutar `publicar=true`. Mientras tanto el release **no está publicado**.
 
 ## 14. Pendientes posteriores
 `PENDIENTES_POSTERIORES.md` (AC-11, AC-12, A-3, L-8, AC-28, `deployment_queued`, navegadores adicionales, plantillas anteriores, golden, anexo por omisión, release).
 
 ## 15. Limitaciones y riesgos
-No se validó: el aspecto en PowerPoint, el sitio publicado, datos de producción, Firefox/Safari/WebViews, ni el significado de una cifra. El detector de AC-14 no es exhaustivo.
+No se validó: el aspecto en PowerPoint, el sitio publicado desde un navegador externo (sí se verificó parcialmente desde el entorno, §12), datos de producción, Firefox/Safari/WebViews, ni el significado de una cifra. El detector de AC-14 no es exhaustivo.
 
 ## 16. Dictamen técnico definitivo
 **FASE 5 FUSIONADA CON OBSERVACIONES.** El PR #24 está integrado en `main` (`428ecee`), con CI en verde y publicación desplegada y verificada de forma parcial. No es «cerrada y verificada» porque AC-28 carece de verificación desde un navegador externo y el release `app-v1.0.0` **no está publicado** (borrador por fallo del workflow). AC-11, AC-12 y A-3 siguen pendientes (`PENDIENTES_POSTERIORES.md`). No se inició la Fase 6.
