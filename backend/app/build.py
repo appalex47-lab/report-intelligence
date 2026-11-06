@@ -22,7 +22,7 @@ from .narrative.writer import Para, fit, to_paragraphs, verify_all, verify_edite
 from .models import Period
 from .pipeline import GlpResult, Result
 from .provenance_capture import ejecutar as registrar_procedencia
-from .qa import checks
+from .qa import checks, pptx_export
 from .render import convert_to_pdf, pdf_to_pngs
 
 
@@ -53,6 +53,10 @@ def _render_and_check(pptx: Path, template: Path, out_dir: Path, slide_map, qa, 
     estructural y estimación geométrica; no hay PDF ni vista previa. Devuelve (pdf|None, pngs, carpeta temporal|None)."""
     checks.check_editable_and_static(pptx, template, qa, slide_map, decorative)
     checks.check_geometry(pptx, qa, template, slide_map)
+    try:                                                            # Fase 5 (RQ-13): re-lectura estructural del archivo ya guardado
+        pptx_export.agregar_a(qa, pptx, template)
+    except Exception as e:                                          # noqa: BLE001 — la revisión no puede impedir generar
+        qa.add("PPTX_REVISION_NO_EJECUTADA", "warn", None, f"No se pudo ejecutar la revisión estructural ({type(e).__name__}).")
     if not render:
         qa.add("QA_VISUAL_OMITIDO", "info", None,
                "QA estructural (sin render): no se generó PDF ni se comprobó el desborde visual; revisa el PPTX antes de distribuirlo.")

@@ -24,6 +24,7 @@ ACLARACION_ABANDONADOS = ("Métrica agregada heredada del embudo («carritos_aba
                           "(add_to_cart − compras). No constituye abandono individual comprobado.")
 AVISO_MAYOR_100 = ("La relación supera 100 %. Esto puede ocurrir porque pedidos y carritos no necesariamente representan unidades "
                    "equivalentes, o porque sus fuentes, periodos, universos o filtros no coinciden. Interprétese con cautela.")
+NOTA_MONEDA = "La moneda no está declarada en el libro: el monto se toma tal como viene (sin IVA, cancelaciones ni devoluciones, según el contrato de datos)."
 SIN_TRAFICO = "No aplica: sin hoja `trafico`"
 # Denominaciones que ninguna salida nueva puede contener (spec §8.2). Las pruebas barren toda la estructura contra esta lista.
 DENOMINACIONES_PROHIBIDAS = ("carritos abandonados comprobados", "usuarios que abandonaron el carrito",
@@ -98,12 +99,12 @@ def escenario_e1(venta, m_neg, r, hay_hoja_negados: bool, negados_sin_monto: int
     if venta is None or venta <= 0:
         faltan.append({"archivo": "ventas", "columna": "monto_venta (Venta total del periodo > 0)", "granularidad": "periodo"})
     variables = [_var("M_neg", "Monto negado", m_neg, "observado" if m_neg is not None else "no_verificable",
-                      "Σ negados.monto_negado", "MXN", "negados no trae fecha: se asume que corresponde al periodo del reporte (no verificable)"),
+                      "Σ negados.monto_negado", "moneda", "negados no trae fecha: se asume que corresponde al periodo del reporte (no verificable). " + NOTA_MONEDA),
                  _var("r", "Porcentaje de recuperación", r, "supuesto_heredado", sup["referencia"], "fracción",
                       "Supuesto heredado, no validado con datos reales. No es una tasa observada.", etiqueta=ETIQUETA_SUPUESTO,
                       origen=sup["origen"], validacion=sup["validacion_operacional"]),
                  _var("Venta_total", "Venta total del periodo", venta, "observado" if venta is not None else "no_verificable",
-                      "Σ ventas.monto_venta del periodo", "MXN")]
+                      "Σ ventas.monto_venta del periodo", "moneda", NOTA_MONEDA)]
     if faltan:
         return base | {"estado": "no_verificable", "faltante": faltan, "variables": variables, "resultado": None,
                        "lectura": "No verificable: faltan datos para calcular el escenario. No se sustituye por otra fuente ni se muestra 0.",
@@ -155,9 +156,9 @@ def escenario_e2(unidad: str, venta, abandonados, ticket, c, derivado_en_embudo:
         _var("c", "Porcentaje de cierre", c, "supuesto_heredado", sup["referencia"], "fracción",
              "Supuesto heredado, no validado con datos reales. No es una tasa observada.", etiqueta=ETIQUETA_SUPUESTO,
              origen=sup["origen"], validacion=sup["validacion_operacional"]),
-        _var("T", "Ticket promedio", ticket, "calculado" if ticket else "no_verificable", "Σ monto_venta ÷ pedidos del sistema de ventas (F-11)", "MXN",
-             "El ticket de pedidos concretados puede no representar el de un carrito no concretado."),
-        _var("Venta_total", "Venta total del periodo", venta, "observado" if venta else "no_verificable", "Σ ventas.monto_venta del periodo", "MXN")]
+        _var("T", "Ticket promedio", ticket, "calculado" if ticket else "no_verificable", "Σ monto_venta ÷ pedidos del sistema de ventas (F-11)", "moneda",
+             "El ticket de pedidos concretados puede no representar el de un carrito no concretado. " + NOTA_MONEDA),
+        _var("Venta_total", "Venta total del periodo", venta, "observado" if venta else "no_verificable", "Σ ventas.monto_venta del periodo", "moneda", NOTA_MONEDA)]
     faltan = []
     if not tiene_embudo:
         faltan.append({"archivo": "trafico", "columna": "carritos_abandonados / add_to_cart / compras", "granularidad": "mes"})
@@ -385,7 +386,7 @@ def construir(res, unidad: str, period, ctx=None) -> dict:
 _CACHE_CTX: dict = {}
 
 
-def _contexto(ruta, period):
+def contexto_cacheado(ruta, period):
     """Lee el libro crudo UNA vez por (archivo, tamaño, fecha de modificación, periodo): el análisis se pide varias veces por reporte y la lectura
     duplicaba su costo. Solo se guardan los últimos 4; el contexto es de solo lectura (las pruebas verifican que no se muta)."""
     from pathlib import Path
@@ -402,5 +403,5 @@ def _contexto(ruta, period):
 def construir_desde_libro(res, unidad: str, period, ruta, es_libro_crudo: bool) -> dict:
     """Punto de entrada del servicio: lee el contexto de datos crudos (solo GLP-1 y solo si el libro es crudo) y arma el panel. Así el servicio no
     importa el motor de reglas (garantía T-14: el módulo expuesto a la IA no depende del motor ni lo modifica)."""
-    ctx = _contexto(ruta, period) if (unidad == "glp1" and es_libro_crudo) else None
+    ctx = contexto_cacheado(ruta, period) if (unidad == "glp1" and es_libro_crudo) else None
     return construir(res, unidad, period, ctx)

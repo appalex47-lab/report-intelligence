@@ -201,25 +201,60 @@ async function fetchFile(path, query = null){            // descarga: el archivo
   try{ const r = await ask({ method: "GET", path: "/api" + path, body: query }); return r.file }
   finally { if(label) loaderEnd() }
 }
+/* ---------------------------------------------------------------- Fase 5 · descarga robusta (INC-001: «data.htm»)
+   Reglas: (1) el NOMBRE y la EXTENSIÓN salen de lo que la interfaz pidió (`path`), nunca de lo que devuelva el motor; (2) el contenido se valida contra
+   su formato real antes de entregarlo (ZIP completo para .pptx, %PDF- para .pdf, JSON válido para .json, PNG); (3) el tipo MIME es explícito;
+   (4) la URL del blob no se revoca hasta pasado un tiempo largo (una red o un equipo lentos tardan en empezar la descarga); (5) en navegadores integrados
+   de otras apps, que no siempre guardan los blobs, se avisa antes. Una respuesta que no es el archivo pedido (p. ej. una página HTML) se rechaza con un mensaje. */
+const DESCARGAS = {
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation", pdf: "application/pdf",
+  json: "application/json", png: "image/png", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", sqlite: "application/vnd.sqlite3",
+};
+const REVOCAR_MS = 60000;
+function extensionPedida(path){ const m = /\.([A-Za-z0-9]{2,6})$/.exec(String(path || "").split("?")[0]); return m ? m[1].toLowerCase() : ""; }
+function nombreSeguro(propuesto, ext){
+  let base = String(propuesto || "").split(/[\\/]/).pop().replace(/[\u0000-\u001f"<>|:*?]/g, "").trim();
+  base = base.replace(/\.[A-Za-z0-9]{1,6}$/, "").slice(0, 120).trim() || "reporte";           // se descarta la extensión propuesta: manda la pedida
+  return `${base}.${ext || "bin"}`;
+}
+function validarArchivo(ext, bytes){
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  if(!u8.length) return "El archivo está vacío.";
+  const texto = (desde, hasta) => new TextDecoder("latin1").decode(u8.subarray(desde, hasta));
+  if(ext === "pptx" || ext === "xlsx"){
+    const que = ext === "pptx" ? "PPTX" : "XLSX";
+    if(u8[0] !== 0x50 || u8[1] !== 0x4b || u8[2] !== 0x03 || u8[3] !== 0x04) return `El archivo no es un ${que} válido (no empieza como un ZIP). Revisa plantilla y generación.`;
+    if(!texto(Math.max(0, u8.length - 66000), u8.length).includes("PK\u0005\u0006")) return `El ${que} está incompleto (el ZIP no termina bien).`;
+    if(!texto(0, Math.min(u8.length, 200000)).includes("[Content_Types].xml") && !texto(Math.max(0, u8.length - 66000), u8.length).includes("[Content_Types].xml")) return `El archivo es un ZIP, pero no un ${que} de Office.`;
+  } else if(ext === "sqlite"){
+    if(texto(0, 15) !== "SQLite format 3") return "El archivo no es una base SQLite válida.";
+  } else if(ext === "pdf"){
+    if(texto(0, 5) !== "%PDF-") return "El archivo no es un PDF válido.";
+  } else if(ext === "json"){
+    try{ JSON.parse(new TextDecoder("utf-8").decode(u8)); }catch{ return "El archivo no es un JSON válido."; }
+  } else if(ext === "png"){
+    if(u8[0] !== 0x89 || texto(1, 4) !== "PNG") return "El archivo no es una imagen PNG válida.";
+  }
+  if(/^\s*<(!doctype html|html)/i.test(texto(0, 64))) return "Se recibió una página HTML en lugar del archivo.";
+  return null;
+}
+const entornoIntegrado = () => /;\s*wv\)|FBAN|FBAV|Instagram|MicroMessenger|Line\/|Teams\/|Outlook/i.test(navigator.userAgent || "");
 async function download(path, query = null){
   try{
     const f = await fetchFile(path, query);
     if(!f || !f.buffer) throw new Error("No se recibió el archivo del motor.");
-    const name = (f.name && String(f.name).replace(/[\\/]/g, "_")) || "reporte.pptx";
-    const bytes = f.buffer instanceof ArrayBuffer ? new Uint8Array(f.buffer) : new Uint8Array(f.buffer);
-    if(name.toLowerCase().endsWith(".pptx") && (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4b)){
-      throw new Error("El archivo no es un PPTX válido (no empieza como ZIP). Revisa plantilla y generación.");
-    }
-    const mime = name.toLowerCase().endsWith(".pdf")
-      ? "application/pdf"
-      : name.toLowerCase().endsWith(".pptx")
-        ? "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-        : "application/octet-stream";
+    const ext = extensionPedida(path) || extensionPedida(f.name);                        // lo pedido manda; sin extensión en la ruta (machote, historial) se usa la del motor
+    const bytes = new Uint8Array(f.buffer);
+    const problema = validarArchivo(ext, bytes);
+    if(problema) throw new Error(problema);
+    const name = nombreSeguro(f.name, ext);
+    const mime = DESCARGAS[ext] || "application/octet-stream";
+    if(entornoIntegrado()) toast("Estás en un navegador integrado de otra app: si la descarga no se guarda como ." + ext + ", abre este sitio en Chrome o Safari.");
+    const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([bytes], { type: mime }));
-    a.download = name;
+    a.href = url; a.download = name; a.rel = "noopener";
     document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    setTimeout(() => URL.revokeObjectURL(url), REVOCAR_MS);
   }catch(e){ toast(e.message || String(e)) }
 }
 /* ---------------------------------------------------------------- redacción con IA (Cohere) · la llamada sale del navegador con la clave del usuario */
@@ -509,7 +544,7 @@ async function upload(f){
 const TIPO_TXT = { observado: "Observado", calculado: "Calculado", supuesto_heredado: "Supuesto heredado, no validado", no_verificable: "No verificable" };
 const fmtN = (v, d = 2) => v == null ? "—" : Number(v).toLocaleString("es-MX", { minimumFractionDigits: d, maximumFractionDigits: d });
 const fmtMon = v => v == null ? "—" : `$${fmtN(v, 0)}`;
-const valVar = x => x.valor == null ? "—" : x.unidad === "fracción" ? `${fmtN(Number(x.valor) * 100, 0)} %` : x.unidad === "MXN" ? fmtMon(x.valor) : fmtN(x.valor, 0);
+const valVar = x => x.valor == null ? "—" : x.unidad === "fracción" ? `${fmtN(Number(x.valor) * 100, 0)} %` : x.unidad === "moneda" ? fmtMon(x.valor) : fmtN(x.valor, 0);
 const tipoChip = t => `<span class="chip ${t === "supuesto_heredado" ? "recomendacion" : t === "observado" ? "hecho" : t === "calculado" ? "contexto" : "info_insuficiente"}">${esc(TIPO_TXT[t] || t)}</span>`;
 const lista = a => (a && a.length) ? `<ul>${a.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
 function escenarioHtml(e) {
@@ -569,6 +604,32 @@ function escenariosHtml(x) {
     <details><summary class="sub" style="cursor:pointer">Pendientes de validación</summary>${lista(x.pendientes_validacion)}</details></div></details>`;
 }
 
+/* ---------------------------------------------------------------- Fase 5 · anexo de calidad de datos (panel de lectura; no bloquea ni corrige) */
+const SEV_CLASE = { alta: "block", media: "warn", baja: "info", informativa: "info" };
+const NAT_TXT = { observado: "Observado", faltante: "Faltante", inferido: "Inferido", no_verificable: "No verificable" };
+function evidenciaTxt(ev) {
+  if (!ev) return "";
+  const partes = [];
+  if (ev.hoja) partes.push(`hoja ${ev.hoja}`);
+  if (ev.columna) partes.push(`columna ${ev.columna}`);
+  if (ev.n_filas != null) partes.push(`${ev.n_filas} fila(s)${(ev.filas_ejemplo || []).length ? ` (p. ej. ${ev.filas_ejemplo.join(", ")})` : ""}`);
+  return partes.join(" · ");
+}
+function anexoHtml(x) {
+  if (!x) return "";
+  if (x.no_disponible) return `<div class="card"><strong>Anexo de calidad de datos</strong><div class="sub">${esc(x.no_disponible)}</div></div>`;
+  const o = x.origen_datos, r = x.resumen;
+  const dims = x.dimensiones.map(d => `<details class="card" data-dim="${esc(d.id)}" ${d.hallazgos.some(h => h.severidad === "alta") ? "open" : ""}><summary><strong>${esc(d.nombre)}</strong>
+    <span class="chip ${d.estado === "con_hallazgos" ? "recomendacion" : d.estado === "no_evaluable" ? "info_insuficiente" : "hecho"}">${esc(d.estado.replaceAll("_", " "))}</span></summary>
+    ${d.motivo ? `<div class="sub">${esc(d.motivo)}</div>` : ""}
+    ${d.hallazgos.length ? `<table><tr><th>Severidad</th><th>Hallazgo</th><th>Evidencia</th><th>Impacto</th></tr>${d.hallazgos.map(h => `<tr><td><span class="sev ${SEV_CLASE[h.severidad] || "info"}">${esc(h.severidad.toUpperCase())}</span><br><span class="sub">${esc(NAT_TXT[h.naturaleza] || h.naturaleza)}</span></td>
+      <td><code>${esc(h.id)}</code> ${esc(h.descripcion)}</td><td class="sub">${esc(evidenciaTxt(h.evidencia))}</td><td class="sub">${esc(h.impacto)}${(h.indicadores || []).length ? `<br>Indicadores: ${esc(h.indicadores.join(", "))}` : ""}</td></tr>`).join("")}</table>` : `<div class="sub">Sin hallazgos.</div>`}</details>`).join("");
+  return `<details class="card grid" id="anexoPanel"><summary><strong>Anexo de calidad de datos</strong> <span class="sub">· ${esc(r.dimensiones_evaluadas)} de ${esc(r.dimensiones)} dimensiones evaluadas · alta ${esc(r.severidades.alta)} · media ${esc(r.severidades.media)} · baja ${esc(r.severidades.baja)}</span></summary>
+    <div class="grid" style="margin-top:10px"><div class="${o.clasificacion === "no_declarado" ? "warnline" : "okline"}" data-origen="${esc(o.clasificacion)}"><b>Origen de los datos:</b> ${esc(o.detalle)} ${esc(o.advertencia)}</div>
+    <div class="sub">${esc(x.etiqueta)}</div>${dims}
+    <details><summary class="sub" style="cursor:pointer">Limitaciones del anexo</summary>${lista(x.limitaciones)}</details></div></details>`;
+}
+
 function vValidate(box){
   const a = S.analysis; if(!a){ box.innerHTML = `<div class="card grid"><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div></div>`; return }
   const blocks = a.findings.filter(f=>f.severity==="block"), real = blocks.filter(f=>f.id!=="TARGETS_MISSING");
@@ -578,7 +639,7 @@ function vValidate(box){
     : `<div class="banner ok"><div><strong>Datos válidos</strong><span class="sub">${warns.length} advertencia(s) para tu revisión.</span></div><button class="btn primary" id="tg">Continuar →</button></div>`;
   const list = (arr, title) => arr.length ? `<div class="card"><strong>${title} (${arr.length})</strong>${arr.map(f=>`<div class="find"><span class="sev ${f.severity}">${f.severity.toUpperCase()}</span><div><code>${esc(f.id)}</code> ${esc(f.message)}<div class="sub">${esc(f.evidence||"")}</div></div></div>`).join("")}</div>` : "";
   const kp = a.kpis.length ? `<div class="card"><strong>Lectura rápida del motor</strong><table><tr><th>Métrica</th><th>Valor</th><th>Δ YoY</th></tr>${a.kpis.map(k=>`<tr><td>${k.metrica}</td><td>${k.metrica==="Venta"||k.metrica==="Ticket"?fmtM(k.valor):Math.round(k.valor).toLocaleString("es-MX")}</td><td>${fmtP(k.delta)}</td></tr>`).join("")}</table></div>` : "";
-  box.innerHTML = banner + (a.message?`<div class="banner warn"><div>${esc(a.message)}</div></div>`:"") + kp + escenariosHtml(a.escenarios_indicador) + list(real,"Bloqueos") + list(warns,"Advertencias") + list(infos,"Información");
+  box.innerHTML = banner + (a.message?`<div class="banner warn"><div>${esc(a.message)}</div></div>`:"") + kp + escenariosHtml(a.escenarios_indicador) + anexoHtml(a.anexo_calidad) + list(real,"Bloqueos") + list(warns,"Advertencias") + list(infos,"Información");
   $("#reload")?.addEventListener("click",()=>{S.step=0;render()}); $("#tg")?.addEventListener("click",()=>go(2));
 }
 
@@ -727,10 +788,10 @@ function vGen(box){
 function outView(host, r){
   const id = S.run.id, issues = r.qa.issues.filter(i=>i.severity!=="info"), infos = r.qa.issues.length - issues.length;
   const dl = (name, label) => name ? `<button class="btn ${r.downloadable?"primary":""}" data-dl="${esc(name)}" ${r.downloadable?"":"disabled"}>${label}</button>` : "";
-  host.innerHTML = `<div class="card grid"><div class="banner ${r.qa_passed?"ok":"bad"}"><div><strong>QA ${r.qa_passed?"aprobado":"rechazado"} · descarga ${r.downloadable?"habilitada":"bloqueada"}</strong><span class="sub">${issues.length} observación(es) · ${infos} nota(s) informativa(s)</span></div>
+  host.innerHTML = `<div class="card grid"><div class="banner ${r.qa_passed?"ok":"bad"}"><div><strong>QA ${r.qa_passed?"aprobado":"rechazado"} · descarga ${r.downloadable?"habilitada":"bloqueada"}</strong><span class="sub">${issues.length} observación(es) · ${infos} nota(s) informativa(s)</span>${r.qa.issues.some(i=>i.id==="QA_VISUAL_OMITIDO"||i.id==="PPTX_REVISION_ESTRUCTURAL")?`<span class="sub" data-qa-limite="1"><b>Revisión estructural.</b> La revisión visual requiere render: aquí no se hizo, revisa las diapositivas antes de distribuirlas.</span>`:""}</div>
       <div class="row">${dl(r.pptx,"Descargar PPTX")}${dl(r.pdf,"Descargar PDF")}</div></div>
     ${issues.length?issues.map(i=>`<div class="find"><span class="sev ${i.severity==="error"?"block":"warn"}">${esc(i.severity.toUpperCase())}</span><div><code>${esc(i.id)}</code> ${esc(i.message)}${i.slide?` <span class="sub">(diap. ${i.slide})</span>`:""}</div></div>`).join(""):""}
-    <div class="row"><button class="mini" data-dl="narrative.json">narrative.json</button><button class="mini" data-dl="qa_report.json">qa_report.json</button><button class="mini" data-dl="manifest.json">manifest.json</button>${r.ia_log?'<button class="mini" data-dl="ia_log.json">ia_log.json (qué se envió a la IA)</button>':""}</div></div>
+    <div class="row"><button class="mini" data-dl="narrative.json">narrative.json</button><button class="mini" data-dl="qa_report.json">qa_report.json</button><button class="mini" data-dl="manifest.json">manifest.json</button><button class="mini" data-dl="anexo_calidad.json">anexo_calidad.json</button>${r.ia_log?'<button class="mini" data-dl="ia_log.json">ia_log.json (qué se envió a la IA)</button>':""}</div></div>
     ${r.slides.length?`<div class="card grid"><strong>Diapositivas generadas</strong><div class="thumbs">${r.slides.map(n=>`<button class="mini" data-dl="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`:""}
     <div class="card"><strong>Tendencias del historial</strong>${trendsHtml(r.trends)}</div>`;
   host.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>download(`/runs/${id}/files/${encodeURIComponent(b.dataset.dl)}`));

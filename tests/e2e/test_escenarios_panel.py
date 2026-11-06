@@ -96,3 +96,18 @@ def test_panel_con_libros_en_formato_antiguo_no_inventa_cifras(sitio, tmp_path):
     assert "No verificable" in t and "no es de datos crudos" in t and "Supuesto heredado, no validado" in t
     res2 = _correr(sitio, tmp_path, "aetops", build_base(tmp_path / "base_antigua.xlsx"))
     assert res2["escenarios"] == ["E1", "E2"] and res2["fuentes"] == [] and "sin hoja `trafico`" in res2["panel_texto"].lower()
+
+
+def test_anexo_de_calidad_visible_con_15_dimensiones_y_origen_nunca_real(sitio, tmp_path):
+    """Fase 5: el anexo aparece en el paso «Validar», con sus 15 dimensiones, el origen inferido del libro y sin afirmar que sean datos reales."""
+    res = _correr(sitio, tmp_path, "glp1", EJEMPLOS / "GLP1_crudo_ejemplo.xlsx")
+    assert res["anexo_presente"] == 1 and len(res["anexo_dimensiones"]) == 15 and res["anexo_origen"] == ["ejemplo_o_sintetico_inferido"]
+    t = res["anexo_texto"]
+    for esperado in ("Anexo de calidad de datos", "Origen de los datos", "ejemplo o sintético", "no son resultados de producción", "Calidad estructural",
+                     "Consistencia entre fuentes", "Datos no verificables", "Supuestos y limitaciones", "No verificable"):
+        assert esperado in t, esperado
+    assert "son datos reales" not in t                                                       # nunca afirma que sean reales
+    aet = _correr(sitio, tmp_path, "aetops", EJEMPLOS / "AETOPS_crudo_ejemplo.xlsx")
+    assert aet["anexo_presente"] == 1 and len(aet["anexo_dimensiones"]) == 15
+    leg = _correr(sitio, tmp_path, "glp1", ROOT / "data" / "GLP1_sintetico_limpio.xlsx")
+    assert leg["anexo_presente"] == 1 and "no evaluable" in leg["anexo_texto"] and leg["anexo_origen"] == ["ejemplo_o_sintetico_inferido"]       # el nombre «sintetico» lo delata; si no, quedaría «no_declarado»

@@ -31,6 +31,11 @@ try {
   out.tiene_ind01 = (await p.$$("[data-ind='IND-01']")).length;
   out.tiene_comparacion = (await p.$$("[data-cmp='E1-E2']")).length;
   out.paso_validar_visible = await p.isVisible("#escPanel");
+  // Fase 5: anexo de calidad de datos
+  out.anexo_presente = (await p.$$("#anexoPanel")).length;
+  out.anexo_dimensiones = await p.$$eval("[data-dim]", (n) => n.map((e) => e.getAttribute("data-dim")));
+  out.anexo_origen = await p.$$eval("[data-origen]", (n) => n.map((e) => e.getAttribute("data-origen")));
+  out.anexo_texto = (await p.evaluate(() => { const e = document.querySelector("#anexoPanel"); if (e) e.open = true; document.querySelectorAll("#anexoPanel details").forEach((d) => (d.open = true)); return e ? e.innerText : ""; })).replace(/\s+/g, " ");
   // la navegación del flujo normal sigue funcionando: el panel no rompe el paso «Validar» ni sus botones
   out.hay_boton_continuar = (await p.$$("#tg, #reload")).length > 0;
   await p.screenshot({ path: `${outdir}/panel_${unidad}.png`, fullPage: true });
