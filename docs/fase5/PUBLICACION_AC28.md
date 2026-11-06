@@ -26,10 +26,20 @@
 
 **Alcance de esta evidencia:** prueba que GitHub reportó un despliegue correcto del SHA `47dc3af`. **No prueba** que el sitio cargue, que corresponda a ese SHA ni que funcione.
 
-**Observación técnica (causa probable de los fallos):** `pages.yml` usa `concurrency: { group: pages, cancel-in-progress: true }`. Al fusionar dos PR seguidos, el run 19 fue cancelado a mitad de su despliegue y el 20 encontró el despliegue anterior pendiente (`deployment_queued`). La documentación de GitHub para `deploy-pages` recomienda `cancel-in-progress: false`. **No se modificó** `pages.yml` (workflow protegido de producción, fuera de la autorización): se deja como recomendación.
+**Investigación de la concurrencia (`cancel-in-progress: true`), con logs de los jobs `deploy`:**
+
+| Run / intento | Hecho observado (log) |
+|---|---|
+| 19 (PR #22), intento 1 | `deploy-pages` en `deployment_queued` desde las 17:51:19 durante ~9 min **sin avanzar** (atasco del lado de GitHub, anterior a cualquier cancelación). A las 18:00:00 aparece `Canceling Pages deployment…` / `Canceled deployment…`: lo canceló la concurrencia al iniciar el run 20 |
+| 20 (PR #23), intentos 1, 2 y 3 | `deployment_queued` sostenido y `##[error]Deployment failed, try again later.` (6 min, 1,5 min y 1,7 min) |
+| 19, intento 2 (reintento manual) | cancelado a los 6 s por la concurrencia al arrancar el intento 4 del run 20 |
+| 20, intento 4 | `deploy-pages` en success en 6 s |
+| Runs 15, 16, 17 y 18 (misma configuración) | success sin incidencias, incluidas fusiones seguidas |
+
+**Conclusión (decisión del 2026-11-06):** la concurrencia **sí produce cancelaciones** (run 19, dos veces) —es su función: descarta el despliegue superado—, pero **no hay evidencia suficiente de que provoque los fallos**: el atasco en `deployment_queued` del run 19 empezó 9 minutos antes de la cancelación; no se demuestra que el despliegue cancelado dejara bloqueado el siguiente (en el intento 4 hubo una cancelación y el despliegue funcionó); y la misma configuración funcionó cuatro veces. Cambiar a `cancel-in-progress: false` no se demuestra necesario, por lo que **se conserva `pages.yml` sin cambios** (autorizado solo si se demostraba necesario). La recomendación queda como hipótesis no demostrada y como opción si el atasco se repite:
 
 ```yaml
-# propuesta (requiere autorización, pages.yml está protegido)
+# opción NO aplicada (hipótesis no demostrada; GitHub la recomienda en su plantilla de Pages)
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -41,6 +51,7 @@ concurrency:
 |---|---|---|
 | `curl https://appalex47-lab.github.io/report-intelligence/` | `curl: (56) CONNECT tunnel failed, response 403`; código HTTP 000 | **proxy del entorno** |
 | `curl https://example.com` (control) | el mismo `CONNECT tunnel failed, response 403` | confirma que el proxy bloquea **cualquier** host no autorizado |
+| `WebFetch` a `https://appalex47-lab.github.io/report-intelligence/` (ruta de red distinta de `curl`, 2026-11-06) | `getaddrinfo ENOTFOUND appalex47-lab.github.io`: el host está fuera de los dominios permitidos de la sesión | limitación de red del entorno; para verificar desde aquí habría que permitir ese host en la red del entorno |
 | API de Pages (`gh api repos/…/pages`) | 403 «Access to this GitHub API path is not permitted through this proxy» | permisos del proxy |
 | Descarga del artefacto `github-pages` (id 13528548724, no expirado) | falla al resolver el almacenamiento de blobs de Actions | proxy del entorno |
 

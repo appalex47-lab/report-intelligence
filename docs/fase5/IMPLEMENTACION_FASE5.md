@@ -37,8 +37,8 @@ La especificación de Fase 1 asigna a la Fase 5 el QA del PPTX (RQ-13/14/15) y e
 | D5-6 | No se creó `visual-qa.yml` | La spec permite `tools/visual_qa.py` local; un workflow no validable aquí sería una afirmación sin evidencia |
 | D5-9 | Las comprobaciones de AC-14 son `warn` y no bloquean | Son heurísticas sobre texto; un falso positivo no debe impedir entregar un reporte válido |
 | D5-10 | La derivación de un porcentaje se acota a la misma celda/párrafo o a las formas `RI_*` | Con todos los números de la lámina, un porcentaje alterado pasaba por «derivable» por coincidencia |
-| D5-11 | El anexo en el PPTX es opt-in (casilla o flag) y no se activa por omisión | Activarlo por omisión cambia la línea base de los decks; decisión del usuario |
-| D5-12 | No se modificó `pages.yml`; se documentó la recomendación `cancel-in-progress: false` | Workflow de producción protegido; los fallos de despliegue del run 20 son evidencia (`PUBLICACION_AC28.md`) |
+| D5-11 | **Decidido por el usuario:** el anexo en el PPTX es opt-in (casilla o flag) y **no se activa por omisión** | Activarlo por omisión cambiaría la línea base de los decks (8 de 8 idénticos con el anexo apagado) |
+| D5-12 | **Decidido:** no se modifica `pages.yml`. La concurrencia cancela despliegues superados (run 19) pero no se demuestra que cause los fallos del run 20 (atasco previo en `deployment_queued`; 4 despliegues anteriores correctos con la misma configuración) | Autorización condicionada a demostrar la necesidad; `PUBLICACION_AC28.md` §2 |
 | D5-7 | El anexo **nunca** afirma que los datos sean reales; solo infiere «ejemplo o sintético» por el nombre del archivo | Encargo: no presentar sintéticos como producción |
 | D5-8 | La extensión del archivo descargado sale de la ruta pedida, no del motor | Causa raíz de `data.htm` no reproducible: se elimina la dependencia, no se adivina la causa |
 
@@ -72,13 +72,13 @@ Resultados y SHA en `AUDITORIA_CIERRE_FASE5.md` §3 (suite completa: 1500 aproba
 |---|---|---|
 | L-1 | **AC-14 PARCIALMENTE CUMPLIDO** (`AC14_CIFRAS_FORMULAS.md` §6): las cuatro comprobaciones existen y detectan los defectos inyectados con 0 falsos positivos, pero no validan el significado de una cifra, dependen del reconocimiento por encabezado y una cifra alterada puede coincidir por azar con otro valor del motor | Observación |
 | L-2 | El contraste se muestrea del render de LibreOffice: es un indicio, no una medición de accesibilidad; un píxel de alto contraste ajeno al texto puede ocultar texto ilegible | No bloqueante |
-| L-3 | El anexo en el PPTX es opt-in: activarlo por omisión es una decisión pendiente (D5-11) | Decisión del usuario |
+| L-3 | El anexo en el PPTX es opt-in; no se activa por omisión (D5-11, decidido) | Decisión tomada |
 | L-4 | La revisión visual no corre en el navegador ni en CI | Por diseño (spec §7.C) |
 | L-5 | La holgura mínima sobre el pie fue de 3,9 pt en la diapositiva 1 del deck AETOPS mensual (sin desborde, pero justa) | Observación |
 | L-6 | Rendimiento: el panel de escenarios y el anexo comparten una sola lectura del libro (caché por archivo), pero la primera lectura de un libro grande en Pyodide no se midió (solo 2,4 MB) | No verificado |
 | L-7 | Plantillas anteriores: solo existe la versión 1 de cada formato; no hay versiones previas contra las que probar | No verificable |
-| L-8 | El resumen del anexo no se añade al manifiesto de procedencia (contrato 3A congelado) | Pendiente de decisión |
-| L-9 | La observación real de GLP-1 «Mounjaro (74 %, $9.20 M)» sin base declarada solo se resuelve cambiando la narrativa protegida (A-3) | Fuera de alcance |
+| L-8 | **Decidido por el usuario:** el resumen del anexo no se incorpora todavía al manifiesto; el anexo (panel, JSON y diapositiva) y el manifiesto de procedencia siguen siendo mecanismos separados hasta que exista una definición funcional completa | Contrato 3A congelado; ver `PENDIENTES_POSTERIORES.md` |
+| L-9 | **Decidido por el usuario:** la narrativa protegida «Mounjaro (74 %, $9.20 M)» no se modifica; el porcentaje carece de denominador explícito y requiere una decisión narrativa A-3 posterior. No se inventa una base de cálculo ni se altera la cifra para eliminar la advertencia | Fuera de alcance; `PENDIENTES_POSTERIORES.md` |
 
 ## 8. Lo que no se pudo hacer, y por qué
 

@@ -75,7 +75,7 @@ La implementación autorizada está completa y validada (1500 pruebas, 0 fallida
 
 1. **AC-28 / publicación real** — requiere fusionar el PR #24, publicar y verificar desde un navegador externo (`PUBLICACION_AC28.md`).
 2. **AC-14 parcial** — el «100 %» no es demostrable en general; la observación de GLP-1 requiere A-3.
-3. **Decisiones del usuario** — anexo en el PPTX por omisión (D5-11), resumen del anexo en el manifiesto (L-8), a qué fase corresponden AC-11 y AC-12, recomendación `cancel-in-progress: false` en `pages.yml` (D5-12).
+3. **Decisiones del usuario** (resueltas el 2026-11-06 en `CIERRE_FINAL_FASE5.md` §2): anexo desactivado por omisión (D5-11), sin resumen del anexo en el manifiesto (L-8), AC-11/AC-12 formalizados como pendientes posteriores sin implementar, `pages.yml` sin cambios (D5-12: necesidad no demostrada) y narrativa GLP-1 intacta (A-3 posterior). Este documento conserva el dictamen de esa fecha; el cierre definitivo está en `CIERRE_FINAL_FASE5.md`.
 4. **`data.htm`** — causa no demostrada; navegadores adicionales sin probar.
 
 **Condiciones para poder fusionar:** CI verde sobre el SHA exacto del HEAD, ausencia de conflictos con `main` y autorización expresa del usuario. **Condiciones para cerrar la fase:** publicar y verificar (AC-28), y resolver las decisiones del punto 3.
