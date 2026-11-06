@@ -196,6 +196,16 @@ def _kpis(res, st) -> list[dict]:
     return out
 
 
+def _escenarios(run_id: str, st: dict, res) -> dict:
+    """Panel de escenarios E1/E2 e IND-01 (Fase 4). Solo lee: nunca modifica el análisis ni bloquea el reporte (si falla, lo declara)."""
+    from .. import escenarios as esc
+    try:
+        p = _input(run_id)
+        return esc.construir_desde_libro(res, st["unit"], period_of(st), p, is_raw_workbook(p))
+    except Exception as e:                                                  # noqa: BLE001 — el panel es informativo (S-3)
+        return {"esquema": esc.ESQUEMA, "no_disponible": f"No se pudo construir el panel de escenarios ({type(e).__name__}).", "escenarios": [], "ind01": None}
+
+
 def analyze(run_id: str) -> dict:
     st = _load(run_id)
     res = _run_engine(run_id, st)
@@ -206,7 +216,7 @@ def analyze(run_id: str) -> dict:
                 "brecha": float(a.gap), "estado": a.status} for a in attainment(res, _targets(st))]
     gen_ok = _has_template(st)
     return {"run": public(st), "can_generate": res.can_generate and gen_ok, "findings": findings,
-            "kpis": _kpis(res, st), "cumplimiento": att,
+            "kpis": _kpis(res, st), "cumplimiento": att, "escenarios_indicador": _escenarios(run_id, st, res),
             "targets_required": st["unit"] == "aetops", "targets_lines": [],
             "generator_available": gen_ok,
             "template_key": f"{st['unit']}-{st['periodicity']}", "template_label": TEMPLATE_KEYS.get(f"{st['unit']}-{st['periodicity']}", ""),
