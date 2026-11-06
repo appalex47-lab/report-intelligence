@@ -528,7 +528,7 @@ Detalle de cada subfase:
 
 **3A-5**
 - Implementación esperada: `release.yml` etiqueta `app-vX.Y.Z` y publica su `app.zip` con su SHA-256 (V-02, AC-28).
-- **Estado:** implementada (autorización expresa de 3A-5): `.github/workflows/release.yml`, más `tools/release_app.py` (decisión técnica: validación y SHA-256 probables en CI) y `tests/unit/test_release_app.py`. **El workflow no se ha ejecutado en GitHub: no existe ninguna etiqueta `app-v*` ni release (V-02 sin ejecutar, AC-28 no demostrado).** Mientras no exista una release, los reportes cuyo código no sea recuperable quedan en `parcial` (§5.3 original). Ver `IMPLEMENTACION_3A5_RELEASES.md`.
+- **Estado:** implementada (autorización expresa de 3A-5): `.github/workflows/release.yml` (job `construir` de solo lectura y job `publicar` con escritura, solo con `publicar` marcado), más `tools/release_app.py` (decisión técnica: validación de la cadena versión → etiqueta → commit → artefacto → SHA-256 y del CI del SHA exacto, probable en CI) y tres archivos de pruebas `tests/unit/test_release_*.py`. La política de CI exigida para publicar (`tests.yml` en success para el SHA exacto) es una **decisión técnica conservadora**, no un requisito oficial: la especificación no lista los checks obligatorios. **El workflow no se ha ejecutado en GitHub: no existe ninguna etiqueta `app-v*` ni release (V-02 sin ejecutar, AC-28 no demostrado).** Mientras no exista una release, los reportes cuyo código no sea recuperable quedan en `parcial` (§5.3 original). Ver `IMPLEMENTACION_3A5_RELEASES.md`.
 
 ---
 
