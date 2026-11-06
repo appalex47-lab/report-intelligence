@@ -7,6 +7,8 @@
 | Base | `main` en `f15abfea707c1f0adcdedcc6d94ddcbc2024226e` (PR #21 fusionado) |
 | No reescribe | Auditorías ni dictámenes de fases anteriores |
 
+> **Nota posterior.** Las cifras de pruebas de §3 corresponden al SHA `7f641e7`. La auditoría independiente posterior encontró y corrigió defectos adicionales; su resultado, las pruebas actualizadas y el estado vigente están en §8 (añadida al final, sin reescribir lo anterior).
+
 ## 1. Criterios de aceptación de la Fase 4
 
 | # | Criterio | Estado | Evidencia |
@@ -75,3 +77,40 @@ Seguridad: toda cadena que llega al DOM se escapa con `esc()`; los números se f
 ## 6. Dictamen
 
 Pendiente del CI del SHA definitivo (se registra en el informe y en la descripción del PR). Con el CI en success, la Fase 4 queda **implementada y validada, con observaciones no bloqueantes**; la integración requiere autorización expresa.
+
+---
+
+## 8. Auditoría independiente posterior (antes de la fusión)
+
+Revisión hecha sin apoyarse en los informes previos: reproducción de las cifras desde el libro con un cálculo que no usa el código del módulo, lectura crítica del código, pruebas con libros alterados y revisión de cada afirmación documental frente al código y al catálogo de definiciones.
+
+### 8.1 Hallazgos y cierre
+
+| ID | Severidad | Hallazgo | Evidencia | Cierre |
+|---|---|---|---|---|
+| A-03 | MEDIO | Textos «r = 25 % / c = 10 %» fijos en `pendientes_validacion` y en la comparación; si cambiara el valor aplicado, el texto contradiría al cálculo | `escenarios.py` (`construir`, `comparar`) | Derivados del valor aplicado; prueba con otros valores |
+| A-04 | MEDIO | El estado global de IND-01 decía «calculable con limitación» aunque todos los resultados fueran «calculable» (unidad declarada y sin otras limitaciones) | reproducido con unidad `eventos` | Regla explícita (todos calculables → calculable); prueba y mutación |
+| A-05 | MEDIO | Una celda vacía de `monto_negado` se suma como 0 (igual que la presentación) y el panel la rotulaba «observado» sin aviso | libro con la primera fila de `negados` vacía: E1 pasó de 1 923 284 a 1 695 529 sin advertencia | Se mantiene la misma cifra que la presentación (no se altera la narrativa protegida) y se **advierte** en el panel; prueba y mutación |
+| A-06 | BAJO | Campo `en_presentacion` sin uso y no verificable (la narrativa conserva como máximo 5 recomendaciones) | grep: ningún consumidor | Eliminado; prueba de ausencia |
+| A-07 | MEDIO | El panel decía que el contrato «NO define» qué cuenta `add_to_cart`, pero el catálogo aprobado lo clasifica como evento de analítica (sin validar) y deja la unidad de los carritos agregados sin declarar | `definiciones.json`: `evento`, `carritos_agregados` | Texto corregido en panel y documentación; prueba que lo ata al catálogo. El estado sigue **NO VERIFICABLE** |
+| A-08 | MEDIO | El panel releía el libro completo en cada análisis: ≈ +4,3 s sobre 4,1 s del motor en el libro de ejemplo (2,4 MB) | medición directa | Lectura reutilizada por (archivo, tamaño, fecha, periodo); sigue habiendo un costo en la primera lectura (observación) |
+| A-09 | BAJO | GLP-1 sin hoja `trafico` se declaraba «No aplica» en IND-01; en GLP-1 es un faltante | libro de ejemplo sin esa hoja | «No calculable» con `faltante` |
+| A-10 | BAJO | Cobertura ausente: trimestres, libros sin hoja opcional, formato antiguo (en navegador), T-14 sobre el módulo nuevo, conservación del resultado original | revisión de pruebas | 13 pruebas unitarias (45 → 58) y 1 de navegador (2 → 3) añadidas |
+
+### 8.2 Verificado de forma independiente
+* **12,48 % y 14,00 %** reproducidos con `openpyxl` sin usar el código del módulo: 2 356 pedidos distintos de septiembre de 2026 (con y sin los criterios del motor, coinciden), 2 643 compras GA4 y 18 883 carritos ⇒ 12,4768 % y 13,9967 %; brecha 12,18 %.
+* **E1/E2** coinciden con la cifra que imprime la recomendación de la presentación (mismo formateador).
+* **Fuentes**: el único cálculo que combina las dos es la brecha F-03 informativa; ninguna estructura suma, promedia ni sustituye (prueba estructural de claves y 3 mutaciones).
+* **T-14**: `service.py` no importa el motor; el módulo nuevo tampoco usa red, escritura, procesos ni IA.
+
+### 8.3 Pruebas y estado vigente (código de `9e45c8c`)
+
+| Prueba | Resultado |
+|---|---|
+| Suite completa local (Pyodide obligatorio, `REPORT_PYODIDE_WORK` y `REPORT_PYODIDE_DIR` fijados) | **1292 aprobadas, 0 fallidas, 35 omitidas** (17 min 15 s); las 35 son todas de `tests/golden` (0 fuera); referencia anterior 1278 |
+| `tests/unit/test_escenarios.py` | 58 aprobadas |
+| `tests/e2e/test_escenarios_panel.py` (navegador real + Pyodide: GLP-1 crudo, AETOPS crudo, formatos antiguos) | 3 aprobadas |
+| Mutaciones deliberadas | 12 de 12 detectadas; las 12 producen código sintácticamente válido (no se detectan por romper la sintaxis) |
+| `archivos_protegidos --check` | sin cambios |
+| `capture_baseline --check` | idéntico (8 de 8) |
+| CI del SHA definitivo | se registra en el PR (un commit de solo documentación no lo cambia de resultado) |

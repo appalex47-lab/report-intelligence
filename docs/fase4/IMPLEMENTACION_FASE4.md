@@ -58,7 +58,7 @@ libro .xlsx ─► motor actual (run_glp1_raw / run_aetops_raw / run_glp1)      
 Son dos fuentes distintas: pedidos creados (`id_pedido` distintos) frente a eventos de compra de GA4. **Nunca se suman, promedian, sustituyen ni usan indistintamente.** La brecha relativa (F-03) se muestra como información. **Equivalencia: NO VALIDADA.** Duplicados, atribución y ventana de maduración: **NO VERIFICABLE** con el libro agregado.
 
 ### Unidad de los carritos
-El contrato de datos define `visitas` como sesiones, pero **no define qué cuenta `add_to_cart`**. Sin declaración, el estado es **NO VERIFICABLE**, el cálculo se permite con interpretación limitada y se advierte; los eventos no se convierten en carritos individuales. Se declara con el parámetro `unidad_carritos` de `reglas.json` (`eventos`, `sesiones`, `otra:<texto>`).
+El catálogo de definiciones del proyecto (`definiciones.json`, definición `evento`) clasifica `add_to_cart` como **métrica de eventos de analítica** («un evento no es una persona, una sesión ni un carrito individual»), definición **no validada con datos reales**. En cambio, la unidad con la que la fuente reporta los **carritos agregados** no está declarada en los libros ni en la configuración (`carritos_agregados.unidad = null`; «se trata como unidad no declarada»), y los datos no permiten comprobarla (en el libro de ejemplo `add_to_cart` = 18 883 frente a 62 643 usuarios y 76 176 visitas: no discrimina). El contrato de datos define `visitas` como sesiones. Estado: **NO VERIFICABLE**; el cálculo se permite con interpretación limitada y se advierte; los eventos no se convierten en carritos individuales. Se declara con el parámetro `unidad_carritos` de `reglas.json` (`eventos`, `sesiones`, `otra:<texto>`).
 
 ### Relaciones superiores a 100 %
 Se muestran sin truncar ni ajustar, con el aviso de §8.2 (no afirma una causa), las variables y unidades que la originan, y una tabla de **causas posibles** con su estado: *concurre*, *no concurre* o *no verificable* (fuentes, periodos, granularidad, unidades, universo y filtros, duplicados, atribución, ventana temporal). **Clasificación:** *anomalía matemática* solo si hay una inconsistencia aritmética (numerador o denominador negativos, denominador cero); si no, *limitación metodológica, no demostrable como error*.
@@ -91,7 +91,7 @@ No se modificó ningún otro archivo de `backend/`, `tools/`, `.github/workflows
 
 ## 6. Pruebas
 
-Ver `AUDITORIA_CIERRE_FASE4.md` §3 (resultados con SHA y evidencia). Resumen de cobertura: fórmulas exactas en `Decimal` y coincidencia con la narrativa; E1/E2 con datos faltantes, nulos y ceros; supuestos rotulados; comparación; IND-01 25 % exacto, machote 12,48 % y 14,00 %, fuentes independientes, faltantes, división entre cero, >100 % conservado y explicado, unidad declarada o no, universo con varios canales; sin identificadores; sin denominaciones prohibidas ni complemento; determinismo y no mutación; servicio (panel presente, falla sin bloquear, no altera el análisis); navegador real (panel visible, sin errores de consola, sin recursos caídos). Verificación por mutación: 10 defectos deliberados, 10 detectados.
+Ver `AUDITORIA_CIERRE_FASE4.md` §3 (resultados con SHA y evidencia). Resumen de cobertura: fórmulas exactas en `Decimal` y coincidencia con la narrativa; E1/E2 con datos faltantes, nulos y ceros; supuestos rotulados; comparación; IND-01 25 % exacto, machote 12,48 % y 14,00 %, fuentes independientes, faltantes, división entre cero, >100 % conservado y explicado, unidad declarada o no, universo con varios canales; sin identificadores; sin denominaciones prohibidas ni complemento; determinismo y no mutación; servicio (panel presente, falla sin bloquear, no altera el análisis); navegador real (panel visible, sin errores de consola, sin recursos caídos). Verificación por mutación: 12 defectos deliberados, 12 detectados (ver `AUDITORIA_CIERRE_FASE4.md` §8 para el estado tras la auditoría independiente).
 
 ## 7. Estado de lo declarado
 
@@ -99,6 +99,6 @@ Ver `AUDITORIA_CIERRE_FASE4.md` §3 (resultados con SHA y evidencia). Resumen de
 |---|---|
 | VERIFICADO | Fórmulas F-01, F-02, F-03, F-09, F-10, F-11 sobre los machotes y fixtures; misma cifra que la presentación; valores de §8.2 (12,48 % y 14,00 %); panel en navegador real |
 | SUPUESTO HEREDADO, NO VALIDADO | r = 25 % (E1), c = 10 % (E2) |
-| NO VERIFICABLE | Unidad de `add_to_cart`; duplicados, atribución y ventana de maduración de GA4; que `negados` corresponda al periodo; qué cuenta la fuente como `carritos_abandonados` |
+| NO VERIFICABLE | Unidad con la que la fuente reporta los carritos agregados (el catálogo define `add_to_cart` como evento, sin validar); duplicados, atribución y ventana de maduración de GA4; que `negados` corresponda al periodo; qué cuenta la fuente como `carritos_abandonados` |
 | NO VERIFICADO | Comportamiento con datos reales de producción (solo se usaron machotes y fixtures sintéticos, OBS-10) |
 | LIMITACIÓN CONOCIDA | Ver auditoría §5 |
