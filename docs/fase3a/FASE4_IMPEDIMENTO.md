@@ -1,6 +1,8 @@
 # Fase 4 — verificación de la especificación oficial
 
-**Resultado: no existe una especificación oficial de la Fase 4 en el repositorio; no se implementó nada.**
+> **ESTADO: SUPERADO.** Este documento registra el impedimento tal como existía al redactarse. El usuario lo resolvió después definiendo la Fase 4 como **«Escenarios e indicador»** (E1, E2 e IND-01), que coincide con las notas de aplazamiento descritas abajo; su implementación está en el PR #23 (`docs/fase4/IMPLEMENTACION_FASE4.md`, si se fusiona). Se conserva como registro histórico y no se reescribe.
+
+**Resultado (al redactarse): no existe una especificación oficial de la Fase 4 en el repositorio; no se implementó nada.**
 
 Búsqueda en todos los documentos, el código y el historial de git (`git log -S`) de «Fase 4», «Fase 3B», «linaje», «Narrativa y recomendaciones» y «recomendaciones»:
 
