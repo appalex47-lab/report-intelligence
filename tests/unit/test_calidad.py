@@ -335,10 +335,9 @@ def test_escribir_anexo_no_deja_un_archivo_si_no_pudo_construirse(servicio, monk
     res = servicio._run_engine(rid, st)
     out = tmp_path / "out"
     out.mkdir()
-    servicio._escribir_anexo(rid, st, res, out)
+    servicio._escribir_anexo(C.construir(res, "glp1", PG, None, {"nombre": "x"}, None), out)
     assert json.loads((out / "anexo_calidad.json").read_text(encoding="utf-8"))["esquema"] == C.ESQUEMA
-    monkeypatch.setattr(C, "construir", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("x")))
     out2 = tmp_path / "out2"
     out2.mkdir()
-    servicio._escribir_anexo(rid, st, res, out2)
+    servicio._escribir_anexo({"esquema": C.ESQUEMA, "no_disponible": "x", "dimensiones": []}, out2)
     assert not (out2 / "anexo_calidad.json").exists()

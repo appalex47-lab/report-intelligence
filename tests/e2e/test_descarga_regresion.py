@@ -146,3 +146,58 @@ def test_en_un_navegador_integrado_se_avisa_antes_de_descargar(navegador, tmp_pa
                                        {"id": "normal", "path": "/runs/a/files/x.pptx", "name": "x.pptx", "b64": b64(pptx_valido())}])
     assert "navegador integrado" in r["wv"]["toast"] and "Chrome o Safari" in r["wv"]["toast"]
     assert "navegador integrado" not in r["normal"]["toast"] and r["normal"]["descarga"]["nombre"] == "x.pptx"
+
+
+# --------------------------------------------------------------------------------------------- archivos REALES de cada formato (Fase 5, auditoría de descarga)
+def _archivos_reales(tmp_path):
+    """Un archivo real de cada formato que la aplicación entrega: machote .xlsx, historial .sqlite, y —con plantillas y LibreOffice— .pptx, .pdf, .json y .png."""
+    import sqlite3
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from backend.app.web import service as S
+    out = {}
+    out["xlsx"] = ("machote.xlsx", Path(S.machote("glp1", "mensual", 2026, 9)).read_bytes())
+    db = tmp_path / "historial.sqlite"
+    con = sqlite3.connect(db)
+    con.execute("create table t(x integer)")
+    con.execute("insert into t values (1)")
+    con.commit()
+    con.close()
+    out["sqlite"] = ("historial.sqlite", db.read_bytes())
+    tpl = ROOT / "templates" / "aetops-mensual" / "1" / "template.pptx"
+    if tpl.exists() and shutil.which("soffice") and shutil.which("pdftoppm"):
+        from backend.app.build import build_aetops
+        from tools.capture_baseline import _run
+        _u, period, _p, _t, res, _ = _run("aetops_mensual_2026-09")
+        b = build_aetops(res, period, tpl, tmp_path / "deck", render=True)
+        out["pptx"] = (b.pptx.name, b.pptx.read_bytes())
+        out["pdf"] = (b.pdf.name, b.pdf.read_bytes())
+        out["png"] = (b.pngs[0].name, b.pngs[0].read_bytes())
+        out["json"] = ("narrative.json", (tmp_path / "deck" / "narrative.json").read_bytes())
+    return out
+
+
+def test_los_archivos_reales_de_cada_formato_se_descargan_con_su_nombre_tipo_y_contenido(navegador, tmp_path):
+    reales = _archivos_reales(tmp_path)
+    assert {"xlsx", "sqlite"} <= set(reales)
+    casos = []
+    for ext, (nombre, datos) in reales.items():
+        ruta = {"xlsx": "/machote", "sqlite": "/history/export"}.get(ext, f"/runs/abc/files/{nombre}")
+        casos.append({"id": ext, "path": ruta, "name": nombre, "b64": b64(datos)})
+    r = ejecutar(navegador, tmp_path, casos)
+    tipos = {"xlsx": "spreadsheetml.sheet", "sqlite": "sqlite3", "pptx": "presentationml.presentation", "pdf": "application/pdf", "json": "application/json", "png": "image/png"}
+    for ext, (nombre, datos) in reales.items():
+        d = r[ext]["descarga"]
+        assert d is not None and d["nombre"] == nombre and d["bytes"] == len(datos), (ext, r[ext])
+        assert tipos[ext] in r[ext]["blobs"][-1]["tipo"], (ext, r[ext]["blobs"])
+        assert Path(d["ruta"]).read_bytes() == datos                                           # idéntico byte a byte
+    import sqlite3
+    c = sqlite3.connect(r["sqlite"]["descarga"]["ruta"])
+    assert c.execute("pragma integrity_check").fetchone() == ("ok",) and c.execute("select x from t").fetchone() == (1,)
+    c.close()
+    import openpyxl
+    assert openpyxl.load_workbook(r["xlsx"]["descarga"]["ruta"]).sheetnames                    # el machote se abre
+    if "pptx" in reales:
+        assert len(Presentation(r["pptx"]["descarga"]["ruta"]).slides) >= 10 and zipfile.is_zipfile(r["pptx"]["descarga"]["ruta"])
+        assert json.loads(Path(r["json"]["descarga"]["ruta"]).read_text(encoding="utf-8"))
+

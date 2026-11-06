@@ -776,11 +776,13 @@ function vGen(box){
     <div class="sub">Se rellena la plantilla original (tablas y textos editables)${S.info.render?", se convierte a PDF y":" y"} se aplica el QA: si el QA no aprueba, la descarga queda bloqueada.
     ${S.info.render?"":"<br><b>QA estructural:</b> esta versión corre 100 % en tu navegador, sin PDF ni vista previa. Revisa el PPTX en PowerPoint (Guardar como PDF) o usa el flujo opcional «PDF en GitHub» del README."}
     ${nEdits?`<br>Incluye ${nEdits} diapositiva(s) con texto editado a mano.`:""}${S.run.discovery?`<br>Incluye la hoja de descubrimiento «${esc(S.run.discovery.titulo)}» (propuesta por IA y validada por ti).`:""}</div>
+    <label class="sub"><input type="checkbox" id="anexoChk" ${S.anexoPpt?"checked":""}> Incluir el anexo «Calidad de datos y supuestos» como última diapositiva (el anexo completo siempre está en el panel de «Validar» y en anexo_calidad.json)</label>
     <div class="row"><button class="btn" id="b4">← Narrativa</button><button class="btn primary" id="go" ${S.busy?"disabled":""}>${S.busy?'<span class="spin" style="display:inline-block;vertical-align:-3px;margin-right:6px"></span>Generando…':res?"Volver a generar":"Generar reporte"}</button></div></div><div id="out"></div>`;
   $("#b4").onclick = () => go(3);
   $("#go").onclick = async () => {
+    S.anexoPpt = !!$("#anexoChk")?.checked;
     S.busy = true; render();
-    try{ S.result = await api(`/runs/${S.run.id}/generate`, {method:"POST"}); S.err = null }catch(e){ S.err = e.message; S.result = null }
+    try{ S.result = await api(`/runs/${S.run.id}/generate`, S.anexoPpt ? {method:"POST", body: JSON.stringify({anexo:true})} : {method:"POST"}); S.err = null }catch(e){ S.err = e.message; S.result = null }
     S.busy = false; render();
   };
   if(res) outView($("#out"), res);

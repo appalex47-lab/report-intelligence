@@ -79,6 +79,7 @@ def test_el_boton_descargar_pptx_entrega_un_pptx_valido_con_el_motor_real(sitio,
     res = json.loads(linea[len("RESULTADO "):])
     assert res["ok"], res
     assert res["boton_habilitado"] and "QA aprobado" in res["banner"]
+    assert "Revisión estructural" in res["banner"] and "revisión visual requiere render" in res["banner"].lower() and "verificado visualmente" not in res["banner"].lower()   # AC-15
     assert res["nombre"].lower().endswith(".pptx")
     assert res["primeros_bytes"] == "504b0304"                                  # firma ZIP «PK\x03\x04»
     assert not [c for c in res["consola"] if c.startswith(("error", "pageerror"))], res["consola"]

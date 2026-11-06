@@ -78,7 +78,7 @@ def verify(m, body, up):
 
 @route("POST", r"/api/runs/(\w+)/generate")
 def generate(m, body, up):
-    return {"status": 200, "json": S.generate(m[1])}
+    return {"status": 200, "json": S.generate(m[1], (body or {}).get("anexo"))}
 
 
 @route("GET", r"/api/runs/(\w+)/result")

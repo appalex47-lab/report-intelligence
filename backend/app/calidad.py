@@ -53,6 +53,14 @@ def _ev(hoja, columna=None, filas=None, **extra) -> dict:
     return d | extra
 
 
+def anexo_activado(solicitud=None) -> bool:
+    """¿Se incluye el anexo como última diapositiva? Una petición expresa manda; si no, el flag `anexo_calidad` de `config/reglas.json` (apagado por omisión: AC-21)."""
+    if solicitud is not None:
+        return bool(solicitud)
+    from . import config
+    return bool(config.cargar("reglas")["flags"].get("anexo_calidad", False))
+
+
 def clasificar_origen(nombre: str | None) -> dict:
     """Origen del libro. Nunca «real»: solo se puede inferir «ejemplo o sintético» por el nombre, o dejarlo «no declarado»."""
     if nombre and NOMBRE_EJEMPLO.search(nombre):

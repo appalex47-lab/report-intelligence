@@ -335,24 +335,28 @@ def history_runs(unit: str | None = None) -> list[dict]:
 OUT_FILES = {"pptx", "pdf"}
 
 
-def generate(run_id: str) -> dict:
+def generate(run_id: str, anexo: bool | None = None) -> dict:
+    """`anexo`: True/False = petición expresa de incluir (o no) el anexo de calidad como última diapositiva; None = lo decide el flag `anexo_calidad`."""
+    from .. import calidad
     st = _load(run_id)
     res = _run_engine(run_id, st)
     out = _dir(run_id) / "out"
     shutil.rmtree(out, ignore_errors=True)
+    anexo_d = _anexo(run_id, st, res, _escenarios(run_id, st, res))
+    en_deck = anexo_d if calidad.anexo_activado(anexo) else None
     try:
         if st["unit"] == "glp1":
             b = build_glp1(res, period_of(st), template_path(st), out, narrative=st["edits"] or None, sources=[_input(run_id)],
                            context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB, render=RENDER,
-                           discovery=st.get("discovery"), ia=_ia_info(run_id, st))
+                           discovery=st.get("discovery"), ia=_ia_info(run_id, st), anexo=en_deck)
             st["generated"] = True
             _save(run_id, st)
             _copy_ia_log(run_id)
-            _escribir_anexo(run_id, st, res, out)
+            _escribir_anexo(anexo_d, out)
             return result_info(run_id, b.qa.passed)
         b = build_aetops(res, period_of(st), template_path(st), out, narrative=st["edits"] or None,
                          context=st["context"] or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st),
-                         render=RENDER, discovery=st.get("discovery"), ia=_ia_info(run_id, st))
+                         render=RENDER, discovery=st.get("discovery"), ia=_ia_info(run_id, st), anexo=en_deck)
     except ReportBlocked as e:
         raise ServiceError(f"No se genera: hay hallazgos bloqueantes ({e}).", 409) from None
     except (DataMissing, TemplateMismatch) as e:
@@ -360,13 +364,12 @@ def generate(run_id: str) -> dict:
     st["generated"] = True
     _save(run_id, st)
     _copy_ia_log(run_id)
-    _escribir_anexo(run_id, st, res, out)
+    _escribir_anexo(anexo_d, out)
     return result_info(run_id, b.qa.passed)
 
 
-def _escribir_anexo(run_id: str, st: dict, res, out: Path) -> None:
-    """Deja `anexo_calidad.json` junto al reporte. Si no se puede construir, no se escribe nada (no se inventa un anexo vacío)."""
-    anexo = _anexo(run_id, st, res, _escenarios(run_id, st, res))
+def _escribir_anexo(anexo: dict, out: Path) -> None:
+    """Deja `anexo_calidad.json` junto al reporte. Si no se pudo construir, no se escribe nada (no se inventa un anexo vacío)."""
     if not anexo.get("no_disponible"):
         (out / "anexo_calidad.json").write_text(json.dumps(anexo, ensure_ascii=False, indent=1), encoding="utf-8")
 

@@ -43,8 +43,6 @@
   "backend/app/validator/rules.py": "1f94e04629aec9f477e3126dc7935a5f879f9d64ad2871ceae96505f7d1929df",
   "backend/app/validator/targets.py": "d434d2628bc94bd04b11925da56e4cbe84c1706a70921d07fd25e20fdd5f93db",
   "backend/app/web/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "backend/app/web/app.py": "1d12b5efb796a84c02b8bf5e174e83441d9984c463c9c23eeba9d96984fac23c",
-  "backend/app/web/bridge.py": "a520fad01b3f439a3a3f3a78ca7f23eb2f4fad5ae56f0adec2857f13e0149348",
   "data/ejemplos/AETOPS_crudo_con_defectos.xlsx": "58c198487bbdbb2612829d52b3438cc0399e57a4e2f995d3fd6cfcf5f6bc4027",
   "data/ejemplos/AETOPS_crudo_ejemplo.xlsx": "3505f61024ac2d421a88503b8ae8b411f2a309e9e0b522e66d14b0484ee8867d",
   "data/ejemplos/GLP1_crudo_con_defectos.xlsx": "a7bd1076bda734046c33381094eb500dcf4ecedb74ed05ec86b2214a98cc23d4",
@@ -70,8 +68,8 @@
    "sha256": "77d966cd7517b05e85496d27a03b61cf2c372ce0d9258f5c7e1c225cf5f705ea"
   },
   "backend/app/build.py": {
-   "motivo": "Fase 5 (RQ-13): re-lectura estructural del PPTX guardado (qa/pptx_export.py), sin poder impedir la generación. Antes — Fase 3A-3: llama a la captura de procedencia tras guardar PPTX y corrida; añade parámetro opcional ia y campo BuildResult.procedencia; no altera la generación del reporte",
-   "sha256": "8966be685f85f9fec3bb9639913a1c587843896926f8329f2bb2f167ae5e5f14"
+   "motivo": "Fase 5 (AC-14, RQ-19): revisión de cifras, fórmulas, unidades y denominadores (qa/cifras.py) y parámetro opcional anexo que agrega la diapositiva final (deck/anexo.py); con anexo=None el PPTX es idéntico. Antes — Fase 5 (RQ-13): re-lectura estructural del PPTX guardado (qa/pptx_export.py), sin poder impedir la generación. Antes — Fase 3A-3: llama a la captura de procedencia tras guardar PPTX y corrida; añade parámetro opcional ia y campo BuildResult.procedencia; no altera la generación del reporte",
+   "sha256": "74c9301f3e427ac7df71b8abf89e74b104434457edfeced7cc134af932cfb675"
   },
   "backend/app/deck/aetops_mensual.py": {
    "motivo": "Corrección QA OVERFLOW_ESTIMATED (tablas con más grupos que la plantilla) y Conclusiones que no caben (patrón de la plantilla)",
@@ -97,13 +95,21 @@
    "motivo": "row_min_heights y row_content_floors (misma corrección)",
    "sha256": "4960e01ccb49112c434b50a03c26142879d4461a4438b8aaa0a1e259455e2fa2"
   },
+  "backend/app/web/app.py": {
+   "motivo": "Fase 5 (RQ-19): parámetro opcional anexo al generar (solicitud expresa de incluir el anexo de calidad como última diapositiva)",
+   "sha256": "b2da387c7b42dd38e39c253970e192ffe7a0f8116c7b4334a628e9fb6ab2b0b7"
+  },
+  "backend/app/web/bridge.py": {
+   "motivo": "Fase 5 (RQ-19): el cuerpo de la petición de generar puede traer anexo=true; sin él decide el flag anexo_calidad (apagado por omisión)",
+   "sha256": "d24f8e0a1c3cfc5cecfe2bd9e4e6c98a733b65d01e5ec41e1b677b18d2c68e90"
+  },
   "backend/app/web/service.py": {
-   "motivo": "Fase 5: anexo de calidad de datos (clave anexo_calidad en el análisis y archivo anexo_calidad.json descargable). Fase 4: añade la clave escenarios_indicador al análisis (solo lectura; el panel falla sin bloquear). Antes — Fase 3A-3: pasa la declaración de uso de IA a la generación y permite descargar procedencia.json y procedencia_error.json",
-   "sha256": "8ed81256db4e942f5c4e13dfd0c4c045c2b90dc08a96317bc97e9a1c261c4d59"
+   "motivo": "Fase 5 (RQ-19): generate(anexo) decide si el anexo va en el PPTX (flag o petición expresa) y siempre deja anexo_calidad.json. Antes — Fase 5: anexo de calidad de datos (clave anexo_calidad en el análisis y archivo anexo_calidad.json descargable). Fase 4: añade la clave escenarios_indicador al análisis (solo lectura; el panel falla sin bloquear). Antes — Fase 3A-3: pasa la declaración de uso de IA a la generación y permite descargar procedencia.json y procedencia_error.json",
+   "sha256": "430ff3ddefc610b4ed1759b16b6589e757d2822d7adcd2e3fcba2b200924629b"
   },
   "frontend/index.html": {
-   "motivo": "Fase 5: panel del anexo de calidad, etiqueta de revisión estructural (AC-15) y descarga robusta (INC-001: nombre y tipo no dependen del motor, validación del contenido). Fase 4: panel de escenarios E1/E2 e IND-01 en el paso Validar (solo se agrega; no cambia cifras ni láminas); avisos del escenario (auditoría independiente). Antes — cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",
-   "sha256": "d4f6c796d9a2700d289df6d5c6c2fda2029c264090d52fe6d1154d0d2003d206"
+   "motivo": "Fase 5 (RQ-19): casilla para incluir el anexo como última diapositiva. Antes — Fase 5: panel del anexo de calidad, etiqueta de revisión estructural (AC-15) y descarga robusta (INC-001: nombre y tipo no dependen del motor, validación del contenido). Fase 4: panel de escenarios E1/E2 e IND-01 en el paso Validar (solo se agrega; no cambia cifras ni láminas); avisos del escenario (auditoría independiente). Antes — cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",
+   "sha256": "2eb3260ad0005d727f982f63569e666289891cf9bd891bed710616847a4d9357"
   },
   "frontend/worker.js": {
    "motivo": "Cambio del usuario (commit 67fd179): nombre de archivo de respaldo",

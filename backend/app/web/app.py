@@ -82,8 +82,8 @@ def discovery_set(rid: str, body: dict = Body(...)):
 
 
 @app.post("/api/runs/{rid}/generate")
-def generate(rid: str):
-    return S.generate(rid)
+def generate(rid: str, anexo: bool | None = None):
+    return S.generate(rid, anexo)
 
 
 @app.get("/api/runs/{rid}/result")
