@@ -97,15 +97,15 @@
   },
   "backend/app/web/app.py": {
    "motivo": "Bloque integral: mismas rutas que el puente (escenarios, plan, vista previa) y parámetro adaptativo en generate Antes — Fase 5 (RQ-19): parámetro opcional anexo al generar (solicitud expresa de incluir el anexo de calidad como última diapositiva)",
-   "sha256": "365fb230d0802378f29cdc10468a23d6ecff38174422edba48d8dccdd59134fb"
+   "sha256": "4881cc323b1c04103b6cb670f7632097af46db2bdc4704cce85cfd9946e04f85"
   },
   "backend/app/web/bridge.py": {
    "motivo": "Bloque integral: rutas de escenarios de reporte, plan de la corrida y vista previa; generate acepta adaptativo Antes — Fase 5 (RQ-19): el cuerpo de la petición de generar puede traer anexo=true; sin él decide el flag anexo_calidad (apagado por omisión)",
-   "sha256": "51751a79f32f60358ba59864ec8c78fa263b6d449449325aea9cd3fe56495a00"
+   "sha256": "03633d62850ad4d7dad29ad4c60956284a6d7b7b2c9e54707f93eec5b6c2ac9a"
   },
   "backend/app/web/service.py": {
    "motivo": "Bloque integral: escenario y plan de la corrida, generate con Plan (diseño adaptativo y QA integral), vigencia por huella de entradas, vista previa, escenarios propios; bloquea la descarga de un reporte desactualizado Antes — Fase 5 (RQ-19): generate(anexo) decide si el anexo va en el PPTX (flag o petición expresa) y siempre deja anexo_calidad.json. Antes — Fase 5: anexo de calidad de datos (clave anexo_calidad en el análisis y archivo anexo_calidad.json descargable). Fase 4: añade la clave escenarios_indicador al análisis (solo lectura; el panel falla sin bloquear). Antes — Fase 3A-3: pasa la declaración de uso de IA a la generación y permite descargar procedencia.json y procedencia_error.json",
-   "sha256": "94c23d602f3ba4e4cf920e139c1f3361bb04aced9a21687fa2d4a0be33a3b1b2"
+   "sha256": "9113d88ead8d3edb9411ebe7699e6019ace257b4da7e1a26614b298b7f7843ec"
   },
   "frontend/index.html": {
    "motivo": "Bloque integral: escenario, etapas del flujo, calidad por severidad con motivo y acción, vista previa navegable y aviso de resultados desactualizados en el paso Generar Antes — Fase 5 (RQ-19): casilla para incluir el anexo como última diapositiva. Antes — Fase 5: panel del anexo de calidad, etiqueta de revisión estructural (AC-15) y descarga robusta (INC-001: nombre y tipo no dependen del motor, validación del contenido). Fase 4: panel de escenarios E1/E2 e IND-01 en el paso Validar (solo se agrega; no cambia cifras ni láminas); avisos del escenario (auditoría independiente). Antes — cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",

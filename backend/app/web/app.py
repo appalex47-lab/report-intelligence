@@ -6,10 +6,11 @@ from pathlib import Path
 from fastapi import Body, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
-from . import service as S
+from . import plan_api, service as S
 
 FRONT = Path(__file__).resolve().parents[3] / "frontend"
 app = FastAPI(title="Report Intelligence", docs_url=None, redoc_url=None)
+app.include_router(plan_api.router)                       # bloque integral: escenarios, plan y vista previa (rutas en plan_api.py)
 
 
 @app.exception_handler(S.ServiceError)
@@ -79,36 +80,6 @@ def ia_discovery_check(rid: str, body: dict = Body(...)):
 @app.put("/api/runs/{rid}/discovery")
 def discovery_set(rid: str, body: dict = Body(...)):
     return S.set_discovery(rid, body)
-
-
-@app.get("/api/escenarios-reporte")
-def escenarios_reporte():
-    return S.escenarios_reporte()
-
-
-@app.put("/api/escenarios-reporte/{eid}")
-def escenario_guardar(eid: str, body: dict = Body(...)):
-    return S.guardar_escenario({**body, "id": eid})
-
-
-@app.delete("/api/escenarios-reporte/{eid}")
-def escenario_borrar(eid: str):
-    return S.borrar_escenario(eid)
-
-
-@app.get("/api/runs/{rid}/plan")
-def plan_get(rid: str):
-    return S.plan_info(rid)
-
-
-@app.put("/api/runs/{rid}/plan")
-def plan_put(rid: str, body: dict = Body(...)):
-    return S.set_plan(rid, body)
-
-
-@app.get("/api/runs/{rid}/preview")
-def preview(rid: str):
-    return S.vista_previa(rid)
 
 
 @app.post("/api/runs/{rid}/generate")

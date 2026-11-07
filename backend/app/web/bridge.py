@@ -11,7 +11,7 @@ import json
 import re
 from pathlib import Path
 
-from . import service as S
+from . import plan_routes, service as S
 
 ROUTES: list[tuple[str, re.Pattern, str]] = []
 
@@ -74,36 +74,6 @@ def narrative(m, body, up):
 def verify(m, body, up):
     b = body or {}
     return {"status": 200, "json": S.verify_text(m[1], [str(t) for t in b.get("texts", [])], b.get("allowed"))}
-
-
-@route("GET", r"/api/escenarios-reporte")
-def escenarios_reporte(m, body, up):
-    return {"status": 200, "json": S.escenarios_reporte()}
-
-
-@route("PUT", r"/api/escenarios-reporte/([a-z0-9][a-z0-9_-]{0,63})")
-def escenario_guardar(m, body, up):
-    return {"status": 200, "json": S.guardar_escenario({**(body or {}), "id": m[1]})}
-
-
-@route("DELETE", r"/api/escenarios-reporte/([a-z0-9][a-z0-9_-]{0,63})")
-def escenario_borrar(m, body, up):
-    return {"status": 200, "json": S.borrar_escenario(m[1])}
-
-
-@route("GET", r"/api/runs/(\w+)/plan")
-def plan_get(m, body, up):
-    return {"status": 200, "json": S.plan_info(m[1])}
-
-
-@route("PUT", r"/api/runs/(\w+)/plan")
-def plan_put(m, body, up):
-    return {"status": 200, "json": S.set_plan(m[1], body or {})}
-
-
-@route("GET", r"/api/runs/(\w+)/preview")
-def preview(m, body, up):
-    return {"status": 200, "json": S.vista_previa(m[1])}
 
 
 @route("POST", r"/api/runs/(\w+)/generate")
@@ -196,4 +166,7 @@ def handle(method: str, path: str, body_json: str = "", upload_path: str = "", u
             except Exception as e:                                     # noqa: BLE001 - al navegador siempre una respuesta legible
                 out = {"status": 500, "error": f"{type(e).__name__}: {e}"}
             return json.dumps(out, ensure_ascii=False, default=str)
+    out = plan_routes.despachar(method, path, body)                   # rutas del bloque integral (escenarios, plan y vista previa)
+    if out is not None:
+        return json.dumps(out, ensure_ascii=False, default=str)
     return json.dumps({"status": 404, "error": "Ruta no encontrada."})

@@ -40,7 +40,7 @@ libro ─▶ motor ─▶ constructores por plantilla ─▶ PPTX guardado
 | `flujo.py` | `Plan` (los dos ganchos), escritura de los archivos del flujo y `vigente()`. |
 | `reglas.py` | Constantes compartidas (letra mínima, umbrales, márgenes). |
 
-Integración: `build.py` (parámetro opcional `plan` y dos ganchos), `web/service.py`, `web/bridge.py`, `web/app.py` (escenarios, plan, vista previa, vigencia), `frontend/index.html` (paso «Generar») y `frontend/worker.js` (persistir los escenarios propios). **Sin `plan`, `build.py` se comporta exactamente como antes.** Seis archivos protegidos se modificaron con reautorización documentada en `tests/regression/protegidos.json` (motivo por archivo).
+Integración: la lógica del bloque que vive en la capa web se trasladó a **módulos nuevos** (no protegidos) para dejar en los archivos protegidos solo los puntos de conexión: `web/plan_service.py` (escenarios propios, plan, vista previa, vigencia, `preparar`/`estado_resultado`/`verificar_descarga`), `web/plan_routes.py` (rutas y despacho del puente del navegador) y `web/plan_api.py` (las mismas rutas como `APIRouter` de FastAPI). Los seis archivos protegidos conservan solo lo indicado en §14.2. **Sin `plan`, `build.py` se comporta exactamente como antes.**
 
 ## 3. Escenarios
 
@@ -103,7 +103,7 @@ Se construye del **mismo PPTX** (no de un modelo paralelo) y se guarda en `previ
 
 ## 9. API
 
-`GET/PUT/DELETE /api/escenarios-reporte[/{id}]`, `GET/PUT /api/runs/{id}/plan`, `GET /api/runs/{id}/preview`, `POST /api/runs/{id}/generate` (ahora acepta `adaptativo`), `GET /api/runs/{id}/result` (agrega `vigente`, `motivos_obsoleto`, `qa_integral`) y descarga de `plan_reporte.json`, `slidespec.json`, `previsualizacion.json`, `qa_integral.json`. Todas las rutas existen en el puente del navegador y en la API.
+`GET/PUT/DELETE /api/escenarios-reporte[/{id}]`, `GET/PUT /api/runs/{id}/plan`, `GET /api/runs/{id}/preview`, `POST /api/runs/{id}/generate` (ahora acepta `adaptativo`), `GET /api/runs/{id}/result` (agrega `vigente`, `motivos_obsoleto`, `qa_integral`) y descarga de `plan_reporte.json`, `slidespec.json`, `previsualizacion.json`, `qa_integral.json`. Todas las rutas existen en el puente del navegador (`plan_routes.py`) y en la API (`plan_api.py`, incluida desde `app.py`); `tests/unit/test_plan_api_fastapi.py` comprueba que ambas responden igual (§10).
 
 ## 10. Pruebas ejecutadas
 
@@ -118,6 +118,17 @@ Se construye del **mismo PPTX** (no de un modelo paralelo) y se guarda en `previ
 | `tests/unit/test_flujo_integral_servicio.py` | 23 | por el puente, con motor, libros y plantillas reales: reporte válido; huella del PPTX = manifiesto = historial; **los 4 decks de referencia idénticos con y sin el plan**; 6 tipos de cambio invalidan resultados (descarga 403, vista previa 409) y regenerar los restablece; borrar el escenario invalida; reportes anteriores no se bloquean; el contexto del escenario llega al PPTX; escenario que exige una diapositiva ausente bloquea y se corrige; CRUD y errores claros; GLP-1 | local (se omite sin plantillas) |
 | `tests/e2e/test_flujo_integral.py` (+ `flujo_integral.mjs`) | 9 | en **Chromium con Pyodide real**: escenario y etapas → generar → vista previa dibujada y navegable → cambio → «Resultados desactualizados» (descarga y vista previa fuera) → regenerar → caso bloqueante (QA rechazado, descarga bloqueada, vista previa disponible) → corrección y reejecución del QA → descarga de un PPTX válido; sin errores de consola | local |
 
+**Pruebas añadidas en la corrección del PR (29 nuevas):**
+
+| Archivo | N.º | Qué demuestra | Dónde corre |
+|---|---|---|---|
+| `tests/unit/test_plan_api_fastapi.py` | 19 | `app.py`: las 6 rutas nuevas están registradas (esquema OpenAPI) y las 17 anteriores siguen; sin rutas duplicadas; `generate` acepta `anexo` y `adaptativo` (valor no booleano → 422; sin libro, el mismo error 400 de siempre); catálogo de 4 perfiles; crear/listar/actualizar/borrar escenario propio; 8 entradas inválidas → 400 con mensaje y sin dejar nada guardado; cuerpo que no es objeto → 422; plan de corrida nueva por perfil, ajustes válidos/ inválidos conservando el plan anterior; corrida inexistente → 404; vista previa sin generar → 404; rutas anteriores sin cambios (la clave `plan` solo se suma); con plantilla real: generar por la API, archivos nuevos descargables, cambio posterior → descarga 403 y vista previa 409 | CI (la prueba con plantilla real se omite con motivo si falta) |
+| `tests/unit/test_worker_persistencia.py` (+ `worker_persistencia.mjs`) | 2 | ejecuta el `worker.js` **real** en Node (`vm`) con IndexedDB, Pyodide y puente simulados: PUT persiste el historial; tras «recargar» se restaura; DELETE persiste; `generate` sigue persistiendo; GET y otras rutas no; un error del puente no persiste; un historial anterior al bloque se restaura intacto; `importHistory` igual que antes. La segunda prueba **quita la línea nueva** y verifica que la prueba falla | CI (se omite sin Node) |
+| `tests/e2e/test_persistencia_escenarios.py` (+ `.mjs`) | 1 | con **Pyodide, SQLite e IndexedDB reales** en Chromium: PUT → recargar → el escenario sigue con su contenido; DELETE → recargar → no reaparece; sin errores de consola | local |
+| `tests/regression/test_motivos_protegidos.py` | 7 | el motivo vigente de cada archivo protegido tocado conserva el rastro de las autorizaciones anteriores (§14.1) | CI |
+
+El simulador del arnés de `worker.js` **no** demuestra el comportamiento de SQLite; eso lo cubre la prueba local con Pyodide real. Las pruebas que dependen de plantillas reales, LibreOffice, Pyodide o navegador **no corren en el CI actual** (`tests.yml` ejecuta `tests/unit`, `tests/regression` y `test_hash_pyodide`); el CI verde no prueba por sí solo que se ejecuten todas las de integración y e2e.
+
 **Mutación** sobre el código del bloque: 13 de 13 defectos detectados (cuerpo largo tomado por título, ajuste que nunca interviene, sin piso de letra, piso no acumulado, ajuste que oculta el aviso, error anterior degradado a advertencia, obligatorias no exigidas, título ausente no es error, vigencia que ignora el PPTX o las entradas, vista previa que no compara textos o acepta cualquier huella, escenario que acepta campos desconocidos).
 
 **Defectos propios hallados y corregidos al probar:** estimador de texto que daba 200 % por ignorar `spAutoFit`, `wrap="none"`, el espacio posterior y la fuente estrecha; comprobación de imágenes que marcaba como dañadas las imágenes de la plantilla sin recurso incrustado (35 falsos ERROR); vista previa que omitía las imágenes dentro de grupos y el contenido alternativo; comparación de formas con `is` (python-pptx crea un objeto por acceso); reducción de letra que se encadenaba en cada pasada; una diapositiva sin título que tomaba su cuerpo por título; observador de tamaño que disparaba tras invalidar la vista previa; hash del PPTX atribuido a la procedencia cuando lo registran el manifiesto y el historial.
@@ -128,10 +139,13 @@ Se construye del **mismo PPTX** (no de un modelo paralelo) y se guarda en `previ
 2. La clasificación del tipo de diapositiva y de las métricas es **heurística** (título y texto): una diapositiva con un título nuevo queda «no clasificada» (INFORMACIÓN) y las métricas no disponibles/estimadas se detectan por palabras clave.
 3. El diseño adaptativo es una **estimación**; en un reporte real puede no coincidir con PowerPoint. El render real solo existe localmente (LibreOffice); en el navegador no hay QA visual.
 4. La vista previa no es un render de PowerPoint (§8).
-5. Las plantillas reales no se versionan: las pruebas de integración con plantillas y de navegador corren solo localmente; en CI corren las sintéticas. Las 35 pruebas `tests/golden` siguen omitidas por falta de archivos reales.
+5. Las plantillas reales no se versionan: las pruebas de integración con plantillas y de navegador corren solo localmente; en CI corren las sintéticas. **El CI actual no demuestra por sí solo que todas las pruebas de integración y e2e se ejecuten.** Las 35 pruebas `tests/golden` siguen omitidas por falta de archivos reales y **no cuentan como aprobadas**.
 6. Con un escenario cuyo orden o tipos obligatorios no correspondan al perfil, el QA lo avisa pero no lo impide.
 7. La verificación en navegadores distintos de Chromium (Firefox, Safari, móviles) y con datos de producción **no se hizo**.
 8. El QA integral de contraste no evalúa colores heredados del tema.
+9. **El diseño adaptativo no cubre completamente gráficas, imágenes ni composición por densidad**: solo avisa si salen del área segura; no recompone la lámina.
+10. **El SlideSpec no permite control individual por diapositiva** (no se reordena, oculta ni edita).
+11. La vista previa es **estructural**, no el render de PowerPoint; **la apertura en PowerPoint no se verificó**.
 
 ## 12. Pendientes históricos y dependencias (sin cambios)
 
@@ -153,5 +167,28 @@ Se construye del **mismo PPTX** (no de un modelo paralelo) y se guarda en `previ
 | 8 | Las pruebas nuevas pasan | **CUMPLIDO** | 125 de 125 en la suite completa |
 | 9 | Las pruebas de regresión pasan o se documentan sus limitaciones | **CUMPLIDO** | 1669 aprobadas, 0 fallidas, 35 omitidas (`tests/golden`, archivos reales ausentes) y línea base 8 de 8 idéntica |
 | 10 | La documentación corresponde al código real | **CUMPLIDO** | Este documento se contrastó con el código y las pruebas; declara sus limitaciones (§11) |
-| 11 | Los archivos protegidos permanecen intactos | **PARCIALMENTE CUMPLIDO** | Intactos: release, etiqueta `app-v1.0.0`, `app.zip`, `APP_VERSION`, Pages, workflows y `docs/fase5/*`. **Se modificaron seis archivos protegidos por integración** (`build.py`, `service.py`, `bridge.py`, `app.py`, `index.html`, `worker.js`) con reautorización documentada con motivo en `protegidos.json`; sin `plan`, `build.py` se comporta igual. Requiere la revisión del usuario |
-| 12 | CI pasa sobre el SHA exacto del PR | **NO VERIFICADO en este documento** | Un documento no puede citar el CI de su propio commit; el resultado va en el PR y en el informe final |
+| 11 | Los archivos protegidos permanecen intactos | **PARCIALMENTE CUMPLIDO** | Intactos: release, etiqueta `app-v1.0.0`, `app.zip`, `APP_VERSION`, Pages, workflows y `docs/fase5/*`. **Se modifican seis archivos protegidos** solo en los puntos de conexión de §14.2; el historial de motivos se recuperó (§14.1). `archivos_protegidos --check` verifica hashes y **no equivale a la autorización del propietario**: la modificación de los seis archivos sigue requiriendo su revisión y aprobación |
+| 12 | CI pasa sobre el SHA exacto del PR | **NO VERIFICADO en este documento** | Un documento no puede citar el CI de su propio commit; el resultado va en el PR y en el informe final. El CI no ejecuta las pruebas con plantillas reales, navegador ni LibreOffice (§10) |
+| 13 | Persistencia de escenarios propios y rutas de `app.py` cubiertas por pruebas automatizadas | **CUMPLIDO** | §10: 19 pruebas de `app.py`, 2 del `worker.js` real (con mutación) en CI y 1 con Pyodide/SQLite/IndexedDB reales (local). Alcance: el arnés de CI simula el motor |
+| 14 | Historial de motivos de autorización íntegro | **CUMPLIDO** | §14.1; 7 pruebas de guarda. Recuperado de `main` sin inventar texto |
+
+## 14. Integridad de los archivos protegidos
+
+### 14.1 Incidente: motivos de autorización sobrescritos y su recuperación
+
+Al registrar la reautorización del bloque se usó `tools/archivos_protegidos.py --write --autorizar ruta=motivo`. Ese comando **reemplaza** el motivo anterior del archivo (mezcla `{**previos, **nuevos}`): los motivos de las fases 3A, 4 y 5 y el del «cambio del usuario, commit 67fd179» de `worker.js` e `index.html` se perdieron en el commit `6d56357` del PR, sin que el PR lo señalara. Se detectó en la revisión complementaria.
+
+**Recuperación (commit `cf24847`):** se compararon, archivo por archivo, el `protegidos.json` de `origin/main` y el del PR. Los 8 archivos autorizados que el bloque no toca eran idénticos. Los 6 afectados recuperaron su texto **verbatim desde `main`**, precedido por el motivo nuevo y separado con «Antes —»; las 13 piezas de historia se trazaron a commits reales (73fe7c4, a5ed0ee, 04ed905, 7f641e7, baeaba9). No se redactó ningún motivo nuevo para lo anterior. La recuperación se hizo editando el JSON directamente, **sin volver a ejecutar `--autorizar`**; los hashes no cambiaron. Después, las re-escrituras de hashes se hicieron con `--write` **sin** `--autorizar` (conserva los motivos; verificado: motivos idénticos antes y después). `tools/archivos_protegidos.py` **no se modificó**. Para que no vuelva a pasar sin tocar la herramienta: `tests/regression/test_motivos_protegidos.py` exige que cada motivo conserve su rastro anterior; y la norma operativa es no usar `--autorizar` sobre un archivo con motivos previos sin copiar antes el texto.
+
+### 14.2 Qué permanece modificado en cada archivo protegido (frente a `main`)
+
+| Archivo | Líneas (+/−) | Permanece | Extraído a módulos nuevos | Inevitable | Riesgo de regresión y pruebas que lo cubren |
+|---|---|---|---|---|---|
+| `build.py` | 10/2 | parámetro `plan=None` y 2 llamadas (`plan.ajustar` tras guardar el PPTX; `plan.revisar` antes del manifiesto) | toda la lógica está en `plan/flujo.py` | los ganchos deben ejecutarse **dentro** de la secuencia (antes del QA/manifiesto/historial) | sin plan es idéntico: línea base 8/8 y 4 decks con/sin plan (`test_flujo_integral_servicio`); `test_build_gate`, `test_procedencia_*` |
+| `service.py` | 17/9 | `plan` en `public`; `generate(…, adaptativo)` que llama `P.preparar` y pasa `plan`/contexto a los constructores; `result_info` mezcla `P.estado_resultado`; lista blanca de archivos y `P.verificar_descarga` | escenarios, plan, vigencia, vista previa, huella de entradas (`plan_service.py`, 194 líneas; antes 191 líneas en `service.py`) | `generate` y `file_path` son los puntos por los que pasa el flujo y la descarga | `test_web`, `test_calidad`, `test_anexo_pptx`, `test_procedencia_servicio`, `test_flujo_integral_servicio`, `test_plan_api_fastapi` |
+| `bridge.py` | 6/2 | importa `plan_routes`; `generate` pasa `adaptativo`; delega rutas no reconocidas a `plan_routes.despachar` antes del 404 | tabla de rutas y manejo de errores (`plan_routes.py`) | el despacho del puente es el único punto de entrada del navegador | `test_bridge`, `test_flujo_integral_servicio` (por el puente), e2e en Chromium |
+| `app.py` | 4/3 | importa `plan_api`; `include_router`; `generate(…, adaptativo)` | las 6 rutas (`plan_api.py`) | el router debe incluirse en la app | `test_plan_api_fastapi` (19), `test_web` |
+| `index.html` | 144/10 | paso «Generar»: escenario, etapas, calidad por severidad, vista previa navegable, aviso de desactualizado | — | la interfaz del flujo vive en este archivo único (sin módulos en el sitio publicado) | `tests/e2e/test_flujo_integral.py` (9), `test_escenarios_panel`, `test_descarga_*` (locales; Chromium) |
+| `worker.js` | 1/1 | persistir el historial también tras PUT/DELETE de escenarios | — | sin esta línea los escenarios propios se pierden al recargar (verificado con Chromium real; la prueba de mutación lo reproduce) | `test_worker_persistencia` (CI) y `test_persistencia_escenarios` (local) |
+
+Estas reducciones **no cambiaron el comportamiento** (se verificó con la regresión y la equivalencia con/sin plan). Frente a la versión anterior del PR, el diff de `service.py` bajó de 191 a 26 líneas, el de `bridge.py` de 33 a 8 y el de `app.py` de 34 a 7.
