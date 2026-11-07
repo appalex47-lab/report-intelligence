@@ -107,7 +107,7 @@ Se construye del **mismo PPTX** (no de un modelo paralelo) y se guarda en `previ
 
 ## 10. Pruebas ejecutadas
 
-**Suite completa local** (Pyodide obligatorio, navegador, LibreOffice) sobre el código final del bloque: **1669 aprobadas, 0 fallidas, 35 omitidas** en 36 min 38 s. Las 35 omitidas son todas de `tests/golden` (8 `test_golden_deck`, 5 `test_golden_glp1`, 8 `test_golden_real_files`, 14 `test_golden_trimestral`; faltan la plantilla Q1 y el Excel Q3 reales): no se declaran aprobadas. Referencia previa: 1500 aprobadas (1669 − 1500 = 169 = 125 de este bloque + 44 de la corrección de `release.yml`, ya integrada en `main`). `capture_baseline --check`: 8 de 8 idéntico. `archivos_protegidos --check`: sin cambios (tras registrar la reautorización de §2).
+**Suite completa local** (Pyodide obligatorio, navegador, LibreOffice) sobre el código final del bloque: **1698 aprobadas, 0 fallidas, 35 omitidas** en 35 min 5 s (con `REPORT_PYODIDE_REQUIRED=1`; tras la corrección del PR: 1669 + 29 pruebas nuevas). Las 35 omitidas son todas de `tests/golden` (8 `test_golden_deck`, 5 `test_golden_glp1`, 8 `test_golden_real_files`, 14 `test_golden_trimestral`; faltan la plantilla Q1 y el Excel Q3 reales): no se declaran aprobadas. Referencia previa: 1500 aprobadas (1698 − 1500 = 198 = 125 del bloque + 29 de la corrección del PR + 44 de la corrección de `release.yml`, ya integrada en `main`). `capture_baseline --check`: 8 de 8 idéntico. `archivos_protegidos --check`: sin cambios (tras registrar la reautorización de §2).
 
 | Archivo (pruebas nuevas) | N.º | Qué demuestra | Dónde corre |
 |---|---|---|---|
@@ -164,8 +164,8 @@ El simulador del arnés de `worker.js` **no** demuestra el comportamiento de SQL
 | 5 | El flujo integral funciona sin inconsistencias | **CUMPLIDO** | 9 pruebas en Chromium con Pyodide real + 23 por el puente: válido, con advertencias, bloqueante, datos incompletos, modificación tras la vista previa, reejecución del QA. Solo Chromium |
 | 6 | La exportación respeta los bloqueos de QA | **CUMPLIDO** | ERROR → `passed=false`, descarga 403, manifiesto e historial lo reflejan; resultados obsoletos → 403 |
 | 7 | El PPTX generado es válido | **CUMPLIDO** | zip íntegro, python-pptx lo abre, número/orden/títulos/tablas/imágenes contra el SlideSpec, descarga real en Chromium. **No verificado en PowerPoint** |
-| 8 | Las pruebas nuevas pasan | **CUMPLIDO** | 125 de 125 en la suite completa |
-| 9 | Las pruebas de regresión pasan o se documentan sus limitaciones | **CUMPLIDO** | 1669 aprobadas, 0 fallidas, 35 omitidas (`tests/golden`, archivos reales ausentes) y línea base 8 de 8 idéntica |
+| 8 | Las pruebas nuevas pasan | **CUMPLIDO** | 154 de 154 (125 del bloque + 29 de la corrección) en la suite completa local |
+| 9 | Las pruebas de regresión pasan o se documentan sus limitaciones | **CUMPLIDO** | 1698 aprobadas, 0 fallidas, 35 omitidas (`tests/golden`, archivos reales ausentes; no cuentan como aprobadas) y línea base 8 de 8 idéntica |
 | 10 | La documentación corresponde al código real | **CUMPLIDO** | Este documento se contrastó con el código y las pruebas; declara sus limitaciones (§11) |
 | 11 | Los archivos protegidos permanecen intactos | **PARCIALMENTE CUMPLIDO** | Intactos: release, etiqueta `app-v1.0.0`, `app.zip`, `APP_VERSION`, Pages, workflows y `docs/fase5/*`. **Se modifican seis archivos protegidos** solo en los puntos de conexión de §14.2; el historial de motivos se recuperó (§14.1). `archivos_protegidos --check` verifica hashes y **no equivale a la autorización del propietario**: la modificación de los seis archivos sigue requiriendo su revisión y aprobación |
 | 12 | CI pasa sobre el SHA exacto del PR | **NO VERIFICADO en este documento** | Un documento no puede citar el CI de su propio commit; el resultado va en el PR y en el informe final. El CI no ejecuta las pruebas con plantillas reales, navegador ni LibreOffice (§10) |
