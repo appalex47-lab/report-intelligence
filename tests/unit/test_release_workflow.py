@@ -14,7 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WF = ROOT / ".github" / "workflows" / "release.yml"
 PINS = {"actions/checkout": "v4", "actions/setup-python": "v5", "actions/upload-artifact": "v4", "actions/download-artifact": "v4"}
-SUBCOMANDOS = {"preparar", "verificar-ci", "etiqueta-libre", "verificar-carpeta", "verificar-release"}
+SUBCOMANDOS = {"preparar", "verificar-ci", "etiqueta-libre", "verificar-carpeta", "verificar-release", "esperar-borrador", "esperar-publicada"}
 PROHIBIDOS = ("--clobber", "release delete", "tag -f", "tag --force", "push --force", "push -f", "--prerelease", "git push", "secrets.", "pull_request_target",
               "continue-on-error", "set +e", "|| true", "2>/dev/null", "eval ", "curl ", "wget ", "--no-verify", "--force")
 
@@ -75,9 +75,14 @@ def problemas_workflow(texto: str) -> list[str]:
     if sum("gh release create" in r for r in _runs(a)) or sum("gh release create" in r for r in _runs(b)) != 1:
         p.append("gh release create solo puede existir una vez y en publicar")
     ib = [_indice(b, x) for x in ("actions/download-artifact", "release_app.py verificar-carpeta", "release_app.py verificar-ci", "release_app.py etiqueta-libre",
-                                 "gh release create", "verificar-release --modo borrador", "draft=false", "verificar-release --modo publicada")]
+                                 "gh release create", "release_app.py esperar-borrador", "verificar-release --modo borrador", "draft=false",
+                                 "release_app.py esperar-publicada", "verificar-release --modo publicada")]
     if any(len(x) != 1 for x in ib) or [x[0] for x in ib] != sorted(x[0] for x in ib):
-        p.append("publicar debe ser: descargar → verificar carpeta → CI → etiqueta libre → borrador → verificar borrador → publicar → verificar publicada")
+        p.append("publicar debe ser: descargar → verificar carpeta → CI → etiqueta libre → borrador → esperar borrador → verificar borrador → publicar → esperar publicada → verificar publicada")
+    # La verificación NO debe volver a depender del listado inmediato (consistencia eventual): ni `select(.tag_name == …)` ni `git/ref/tags` directos.
+    for r in _runs(b):
+        if "select(.tag_name" in r or "git/ref/tags" in r or "git/tags/" in r:
+            p.append("publicar no debe consultar el listado ni la etiqueta sin la espera con reintentos (esperar-borrador / esperar-publicada)")
     # --- ambos
     for nombre, job in (("construir", a), ("publicar", b)):
         for s in _pasos(job):
@@ -215,6 +220,11 @@ MUTACIONES = [
     ("no cancelar la publicación en curso", "cancel-in-progress: false", "cancel-in-progress: true"),
     ("tercer job", "\n  publicar:\n", "\n  extra:\n    runs-on: ubuntu-latest\n    steps: []\n\n  publicar:\n"),
     ("borrar la release", '--notes-file _release/NOTAS.md', '--notes-file _release/NOTAS.md; gh release delete x'),
+    ("volver a consultar el listado sin espera", 'python tools/release_app.py esperar-borrador --repo "$REPO" --tag "$ETIQUETA" --url-file "$RUNNER_TEMP/url_borrador.txt" --out "$RUNNER_TEMP/release.json"',
+     'gh api --paginate "repos/$REPO/releases" --jq \'.[] | select(.tag_name == env.ETIQUETA)\' > "$RUNNER_TEMP/release.json"'),
+    ("quitar la espera de la publicada", 'python tools/release_app.py esperar-publicada', 'python tools/release_app.py verificar-ci'),
+    ("etiqueta sin espera", '--out "$RUNNER_TEMP/release.json" --ref-out "$RUNNER_TEMP/ref.json" --tag-obj-out "$RUNNER_TEMP/tagobj.json"',
+     '--out "$RUNNER_TEMP/release.json" --ref-out "$RUNNER_TEMP/ref.json" --tag-obj-out "$RUNNER_TEMP/tagobj.json"; gh api "repos/$REPO/git/ref/tags/$ETIQUETA" > "$RUNNER_TEMP/ref.json"'),
 ]
 
 
