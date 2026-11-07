@@ -2,6 +2,29 @@
 
 Documento técnico de lo que **quedó implementado** en la rama `claude/bloque-integral-slidespec-adaptativo-qa` (un único PR hacia `main`, sin fusionar). Describe el código real; no declara terminado nada que no tenga evidencia. No modifica los documentos de cierre de la Fase 5 ni su dictamen (`docs/fase5/*` no se tocó).
 
+## 0. Estado del bloque y cambios de comportamiento (D-7)
+
+**Dictamen honesto:** el flujo integral funciona de extremo a extremo para un reporte válido, un reporte con error bloqueante y un reporte desactualizado; sin embargo **seis de los doce criterios de aceptación están solo PARCIALMENTE cumplidos** (1, 2, 3, 4, 5 y 7; ver §13), el de archivos protegidos lo está con autorización limitada del propietario y el de documentación está en reevaluación. El PR está **abierto y sin fusionar**; la decisión de fusionarlo es exclusivamente del propietario.
+
+### Cambios de comportamiento respecto a la versión publicada (D-7)
+
+Estos cambios son intencionales, pero **alteran lo que el usuario experimentaba antes**:
+
+1. **El flujo integral se ejecuta siempre para los reportes nuevos del flujo web.** `service.generate` construye un `Plan` en cada generación (escenario del perfil por omisión); no hay un modo web que lo desactive. (Llamar a `build.build_*` directamente sin `plan` sigue comportándose exactamente como antes.)
+2. **El diseño adaptativo está activado por defecto** (casilla «Diseño adaptativo» marcada). Si todo cabe no cambia el PPTX (los 4 decks de referencia son idénticos con y sin plan); si el estimador detecta desborde, amplía el cuadro o reduce la letra (piso 9 pt) y lo registra en el informe.
+3. **Un error del QA integral bloquea la descarga** del PPTX/PDF (403), igual que un error del QA anterior. Antes del bloque no existían esos controles, de modo que un reporte con, por ejemplo, una diapositiva obligatoria ausente según el escenario podía descargarse.
+4. **Un resultado obsoleto bloquea la descarga.** Si después de generar cambia el libro, las ediciones de narrativa, el contexto, las metas, el descubrimiento, el escenario (o se borra), las opciones o la plantilla, el PPTX anterior ya no se puede descargar (403) y la vista previa no se entrega (409). Antes, un PPTX generado seguía descargable aunque se hubiera editado la narrativa.
+5. **Qué debe hacer el usuario:** pulsar de nuevo **«Volver a generar»** (paso Generar). Eso recalcula el motor, rehace el PPTX, la vista previa y el QA y restablece la descarga. Si solo se quiere volver atrás, restaurar exactamente el estado anterior (mismos contenidos y opciones) también restablece la vigencia sin regenerar (la vigencia se calcula por huella).
+
+### Compatibilidad con reportes generados antes del bloque
+
+Un reporte generado antes del bloque **no tiene** `plan_reporte.json` ni los demás archivos del flujo. El sistema lo trata como «anterior al flujo integrado» (`vigente: null`):
+
+* **Se puede consultar:** `GET /api/runs/{id}` y `/result` responden con todos los campos anteriores (`qa`, `qa_passed`, `pptx`, `trends`…); los campos nuevos valen `null` (`plan`, `qa_integral`) o `null`/`[]` (`vigente`, `motivos_obsoleto`). No se pierde información.
+* **Se puede descargar sin regenerar:** el PPTX, el PDF y los JSON anteriores siguen descargables, **también si el contexto se edita después**: sin huellas guardadas no hay contra qué comparar, y bloquearlo no tendría una razón técnica real.
+* **No queda inutilizable:** la vista previa responde 404 «genera el reporte»; el plan (`GET /plan`) devuelve el escenario del perfil con `generado: false`, de modo que el usuario puede elegir uno y regenerar **si quiere**, pero no está obligado.
+* **Evidencia:** `tests/unit/test_flujo_integral_api_ci.py` (3 pruebas de compatibilidad, **corren en CI**) y `test_flujo_integral_servicio.py::test_un_reporte_generado_antes_del_flujo_integral_no_se_bloquea` (local, con plantillas). Límite: se simula el reporte anterior con un PPTX sintético y los archivos mínimos que genera el flujo anterior; **no se probó con reportes reales generados por la versión publicada 1.0.0**.
+
 ## 1. Punto de partida y decisiones
 
 Antes de programar se inspeccionó el repositorio: **«SlideSpec», «diseño adaptativo» y «previsualización» no están definidos en ninguna especificación ni roadmap del repositorio** (no existe un documento de hoja de ruta). Los únicos «escenarios» de la especificación son los financieros E1/E2 (Fase 4), que ya estaban implementados y no se tocaron. Por eso los requisitos de este bloque son los del prompt de trabajo y, donde la documentación no define algo, se tomó la solución más conservadora y se registró aquí.
@@ -118,6 +141,10 @@ Se construye del **mismo PPTX** (no de un modelo paralelo) y se guarda en `previ
 | `tests/unit/test_flujo_integral_servicio.py` | 23 | por el puente, con motor, libros y plantillas reales: reporte válido; huella del PPTX = manifiesto = historial; **los 4 decks de referencia idénticos con y sin el plan**; 6 tipos de cambio invalidan resultados (descarga 403, vista previa 409) y regenerar los restablece; borrar el escenario invalida; reportes anteriores no se bloquean; el contexto del escenario llega al PPTX; escenario que exige una diapositiva ausente bloquea y se corrige; CRUD y errores claros; GLP-1 | local (se omite sin plantillas) |
 | `tests/e2e/test_flujo_integral.py` (+ `flujo_integral.mjs`) | 9 | en **Chromium con Pyodide real**: escenario y etapas → generar → vista previa dibujada y navegable → cambio → «Resultados desactualizados» (descarga y vista previa fuera) → regenerar → caso bloqueante (QA rechazado, descarga bloqueada, vista previa disponible) → corrección y reejecución del QA → descarga de un PPTX válido; sin errores de consola | local |
 
+**Pruebas añadidas en el cierre condicionado (corren en CI, sin plantillas ni navegador):** `tests/unit/test_flujo_integral_api_ci.py` (11): recorrido por las rutas HTTP con la corrida sembrada con un PPTX sintético y los dos ganchos reales del flujo (`Plan.ajustar` y `Plan.revisar`): resultado válido y vigente con plan, vista previa, QA, descarga de un PPTX que se abre con python-pptx y archivos del flujo; error del QA integral (descarga 403, vista previa y hallazgos con motivo y acción disponibles); cinco tipos de cambio posterior (contexto, metas, adaptativo, ajuste del escenario, borrado del escenario) que dejan el resultado obsoleto (descarga 403, vista previa 409); los archivos de apoyo no se pierden; y tres de compatibilidad con reportes anteriores. Se comprobó por mutación que quitar el bloqueo por vigencia o el `downloadable` hace fallar 5 de ellas. **Alcance honesto:** no generan con una plantilla real; eso lo cubren solo en local `test_flujo_integral_servicio.py` y `tests/e2e/test_flujo_integral.py`.
+
+**Revisión visual reproducible (solo local):** `tests/e2e/test_revision_visual.py` (+ `revision_visual.mjs`, 5 pruebas): Chromium con Pyodide real; mide en escritorio (1280 px) y en pantalla pequeña (390 px) que no hay desborde horizontal, que se ven las seis etapas, el escenario y el botón Generar, que aparecen vista previa, lista de diapositivas y estado de descarga, y que un cambio muestra «Resultados desactualizados» y quita la descarga; guarda 5 capturas. Mide, **no juzga** la estética: ver §15.
+
 **Pruebas añadidas en la corrección del PR (29 nuevas):**
 
 | Archivo | N.º | Qué demuestra | Dónde corre |
@@ -146,6 +173,10 @@ El simulador del arnés de `worker.js` **no** demuestra el comportamiento de SQL
 9. **El diseño adaptativo no cubre completamente gráficas, imágenes ni composición por densidad**: solo avisa si salen del área segura; no recompone la lámina.
 10. **El SlideSpec no permite control individual por diapositiva** (no se reordena, oculta ni edita).
 11. La vista previa es **estructural**, no el render de PowerPoint; **la apertura en PowerPoint no se verificó**.
+12. **La fidelidad de la vista previa no está certificada** en todos los motores ni plantillas: se verificó contra los 4 decks de referencia y con un lector independiente, pero no contra renders de otras plantillas.
+13. El recorrido integral en **navegador** solo existe para AETOPS mensual con la plantilla real y solo en Chromium; GLP-1 se probó por el puente, no en navegador. **Ningún** recorrido en navegador corre en el CI actual (§16).
+14. **Pantalla pequeña:** a 390 px la interfaz no desborda, pero la diapositiva de la vista previa queda muy pequeña (el texto de la diapositiva apenas se lee); se muestra tal cual.
+15. **Observación de interfaz (no se modifica `index.html`):** con resultados desactualizados el recuadro de calidad sigue diciendo «QA aprobado» en verde junto a «descarga bloqueada»; el aviso «Resultados desactualizados» está justo encima y la etapa «Exportación» se muestra en rojo, pero el mensaje combinado puede confundir.
 
 ## 12. Pendientes históricos y dependencias (sin cambios)
 
@@ -155,22 +186,35 @@ El simulador del arnés de `worker.js` **no** demuestra el comportamiento de SQL
 
 ## 13. Criterios de aceptación y evidencia
 
-| # | Criterio | Estado | Evidencia y alcance |
+Referencia: los 12 criterios de §12 del prompt maestro del bloque. Un criterio solo es CUMPLIDO si la capacidad completa está implementada **y** validada; tener pruebas unitarias no basta. «CI» = lo ejecuta el workflow `Pruebas`; «local» = solo en el equipo de desarrollo.
+
+| # | Criterio | Estado | Justificación y evidencia | Limitación pendiente |
+|---|---|---|---|---|
+| 1 | Escenarios y SlideSpec implementados y probados | **PARCIALMENTE CUMPLIDO** | Existe un modelo estructurado de escenario y de SlideSpec (id estable `tipo:sldId`, tipo, título, mensaje, bloques, métricas con estado, densidad, restricciones), con validación; 34 + 19 pruebas (CI) y 23 (local, plantillas reales). El SlideSpec **se deriva del PPTX ya generado** y se usa para validar. | **No hay editor individual de SlideSpec** (ni edición, ocultación o reordenamiento por diapositiva). **La estructura narrativa no se controla desde el SlideSpec antes de la representación:** el orden narrativo, las obligatorias, la profundidad, los indicadores y la conclusión del escenario son solo expectativas del QA (`qa_integral.py`); lo único del escenario que cambia el PPTX es el contexto de negocio. |
+| 2 | Diseño adaptativo sobre distintos tipos y densidades | **PARCIALMENTE CUMPLIDO** | Ajusta **texto** (cuadros autoajustables, ampliación del cuadro, reducción proporcional de letra con piso de 9 pt y 80–85 % del original acumulado) y **tablas**; no-op si todo cabe; avisa (`DISENO_NO_CABE`, `DISENO_SOLAPE`, `DISENO_FUERA_DE_AREA`) cuando no puede corregir. 24 pruebas (CI) + 2 con render real de LibreOffice (local: 57 → 1 palabra fuera de zona). | **No cubre completamente gráficas ni imágenes** (solo informa si se salen del área segura); **no resuelve todos los problemas de composición y densidad** (no recompone la lámina); en los 4 decks de referencia no interviene porque todo cabe; el estimador no está verificado en PowerPoint. |
+| 3 | QA detecta y clasifica los problemas | **PARCIALMENTE CUMPLIDO** | Verificaciones implementadas: estructura (ids, orden, obligatorias, referencias), contenido (títulos, vacíos, métricas sin respaldo, cifras vs motor, conclusiones sin evidencia, indicadores), diseño (avisos del ajuste, contraste con colores explícitos), exportación (correspondencia con el PPTX, integridad, número y orden, recursos gráficos). Clasifica ERROR/ADVERTENCIA/INFORMACIÓN con diapositiva, elemento, descripción, motivo y acción; el QA anterior se incorpora sin degradar severidades. 33 pruebas (CI) y 13/13 mutaciones. | No se comprueban todas las inconsistencias visuales ni semánticas: «distribuciones inconsistentes» solo en títulos; «gráficos o tablas recortados» y «fuera de límites» los cubre el QA anterior; el contraste ignora colores heredados del tema; la clasificación del tipo de diapositiva y de métricas es heurística. |
+| 4 | La previsualización representa el resultado esperado | **PARCIALMENTE CUMPLIDO** | Se construye del **mismo PPTX** y se verifica con un lector independiente (huella, número y orden de diapositivas, textos, tablas, imágenes y gráficas); se actualiza o invalida por huella. Comprueba estructura, contenido y elementos identificables. 24 pruebas (CI), 4 decks reales sin discrepancias (local), 9 e2e (local). | **No equivale a una representación visual idéntica a PowerPoint** (tipografías del navegador, gráficas avanzadas como recuadro, colores del tema por defecto). **No se certificó la fidelidad de renderizado en todos los motores y plantillas.** |
+| 5 | El flujo integral funciona sin inconsistencias | **PARCIALMENTE CUMPLIDO** | Ver desglose abajo. Validado: reporte válido, error bloqueante, resultado obsoleto, regeneración y corrección con reejecución del QA. | Sin recorrido integral validado para **reporte con advertencias**, **datos incompletos** ni **contenido extenso** (solo pruebas unitarias o sintéticas); solo AETOPS mensual en navegador; solo Chromium. |
+| 6 | La exportación respeta los bloqueos de QA | **CUMPLIDO** | ERROR → `passed=false`, descarga 403 en el servidor (no solo en la interfaz), manifiesto e historial lo reflejan; resultado obsoleto → 403. Probado en CI (`test_flujo_integral_api_ci.py`, mutación incluida), por el puente con plantillas reales (local) y en Chromium (local). | Ninguna relevante para el criterio. |
+| 7 | El PPTX generado es válido | **PARCIALMENTE CUMPLIDO** | **Validación estructural:** zip íntegro, python-pptx lo abre, número, orden, títulos, tablas e imágenes contra el SlideSpec (CI con PPTX sintéticos; local con plantillas). **Apertura y descarga en Chromium:** el PPTX descargado se abre con python-pptx y coincide con lo previsualizado (local). | **La apertura real en Microsoft PowerPoint no se ha confirmado.** |
+| 8 | Las pruebas nuevas pasan | **CUMPLIDO** | Ver §10; resultados de la suite completa en §10. | — |
+| 9 | Las pruebas de regresión pasan o sus limitaciones están documentadas | **CUMPLIDO** | Suite local sin fallos; línea base 8 de 8 idéntica; 35 omitidas (`tests/golden`) documentadas y no contadas como aprobadas. | Las omitidas siguen sin ejecutarse. |
+| 10 | La documentación corresponde al código real | **PARCIALMENTE CUMPLIDO (corregida; pendiente de nueva evaluación)** | Se corrigió la matriz (antes marcaba CUMPLIDO los criterios 1, 3, 5 y 7), se añadieron §0 (D-7 y compatibilidad), §15 y §16 y se actualizó la descripción del PR. | Debe reevaluarse por el propietario o en una revisión posterior; hasta entonces no se declara cumplido. |
+| 11 | Los archivos protegidos permanecen intactos | **PARCIALMENTE CUMPLIDO, con autorización limitada del propietario** | Seis archivos protegidos tienen modificaciones (§14.2). El propietario autorizó conservar **exclusivamente** los diffs presentes en el commit `16a658a`; sin ampliarlos ni alterar sus motivos históricos. Intactos: release, etiqueta, `app.zip`, `APP_VERSION`, Pages, workflows y `docs/fase5/*`. | `archivos_protegidos --check` es una comprobación de **integridad (hashes)**, no una prueba de autorización ni de consentimiento. |
+| 12 | CI pasa sobre el SHA exacto del PR | **CUMPLIDO, solo si se confirma en el SHA final** | Se confirma en el informe y en el PR contra el SHA definitivo; un documento no puede citar el CI de su propio commit. | El CI no ejecuta e2e, plantillas reales, LibreOffice ni golden (§16). |
+
+### Desglose del criterio 5 (qué se probó y dónde)
+
+| Caso | CI | Local (plantillas reales) | Navegador (Chromium + Pyodide) |
 |---|---|---|---|
-| 1 | Escenarios y SlideSpec implementados y probados | **CUMPLIDO** | §3–§4; 34 + 23 pruebas. Con la limitación D-1: el SlideSpec se deriva del PPTX y no hay editor por diapositiva |
-| 2 | El diseño adaptativo funciona sobre distintos tipos y densidades | **PARCIALMENTE CUMPLIDO** | Probado en texto corto/extenso, tablas pequeñas/gigantes, cuadros autoajustables y con render real (57 → 1 palabra fuera de zona). **No** adapta gráficas ni imágenes (solo informa si se salen) y no resuelve todo desborde (avisa); estimador no verificado en PowerPoint |
-| 3 | QA detecta y clasifica correctamente los problemas | **CUMPLIDO** | §6; 33 pruebas y 13 de 13 mutaciones. Alcance: «gráficos recortados» y «fuera de límites» los cubre el QA anterior; «distribuciones inconsistentes» solo en títulos; contraste solo con colores explícitos |
-| 4 | La previsualización representa el resultado real esperado | **PARCIALMENTE CUMPLIDO** | Sale del mismo PPTX y se verifica con un lector independiente (4 decks reales sin discrepancias); pero no es un render de PowerPoint (tipografías, gráficas avanzadas como recuadro, colores del tema) |
-| 5 | El flujo integral funciona sin inconsistencias | **CUMPLIDO** | 9 pruebas en Chromium con Pyodide real + 23 por el puente: válido, con advertencias, bloqueante, datos incompletos, modificación tras la vista previa, reejecución del QA. Solo Chromium |
-| 6 | La exportación respeta los bloqueos de QA | **CUMPLIDO** | ERROR → `passed=false`, descarga 403, manifiesto e historial lo reflejan; resultados obsoletos → 403 |
-| 7 | El PPTX generado es válido | **CUMPLIDO** | zip íntegro, python-pptx lo abre, número/orden/títulos/tablas/imágenes contra el SlideSpec, descarga real en Chromium. **No verificado en PowerPoint** |
-| 8 | Las pruebas nuevas pasan | **CUMPLIDO** | 154 de 154 (125 del bloque + 29 de la corrección) en la suite completa local |
-| 9 | Las pruebas de regresión pasan o se documentan sus limitaciones | **CUMPLIDO** | 1698 aprobadas, 0 fallidas, 35 omitidas (`tests/golden`, archivos reales ausentes; no cuentan como aprobadas) y línea base 8 de 8 idéntica |
-| 10 | La documentación corresponde al código real | **CUMPLIDO** | Este documento se contrastó con el código y las pruebas; declara sus limitaciones (§11) |
-| 11 | Los archivos protegidos permanecen intactos | **PARCIALMENTE CUMPLIDO** | Intactos: release, etiqueta `app-v1.0.0`, `app.zip`, `APP_VERSION`, Pages, workflows y `docs/fase5/*`. **Se modifican seis archivos protegidos** solo en los puntos de conexión de §14.2; el historial de motivos se recuperó (§14.1). `archivos_protegidos --check` verifica hashes y **no equivale a la autorización del propietario**: la modificación de los seis archivos sigue requiriendo su revisión y aprobación |
-| 12 | CI pasa sobre el SHA exacto del PR | **NO VERIFICADO en este documento** | Un documento no puede citar el CI de su propio commit; el resultado va en el PR y en el informe final. El CI no ejecuta las pruebas con plantillas reales, navegador ni LibreOffice (§10) |
-| 13 | Persistencia de escenarios propios y rutas de `app.py` cubiertas por pruebas automatizadas | **CUMPLIDO** | §10: 19 pruebas de `app.py`, 2 del `worker.js` real (con mutación) en CI y 1 con Pyodide/SQLite/IndexedDB reales (local). Alcance: el arnés de CI simula el motor |
-| 14 | Historial de motivos de autorización íntegro | **CUMPLIDO** | §14.1; 7 pruebas de guarda. Recuperado de `main` sin inventar texto |
+| Reporte válido (plan, vista previa, QA, descarga) | sí (API con PPTX sintético) | sí (23, por el puente) | sí (9) |
+| Error bloqueante y corrección | sí (API, sintético) | sí | sí |
+| Resultado obsoleto tras un cambio | sí (5 tipos de cambio) | sí (6 tipos) | sí |
+| Reportes anteriores al bloque | sí (3 pruebas) | sí (1) | no |
+| Reporte con advertencias | **no** (solo unidades del QA) | **no** | **no** |
+| Datos incompletos | **no** | **no** | **no** |
+| Contenido extenso | **no** (solo unidades del diseño) | **no** | **no** |
+| GLP-1 | no | sí (por el puente) | **no** |
 
 ## 14. Integridad de los archivos protegidos
 
@@ -192,3 +236,29 @@ Al registrar la reautorización del bloque se usó `tools/archivos_protegidos.py
 | `worker.js` | 1/1 | persistir el historial también tras PUT/DELETE de escenarios | — | sin esta línea los escenarios propios se pierden al recargar (verificado con Chromium real; la prueba de mutación lo reproduce) | `test_worker_persistencia` (CI) y `test_persistencia_escenarios` (local) |
 
 Estas reducciones **no cambiaron el comportamiento** (se verificó con la regresión y la equivalencia con/sin plan). Frente a la versión anterior del PR, el diff de `service.py` bajó de 191 a 26 líneas, el de `bridge.py` de 33 a 8 y el de `app.py` de 34 a 7.
+
+## 15. Revisión visual de la interfaz
+
+**Evidencia reproducible** (local): `tests/e2e/test_revision_visual.py` (§10) recorre el flujo en Chromium con Pyodide real y mide, a 1280 px y a 390 px: sin desborde horizontal, seis etapas visibles, escenario y botón Generar visibles, vista previa y lista de diapositivas tras generar, estado de descarga y aviso de resultados desactualizados. En la ejecución de este cierre las 5 pruebas pasaron y se inspeccionaron las capturas de escritorio y de 390 px. **Eso no certifica el diseño visual:** lo medible por máquina no sustituye la valoración de una persona. No corre en CI.
+
+**Checklist para el propietario** (verificación manual en el sitio, con un libro real):
+
+1. Paso «Generar»: ¿se entiende en qué etapa se está? Las seis etapas (Escenario, Estructura, Diseño adaptativo, Calidad, Vista previa, Exportación) se ven y cambian de estado al generar.
+2. Cambiar de escenario en el selector: el objetivo, el orden y las obligatorias cambian; «Ajustar este reporte» permite editar y «Aplicar ajustes» marca «Ajustado para este reporte».
+3. Guardar como escenario propio, recargar la página, volver a elegirlo y borrarlo: debe persistir y desaparecer.
+4. Generar: aparecen la calidad agrupada por severidad (error/advertencia/información, cada hallazgo con motivo y acción), la vista previa y el botón «Descargar PPTX».
+5. Vista previa: botones ← →, flechas del teclado, lista lateral; los avisos por diapositiva; los botones «← Escenario», «← Metas y contexto», «← Narrativa».
+6. Abrir el PPTX descargado en **PowerPoint** y compararlo con la vista previa (diapositiva por diapositiva): es la verificación que falta.
+7. Cambiar el contexto después de generar: debe aparecer «Resultados desactualizados», la etapa «Exportación» en rojo, la descarga deshabilitada y la vista previa oculta; «Volver a generar» lo restablece.
+8. Provocar un error (p. ej. un escenario propio que exija «conclusiones» en un reporte sin esa diapositiva): la descarga queda bloqueada, la vista previa sigue disponible y el hallazgo dice cómo corregir.
+9. Pantalla pequeña (teléfono o ventana de 390 px): sin desplazamiento horizontal; evaluar si la vista previa es legible (se espera que el texto sea muy pequeño).
+10. Flujo anterior: abrir un reporte generado antes del bloque (historial) y comprobar que se consulta y se descarga sin pedir regenerar.
+11. Observación a decidir: con resultados desactualizados el recuadro dice «QA aprobado» en verde junto a «descarga bloqueada» (§11, punto 15).
+
+## 16. Pruebas de extremo a extremo y CI: lo que falta
+
+* **Qué corre en el CI actual:** `tests/unit`, `tests/regression` y la verificación del hash en Pyodide (`.github/workflows/tests.yml`). Incluye ahora el recorrido por la API con PPTX sintético (`test_flujo_integral_api_ci.py`), las pruebas de `app.py` y el arnés de `worker.js` en Node.
+* **Qué no corre y por qué:**
+  1. El recorrido en navegador (`tests/e2e/test_flujo_integral.py`, `test_persistencia_escenarios.py`, `test_revision_visual.py`) necesita Chromium con Playwright, Pyodide completo y, el primero, las plantillas reales (que **no se versionan**).
+  2. Las pruebas con plantillas reales, con LibreOffice y las 35 `tests/golden` necesitan archivos que no están en el repositorio.
+* **Qué haría falta, y requiere autorización del propietario:** ejecutar en CI el e2e de persistencia (no necesita plantillas) exigiría **modificar `.github/workflows/tests.yml`** (instalar Playwright y Chromium y definir `REPORT_PYODIDE_DIR`). Archivo protegido; **no se modificó ni se intentó autorizar**. Un e2e del flujo completo en CI además requeriría una plantilla de prueba versionada. Hasta entonces el CI verde **no demuestra** que esos recorridos pasen.
