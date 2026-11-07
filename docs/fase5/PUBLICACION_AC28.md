@@ -131,3 +131,13 @@ Realizada por el usuario desde un **dispositivo Android**, con **Chrome**; fecha
 * **Criterio de la especificación de la 3A** (`release.yml` etiqueta `app-vX.Y.Z` y publica `app.zip` con su SHA-256): **cumplido** por la release publicada y su integridad verificada (`CIERRE_FINAL_FASE5.md` §13.3).
 * **Criterio de verificación de la Fase 5** (§7: abrir, revisar la consola sin errores bloqueantes, verificar el commit, generar y descargar el PPTX; «solo pasa a CUMPLIDO con este resultado y con el release publicado»): el release está publicado y los pasos funcionales están aprobados, pero **la consola está NO VERIFICADA** y los pasos 3, 4 y 6 no constan.
 * **Conclusión: AC-28 se conserva como PARCIALMENTE CUMPLIDO.** «Cumplido con observación» no es uno de los estados definidos (CUMPLIDO, PARCIALMENTE CUMPLIDO, NO CUMPLIDO, NO VERIFICABLE, FUERA DEL ALCANCE) y rebajar a posteriori un paso del procedimiento aprobado sería cambiar el criterio. Pasa a CUMPLIDO si ocurre una de dos cosas: (a) se inspecciona la consola en el dispositivo (p. ej. Chrome DevTools remoto desde una computadora) y se reportan los pasos 3, 4 y 6; o (b) **el usuario decide expresamente** dispensar la inspección de consola, y entonces se registra como desviación aceptada por el usuario. Esta sesión no toma esa decisión.
+
+## 10. Cierre formal de la Fase 5 y estado final de AC-28 (2026-11-07)
+Con el PR #29 fusionado (merge `4df15399dce8cde762535d62d626d3e7cec3fde6`), el usuario autorizó el cierre formal de la Fase 5: **FASE 5: COMPLETADA, FUSIONADA Y PUBLICADA, CON OBSERVACIONES DE VERIFICACIÓN EXTERNA** (`CIERRE_FINAL_FASE5.md` §16.3).
+
+**AC-28: PARCIALMENTE CUMPLIDO — sin cambio.** El cierre de la fase no lo eleva a CUMPLIDO ni dispensa ninguna parte del procedimiento del §7:
+* **Aprobado** por el usuario en Android con Chrome: apertura, navegación, generación del PPTX, descarga y apertura correcta del archivo (§9).
+* **Consola de Chrome Android: NO VERIFICADA.**
+* **Pasos 3, 4 y 6: NO REPORTADOS.**
+
+Para pasar a CUMPLIDO sigue valiendo lo del §9.1: inspeccionar la consola y reportar los pasos pendientes, o una dispensa expresa y registrada por el usuario. Mientras tanto, estos puntos quedan como pendiente posterior (`PENDIENTES_POSTERIORES.md` §5), separados del trabajo necesario para terminar la Fase 5.
