@@ -68,8 +68,8 @@
    "sha256": "77d966cd7517b05e85496d27a03b61cf2c372ce0d9258f5c7e1c225cf5f705ea"
   },
   "backend/app/build.py": {
-   "motivo": "Fase 5 (AC-14, RQ-19): revisión de cifras, fórmulas, unidades y denominadores (qa/cifras.py) y parámetro opcional anexo que agrega la diapositiva final (deck/anexo.py); con anexo=None el PPTX es idéntico. Antes — Fase 5 (RQ-13): re-lectura estructural del PPTX guardado (qa/pptx_export.py), sin poder impedir la generación. Antes — Fase 3A-3: llama a la captura de procedencia tras guardar PPTX y corrida; añade parámetro opcional ia y campo BuildResult.procedencia; no altera la generación del reporte",
-   "sha256": "74c9301f3e427ac7df71b8abf89e74b104434457edfeced7cc134af932cfb675"
+   "motivo": "Bloque integral (escenarios y SlideSpec, diseño adaptativo, QA y previsualización): parámetro opcional plan y dos ganchos (ajuste de diseño tras guardar el PPTX y antes del QA/manifiesto/historial; revisión integral antes del manifiesto). Sin plan el comportamiento es idéntico",
+   "sha256": "70ecd3ef549961d2396f5de034ee53f58df90ef3d873276b3939b69912f55d3c"
   },
   "backend/app/deck/aetops_mensual.py": {
    "motivo": "Corrección QA OVERFLOW_ESTIMATED (tablas con más grupos que la plantilla) y Conclusiones que no caben (patrón de la plantilla)",
@@ -96,24 +96,24 @@
    "sha256": "4960e01ccb49112c434b50a03c26142879d4461a4438b8aaa0a1e259455e2fa2"
   },
   "backend/app/web/app.py": {
-   "motivo": "Fase 5 (RQ-19): parámetro opcional anexo al generar (solicitud expresa de incluir el anexo de calidad como última diapositiva)",
-   "sha256": "b2da387c7b42dd38e39c253970e192ffe7a0f8116c7b4334a628e9fb6ab2b0b7"
+   "motivo": "Bloque integral: mismas rutas que el puente (escenarios, plan, vista previa) y parámetro adaptativo en generate",
+   "sha256": "365fb230d0802378f29cdc10468a23d6ecff38174422edba48d8dccdd59134fb"
   },
   "backend/app/web/bridge.py": {
-   "motivo": "Fase 5 (RQ-19): el cuerpo de la petición de generar puede traer anexo=true; sin él decide el flag anexo_calidad (apagado por omisión)",
-   "sha256": "d24f8e0a1c3cfc5cecfe2bd9e4e6c98a733b65d01e5ec41e1b677b18d2c68e90"
+   "motivo": "Bloque integral: rutas de escenarios de reporte, plan de la corrida y vista previa; generate acepta adaptativo",
+   "sha256": "51751a79f32f60358ba59864ec8c78fa263b6d449449325aea9cd3fe56495a00"
   },
   "backend/app/web/service.py": {
-   "motivo": "Fase 5 (RQ-19): generate(anexo) decide si el anexo va en el PPTX (flag o petición expresa) y siempre deja anexo_calidad.json. Antes — Fase 5: anexo de calidad de datos (clave anexo_calidad en el análisis y archivo anexo_calidad.json descargable). Fase 4: añade la clave escenarios_indicador al análisis (solo lectura; el panel falla sin bloquear). Antes — Fase 3A-3: pasa la declaración de uso de IA a la generación y permite descargar procedencia.json y procedencia_error.json",
-   "sha256": "430ff3ddefc610b4ed1759b16b6589e757d2822d7adcd2e3fcba2b200924629b"
+   "motivo": "Bloque integral: escenario y plan de la corrida, generate con Plan (diseño adaptativo y QA integral), vigencia por huella de entradas, vista previa, escenarios propios; bloquea la descarga de un reporte desactualizado",
+   "sha256": "94c23d602f3ba4e4cf920e139c1f3361bb04aced9a21687fa2d4a0be33a3b1b2"
   },
   "frontend/index.html": {
-   "motivo": "Fase 5 (RQ-19): casilla para incluir el anexo como última diapositiva. Antes — Fase 5: panel del anexo de calidad, etiqueta de revisión estructural (AC-15) y descarga robusta (INC-001: nombre y tipo no dependen del motor, validación del contenido). Fase 4: panel de escenarios E1/E2 e IND-01 en el paso Validar (solo se agrega; no cambia cifras ni láminas); avisos del escenario (auditoría independiente). Antes — cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",
-   "sha256": "2eb3260ad0005d727f982f63569e666289891cf9bd891bed710616847a4d9357"
+   "motivo": "Bloque integral: escenario, etapas del flujo, calidad por severidad con motivo y acción, vista previa navegable y aviso de resultados desactualizados en el paso Generar",
+   "sha256": "3244ae9e9b6364f9d23674af1deac387b4a72d201568dc2e1bba2e4f0765ad70"
   },
   "frontend/worker.js": {
-   "motivo": "Cambio del usuario (commit 67fd179): nombre de archivo de respaldo",
-   "sha256": "cc2f689e28bf8d270cc6d3aa3d63921f77f95a08f56ff53a90f0220c39960f17"
+   "motivo": "Bloque integral: persistir el historial al guardar o borrar escenarios propios",
+   "sha256": "ba5183e500538e0454193f03aeaa8599e9ff663bea5b2f4dfe1b88a608c83651"
   },
   "tools/build_site.py": {
    "motivo": "Fase 3A-1: estampado del SHA del commit en backend/app/_build_info.json dentro de app.zip (commit_info, BUILD_INFO) y detección de +dirty sobre todas las rutas que alteran el artefacto (PACKAGED: incluye build_site.py, pages.yml y legacy/); FRONTEND y LEGACY como constantes; sin fechas ni otros cambios en la compilación",

@@ -81,9 +81,39 @@ def discovery_set(rid: str, body: dict = Body(...)):
     return S.set_discovery(rid, body)
 
 
+@app.get("/api/escenarios-reporte")
+def escenarios_reporte():
+    return S.escenarios_reporte()
+
+
+@app.put("/api/escenarios-reporte/{eid}")
+def escenario_guardar(eid: str, body: dict = Body(...)):
+    return S.guardar_escenario({**body, "id": eid})
+
+
+@app.delete("/api/escenarios-reporte/{eid}")
+def escenario_borrar(eid: str):
+    return S.borrar_escenario(eid)
+
+
+@app.get("/api/runs/{rid}/plan")
+def plan_get(rid: str):
+    return S.plan_info(rid)
+
+
+@app.put("/api/runs/{rid}/plan")
+def plan_put(rid: str, body: dict = Body(...)):
+    return S.set_plan(rid, body)
+
+
+@app.get("/api/runs/{rid}/preview")
+def preview(rid: str):
+    return S.vista_previa(rid)
+
+
 @app.post("/api/runs/{rid}/generate")
-def generate(rid: str, anexo: bool | None = None):
-    return S.generate(rid, anexo)
+def generate(rid: str, anexo: bool | None = None, adaptativo: bool | None = None):
+    return S.generate(rid, anexo, adaptativo)
 
 
 @app.get("/api/runs/{rid}/result")

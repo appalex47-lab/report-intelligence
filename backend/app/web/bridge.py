@@ -76,9 +76,40 @@ def verify(m, body, up):
     return {"status": 200, "json": S.verify_text(m[1], [str(t) for t in b.get("texts", [])], b.get("allowed"))}
 
 
+@route("GET", r"/api/escenarios-reporte")
+def escenarios_reporte(m, body, up):
+    return {"status": 200, "json": S.escenarios_reporte()}
+
+
+@route("PUT", r"/api/escenarios-reporte/([a-z0-9][a-z0-9_-]{0,63})")
+def escenario_guardar(m, body, up):
+    return {"status": 200, "json": S.guardar_escenario({**(body or {}), "id": m[1]})}
+
+
+@route("DELETE", r"/api/escenarios-reporte/([a-z0-9][a-z0-9_-]{0,63})")
+def escenario_borrar(m, body, up):
+    return {"status": 200, "json": S.borrar_escenario(m[1])}
+
+
+@route("GET", r"/api/runs/(\w+)/plan")
+def plan_get(m, body, up):
+    return {"status": 200, "json": S.plan_info(m[1])}
+
+
+@route("PUT", r"/api/runs/(\w+)/plan")
+def plan_put(m, body, up):
+    return {"status": 200, "json": S.set_plan(m[1], body or {})}
+
+
+@route("GET", r"/api/runs/(\w+)/preview")
+def preview(m, body, up):
+    return {"status": 200, "json": S.vista_previa(m[1])}
+
+
 @route("POST", r"/api/runs/(\w+)/generate")
 def generate(m, body, up):
-    return {"status": 200, "json": S.generate(m[1], (body or {}).get("anexo"))}
+    b = body or {}
+    return {"status": 200, "json": S.generate(m[1], b.get("anexo"), b.get("adaptativo"))}
 
 
 @route("GET", r"/api/runs/(\w+)/result")
