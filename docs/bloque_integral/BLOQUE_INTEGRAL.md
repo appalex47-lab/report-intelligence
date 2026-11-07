@@ -107,7 +107,20 @@ Se construye del **mismo PPTX** (no de un modelo paralelo) y se guarda en `previ
 
 ## 10. Pruebas ejecutadas
 
-{{PRUEBAS}}
+**Suite completa local** (Pyodide obligatorio, navegador, LibreOffice) sobre el código final del bloque: **1669 aprobadas, 0 fallidas, 35 omitidas** en 36 min 38 s. Las 35 omitidas son todas de `tests/golden` (8 `test_golden_deck`, 5 `test_golden_glp1`, 8 `test_golden_real_files`, 14 `test_golden_trimestral`; faltan la plantilla Q1 y el Excel Q3 reales): no se declaran aprobadas. Referencia previa: 1500 aprobadas (1669 − 1500 = 169 = 125 de este bloque + 44 de la corrección de `release.yml`, ya integrada en `main`). `capture_baseline --check`: 8 de 8 idéntico. `archivos_protegidos --check`: sin cambios (tras registrar la reautorización de §2).
+
+| Archivo (pruebas nuevas) | N.º | Qué demuestra | Dónde corre |
+|---|---|---|---|
+| `tests/unit/test_plan_escenario_slidespec.py` | 34 | catálogo válido; «no definido» sin inventar; 14 validaciones de escenario; escenarios propios (CRUD, no pisan el catálogo, registros dañados); ids estables e independientes de la posición y de títulos repetidos; estados de métrica (real/sin respaldo/estimado/no disponible); densidades; imagen decorativa; invariantes previas a la representación; un cuerpo largo no se toma por título | CI (PPTX sintéticos) |
+| `tests/unit/test_plan_adaptativo_preview.py` | 24 | no-op si todo cabe (ni el archivo cambia); ampliar, reducir proporcional con piso de 9 pt y jerarquía; sin recortar nada y con aviso; tablas pequeñas y gigantes; piso acumulado e idempotencia; cuadros autoajustables y sin ajuste de línea; letra heredada no estimable; modelo de vista previa; correspondencia con el PPTX (archivo alterado, modelo adulterado, orden, número, ilegible); grupos y contenido alternativo; imagen grande | CI |
+| `tests/unit/test_plan_qa_integral.py` | 33 | cada hallazgo con elemento, motivo y acción; estructura, contenido, diseño y exportación; severidades del QA anterior **sin degradar**; ERROR bloquea; correspondencia del archivo final con el SlideSpec; `Plan` y vigencia (PPTX cambiado, entradas cambiadas, archivos faltantes) | CI |
+| `tests/unit/test_plan_adaptativo_render.py` | 2 | con **render real de LibreOffice**: sin ajuste 57 palabras pasan de la nota de abajo; con ajuste 1 (y el sistema sigue avisando) | local (se omite sin LibreOffice) |
+| `tests/unit/test_flujo_integral_servicio.py` | 23 | por el puente, con motor, libros y plantillas reales: reporte válido; huella del PPTX = manifiesto = historial; **los 4 decks de referencia idénticos con y sin el plan**; 6 tipos de cambio invalidan resultados (descarga 403, vista previa 409) y regenerar los restablece; borrar el escenario invalida; reportes anteriores no se bloquean; el contexto del escenario llega al PPTX; escenario que exige una diapositiva ausente bloquea y se corrige; CRUD y errores claros; GLP-1 | local (se omite sin plantillas) |
+| `tests/e2e/test_flujo_integral.py` (+ `flujo_integral.mjs`) | 9 | en **Chromium con Pyodide real**: escenario y etapas → generar → vista previa dibujada y navegable → cambio → «Resultados desactualizados» (descarga y vista previa fuera) → regenerar → caso bloqueante (QA rechazado, descarga bloqueada, vista previa disponible) → corrección y reejecución del QA → descarga de un PPTX válido; sin errores de consola | local |
+
+**Mutación** sobre el código del bloque: 13 de 13 defectos detectados (cuerpo largo tomado por título, ajuste que nunca interviene, sin piso de letra, piso no acumulado, ajuste que oculta el aviso, error anterior degradado a advertencia, obligatorias no exigidas, título ausente no es error, vigencia que ignora el PPTX o las entradas, vista previa que no compara textos o acepta cualquier huella, escenario que acepta campos desconocidos).
+
+**Defectos propios hallados y corregidos al probar:** estimador de texto que daba 200 % por ignorar `spAutoFit`, `wrap="none"`, el espacio posterior y la fuente estrecha; comprobación de imágenes que marcaba como dañadas las imágenes de la plantilla sin recurso incrustado (35 falsos ERROR); vista previa que omitía las imágenes dentro de grupos y el contenido alternativo; comparación de formas con `is` (python-pptx crea un objeto por acceso); reducción de letra que se encadenaba en cada pasada; una diapositiva sin título que tomaba su cuerpo por título; observador de tamaño que disparaba tras invalidar la vista previa; hash del PPTX atribuido a la procedencia cuando lo registran el manifiesto y el historial.
 
 ## 11. Limitaciones conocidas
 
@@ -128,4 +141,17 @@ Se construye del **mismo PPTX** (no de un modelo paralelo) y se guarda en `previ
 
 ## 13. Criterios de aceptación y evidencia
 
-{{MATRIZ}}
+| # | Criterio | Estado | Evidencia y alcance |
+|---|---|---|---|
+| 1 | Escenarios y SlideSpec implementados y probados | **CUMPLIDO** | §3–§4; 34 + 23 pruebas. Con la limitación D-1: el SlideSpec se deriva del PPTX y no hay editor por diapositiva |
+| 2 | El diseño adaptativo funciona sobre distintos tipos y densidades | **PARCIALMENTE CUMPLIDO** | Probado en texto corto/extenso, tablas pequeñas/gigantes, cuadros autoajustables y con render real (57 → 1 palabra fuera de zona). **No** adapta gráficas ni imágenes (solo informa si se salen) y no resuelve todo desborde (avisa); estimador no verificado en PowerPoint |
+| 3 | QA detecta y clasifica correctamente los problemas | **CUMPLIDO** | §6; 33 pruebas y 13 de 13 mutaciones. Alcance: «gráficos recortados» y «fuera de límites» los cubre el QA anterior; «distribuciones inconsistentes» solo en títulos; contraste solo con colores explícitos |
+| 4 | La previsualización representa el resultado real esperado | **PARCIALMENTE CUMPLIDO** | Sale del mismo PPTX y se verifica con un lector independiente (4 decks reales sin discrepancias); pero no es un render de PowerPoint (tipografías, gráficas avanzadas como recuadro, colores del tema) |
+| 5 | El flujo integral funciona sin inconsistencias | **CUMPLIDO** | 9 pruebas en Chromium con Pyodide real + 23 por el puente: válido, con advertencias, bloqueante, datos incompletos, modificación tras la vista previa, reejecución del QA. Solo Chromium |
+| 6 | La exportación respeta los bloqueos de QA | **CUMPLIDO** | ERROR → `passed=false`, descarga 403, manifiesto e historial lo reflejan; resultados obsoletos → 403 |
+| 7 | El PPTX generado es válido | **CUMPLIDO** | zip íntegro, python-pptx lo abre, número/orden/títulos/tablas/imágenes contra el SlideSpec, descarga real en Chromium. **No verificado en PowerPoint** |
+| 8 | Las pruebas nuevas pasan | **CUMPLIDO** | 125 de 125 en la suite completa |
+| 9 | Las pruebas de regresión pasan o se documentan sus limitaciones | **CUMPLIDO** | 1669 aprobadas, 0 fallidas, 35 omitidas (`tests/golden`, archivos reales ausentes) y línea base 8 de 8 idéntica |
+| 10 | La documentación corresponde al código real | **CUMPLIDO** | Este documento se contrastó con el código y las pruebas; declara sus limitaciones (§11) |
+| 11 | Los archivos protegidos permanecen intactos | **PARCIALMENTE CUMPLIDO** | Intactos: release, etiqueta `app-v1.0.0`, `app.zip`, `APP_VERSION`, Pages, workflows y `docs/fase5/*`. **Se modificaron seis archivos protegidos por integración** (`build.py`, `service.py`, `bridge.py`, `app.py`, `index.html`, `worker.js`) con reautorización documentada con motivo en `protegidos.json`; sin `plan`, `build.py` se comporta igual. Requiere la revisión del usuario |
+| 12 | CI pasa sobre el SHA exacto del PR | **NO VERIFICADO en este documento** | Un documento no puede citar el CI de su propio commit; el resultado va en el PR y en el informe final |
