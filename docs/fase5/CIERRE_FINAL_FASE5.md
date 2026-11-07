@@ -142,6 +142,34 @@ Sustituye a la §13.2; los cambios respecto a ella son **Release v1.0.0**, **Int
 | AC-12 | FUERA DEL ALCANCE | ídem |
 | A-3 | FUERA DEL ALCANCE | decisión narrativa posterior; la narrativa protegida no se tocó |
 
+### 13.5 Verificación externa de AC-28 por el usuario (2026-11-06)
+El usuario verificó el sitio desde un dispositivo **Android con Chrome** (fecha 2026-11-06, hora local aproximada de México; sin modelo ni versión registrados). **Aprobado:** la aplicación abre, la navegación funciona, la generación del PPTX funciona, la descarga funciona y el PPTX descargado abre correctamente; no se detectaron problemas funcionales. **NO VERIFICADA:** la consola de Chrome Android (no hay una computadora para DevTools remoto); no es una aprobación ni un error. **No reportados:** el commit del `app.zip` (paso 3), el panel de validación (paso 4) y el anexo activado/desactivado (paso 6). Detalle en `PUBLICACION_AC28.md` §9.
+
+**Evaluación:** AC-28 **se conserva como PARCIALMENTE CUMPLIDO** según el criterio original del §7 (incluye la consola). El criterio de la especificación 3A (release publicada con su SHA-256) sí está cumplido. Pasaría a CUMPLIDO inspeccionando la consola y reportando los pasos pendientes, o si el usuario dispensa expresamente la consola (desviación aceptada, a registrar). No se usa «cumplido con observación» porque no es un estado definido.
+
+### 13.6 Matriz vigente (2026-11-07, tras la verificación externa del usuario)
+Sustituye a la §13.4; el único cambio es la nota de **AC-28** (el estado se conserva). La §13.4 queda como registro histórico.
+
+| Elemento | Estado | Nota |
+|---|---|---|
+| PR #24 | CUMPLIDO | fusionado como `428ecee` con CI en verde sobre el SHA exacto |
+| CI sobre `main` | CUMPLIDO | `Pruebas` #67 (`428ecee`), #72 (`86bc9cc`) y #74 (`f8c80c6`) en success; Pages #21, #23 y #24 en success |
+| Regresión | CUMPLIDO | 1500/0/35 antes de fusionar; tras la corrección de release: unit 1426, regresión 90 (las 35 omitidas son `tests/golden`, faltan archivos reales) |
+| Archivos protegidos | CUMPLIDO | `--check` sin cambios en cada etapa |
+| QA estructural | PARCIALMENTE CUMPLIDO | RQ-13 depende de AC-14 |
+| QA visual | CUMPLIDO | solo local (LibreOffice) |
+| AC-14 | PARCIALMENTE CUMPLIDO | no garantiza el 100 % de errores; observación real GLP-1 |
+| AC-15 | CUMPLIDO | |
+| AC-16 | CUMPLIDO | |
+| AC-21 | CUMPLIDO | 8 de 8 idéntico |
+| AC-28 | PARCIALMENTE CUMPLIDO | verificación externa funcional del usuario (Android, Chrome) **aprobada**; **consola NO VERIFICADA** y pasos 3, 4 y 6 no reportados (`PUBLICACION_AC28.md` §9) |
+| GitHub Pages | CUMPLIDO | desplegado (`success`), `app.zip` con el commit de `main`; verificación funcional con Chromium desde el entorno (con Pyodide y plantilla locales) |
+| Release v1.0.0 | CUMPLIDO | publicada: etiqueta `app-v1.0.0` → `428ecee`, release 437239935, no borrador (§13.3) |
+| Integridad del `app.zip` | CUMPLIDO | SHA-256 coincide con `.sha256` y con GitHub; contenido idéntico al regenerado desde `428ecee` (§13.3) |
+| AC-11 | FUERA DEL ALCANCE | pendiente de la fase de interfaz (`PENDIENTES_POSTERIORES.md`) |
+| AC-12 | FUERA DEL ALCANCE | ídem |
+| A-3 | FUERA DEL ALCANCE | decisión narrativa posterior; la narrativa protegida no se tocó |
+
 ## 14. Pendientes posteriores
 `PENDIENTES_POSTERIORES.md` (AC-11, AC-12, A-3, L-8, AC-28, `deployment_queued`, navegadores adicionales, plantillas anteriores, golden, anexo por omisión, release).
 
@@ -153,3 +181,6 @@ No se validó: el aspecto en PowerPoint, el sitio publicado desde un navegador e
 
 ### 16.1 Dictamen técnico vigente (2026-11-07)
 **FASE 5 FUSIONADA Y PUBLICADA, PENDIENTE DE VERIFICACIÓN EXTERNA.** PR #24, #26, #25 y #27 integrados en `main` (`f8c80c6`) con CI y Pages en verde; la release `app-v1.0.0` está publicada y su integridad verificada (§13.3). **No** se declara «cerrada y verificada» porque AC-28 sigue PARCIALMENTE CUMPLIDO: falta la comprobación del sitio desde un navegador externo real, que debe hacer el usuario (`PUBLICACION_AC28.md` §7). Quedan además las observaciones técnicas 1 y 2 de la §13.3, y AC-11, AC-12 y A-3 siguen pendientes. No se inició la Fase 6.
+
+### 16.2 Dictamen técnico vigente tras la verificación externa (2026-11-07)
+**FASE 5 FUSIONADA Y PUBLICADA, CON VERIFICACIÓN EXTERNA FUNCIONAL REALIZADA POR EL USUARIO; AC-28 PARCIALMENTE CUMPLIDO (consola NO VERIFICADA).** Sustituye a la §16.1 en lo relativo a la verificación externa: ya existe evidencia de una persona usuaria con un navegador real (§13.5). **No** se declara «cerrada y verificada» mientras AC-28 no sea CUMPLIDO por el criterio original; la decisión de cómo cerrar el punto de la consola es del usuario. Siguen pendientes AC-11, AC-12, A-3 y las observaciones de la §13.3. No se inició la Fase 6.
