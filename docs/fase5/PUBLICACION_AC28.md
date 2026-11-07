@@ -81,3 +81,6 @@ Con el sitio publicado desde un `main` que **ya contenga la Fase 5** (esta rama 
 ## 6. Dictamen
 
 **AC-28: NO DEMOSTRADO.** Preparado: configuración verificada, procedimiento exacto y lista de verificaciones externas. Falta: la fusión del #24, la publicación real, la verificación desde un navegador externo y la ejecución de `release.yml` con `publicar=true`.
+
+### Actualización posterior a la fusión (2026-11-06)
+El dictamen anterior es el de antes de fusionar. Tras la fusión del PR #24 (`428ecee`) y con el host de Pages permitido en el entorno, AC-28 pasa a **PARCIALMENTE CUMPLIDO**: despliegue `success`, `app.zip` publicado con `commit` = SHA fusionado y recorrido funcional con Chromium contra el sitio real (con el runtime de Pyodide y la plantilla servidos localmente). Falta la verificación desde un navegador externo y el release publicado (el run 42308811022 falló al verificar el borrador). Detalle y límites en `CIERRE_FINAL_FASE5.md` §12–13.
