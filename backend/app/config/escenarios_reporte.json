@@ -1,0 +1,66 @@
+{
+  "esquema": "escenarios_reporte/1",
+  "nota": "Escenarios de presentación (objetivo, audiencia, orden narrativo…). NO son los escenarios financieros E1/E2 de la Fase 4. Todo lo que la documentación no define queda en null («no definido»): nunca se inventa. Fuentes: docs/OBJETIVO_Y_NARRATIVA.md §1, §4 y §5, y la estructura real de cada plantilla.",
+  "escenarios": [
+    {
+      "id": "aetops-mensual",
+      "nombre": "AETOPS · lectura mensual para la dirección",
+      "perfil": "aetops/mensual",
+      "objetivo": "Dar a la dirección de E-Commerce una lectura mensual de la salud de la venta digital de AETOPS que permita decidir dónde actuar, no solo conocer cifras.",
+      "audiencia": "Dirección comercial / E-Commerce (pendiente de validar: OBJETIVO_Y_NARRATIVA §1).",
+      "contexto_negocio": null,
+      "mensaje_central": null,
+      "profundidad": "ejecutivo",
+      "tipo_analisis": "Variación contra el año anterior (YoY) y el mes anterior (MoM); volumen frente a precio; aporte por canal, línea y categoría; venta negada.",
+      "orden_narrativo": ["resumen_ejecutivo", "panorama", "canales", "lineas", "productos", "categorias", "negados", "conclusiones", "recomendaciones"],
+      "tipos_obligatorios": ["panorama", "conclusiones", "recomendaciones"],
+      "indicadores_relevantes": ["monto", "pacientes", "ticket"],
+      "tipo_conclusion": "acciones_priorizadas"
+    },
+    {
+      "id": "aetops-trimestral",
+      "nombre": "AETOPS · lectura trimestral para la dirección",
+      "perfil": "aetops/trimestral",
+      "objetivo": "Dar a la dirección de E-Commerce una lectura trimestral de la salud de la venta digital de AETOPS que permita decidir dónde actuar, no solo conocer cifras.",
+      "audiencia": "Dirección comercial / E-Commerce (pendiente de validar: OBJETIVO_Y_NARRATIVA §1).",
+      "contexto_negocio": null,
+      "mensaje_central": null,
+      "profundidad": "ejecutivo",
+      "tipo_analisis": "Variación contra el año anterior (YoY) y el trimestre anterior (QoQ); volumen frente a precio; aporte por línea, canal y categoría; venta negada.",
+      "orden_narrativo": ["resumen_ejecutivo", "panorama", "lineas", "canales", "productos", "categorias", "negados", "conclusiones", "recomendaciones"],
+      "tipos_obligatorios": ["panorama", "conclusiones", "recomendaciones"],
+      "indicadores_relevantes": ["monto", "pacientes", "ticket"],
+      "tipo_conclusion": "acciones_priorizadas"
+    },
+    {
+      "id": "glp1-mensual",
+      "nombre": "GLP-1 · lectura mensual",
+      "perfil": "glp1/mensual",
+      "objetivo": null,
+      "audiencia": null,
+      "contexto_negocio": null,
+      "mensaje_central": null,
+      "profundidad": "ejecutivo",
+      "tipo_analisis": null,
+      "orden_narrativo": ["resumen_ejecutivo", "perfil_paciente", "comportamiento_compra", "engagement_digital", "conclusiones", "recomendaciones"],
+      "tipos_obligatorios": ["conclusiones", "recomendaciones"],
+      "indicadores_relevantes": [],
+      "tipo_conclusion": "acciones_priorizadas"
+    },
+    {
+      "id": "glp1-trimestral",
+      "nombre": "GLP-1 · lectura trimestral",
+      "perfil": "glp1/trimestral",
+      "objetivo": null,
+      "audiencia": null,
+      "contexto_negocio": null,
+      "mensaje_central": null,
+      "profundidad": "ejecutivo",
+      "tipo_analisis": null,
+      "orden_narrativo": ["resumen_ejecutivo", "perfil_paciente", "comportamiento_compra", "engagement_digital", "conclusiones", "recomendaciones"],
+      "tipos_obligatorios": ["conclusiones", "recomendaciones"],
+      "indicadores_relevantes": [],
+      "tipo_conclusion": "acciones_priorizadas"
+    }
+  ]
+}

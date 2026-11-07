@@ -93,7 +93,7 @@ async function handle(m) {
   const out = JSON.parse(bridge.handle(m.method, m.path, m.body ? JSON.stringify(m.body) : "", upPath, upName));
   if (upPath) { try { pyodide.FS.unlink(upPath); } catch { /* ya no está */ } }
   if (out.error) return { ok: false, status: out.status, error: out.error };
-  if (m.method === "POST" && /\/(generate)$/.test(m.path)) await persist();
+  if ((m.method === "POST" && /\/(generate)$/.test(m.path)) || (/^\/api\/escenarios-reporte\//.test(m.path) && (m.method === "PUT" || m.method === "DELETE"))) await persist();   // los escenarios propios viven en el historial
   if (m.method === "POST" && m.path.startsWith("/api/templates/")) {
     const key = m.path.split("/").pop();
     await idbPut("tpl:" + key, pyodide.FS.readFile(`/templates/${key}/1/template.pptx`));

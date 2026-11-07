@@ -6,10 +6,11 @@ from pathlib import Path
 from fastapi import Body, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
-from . import service as S
+from . import plan_api, service as S
 
 FRONT = Path(__file__).resolve().parents[3] / "frontend"
 app = FastAPI(title="Report Intelligence", docs_url=None, redoc_url=None)
+app.include_router(plan_api.router)                       # bloque integral: escenarios, plan y vista previa (rutas en plan_api.py)
 
 
 @app.exception_handler(S.ServiceError)
@@ -82,8 +83,8 @@ def discovery_set(rid: str, body: dict = Body(...)):
 
 
 @app.post("/api/runs/{rid}/generate")
-def generate(rid: str, anexo: bool | None = None):
-    return S.generate(rid, anexo)
+def generate(rid: str, anexo: bool | None = None, adaptativo: bool | None = None):
+    return S.generate(rid, anexo, adaptativo)
 
 
 @app.get("/api/runs/{rid}/result")

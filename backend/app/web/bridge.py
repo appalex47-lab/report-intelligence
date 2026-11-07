@@ -11,7 +11,7 @@ import json
 import re
 from pathlib import Path
 
-from . import service as S
+from . import plan_routes, service as S
 
 ROUTES: list[tuple[str, re.Pattern, str]] = []
 
@@ -78,7 +78,8 @@ def verify(m, body, up):
 
 @route("POST", r"/api/runs/(\w+)/generate")
 def generate(m, body, up):
-    return {"status": 200, "json": S.generate(m[1], (body or {}).get("anexo"))}
+    b = body or {}
+    return {"status": 200, "json": S.generate(m[1], b.get("anexo"), b.get("adaptativo"))}
 
 
 @route("GET", r"/api/runs/(\w+)/result")
@@ -165,4 +166,7 @@ def handle(method: str, path: str, body_json: str = "", upload_path: str = "", u
             except Exception as e:                                     # noqa: BLE001 - al navegador siempre una respuesta legible
                 out = {"status": 500, "error": f"{type(e).__name__}: {e}"}
             return json.dumps(out, ensure_ascii=False, default=str)
+    out = plan_routes.despachar(method, path, body)                   # rutas del bloque integral (escenarios, plan y vista previa)
+    if out is not None:
+        return json.dumps(out, ensure_ascii=False, default=str)
     return json.dumps({"status": 404, "error": "Ruta no encontrada."})
