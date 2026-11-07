@@ -104,3 +104,30 @@ AC-28 solo pasa a CUMPLIDO con este resultado **y** con el release publicado (§
 La release `app-v1.0.0` ya está **publicada** (id 437239935, etiqueta → `428eceeef3e776286e1ec8053ef3cffc0bd9caa9`, `app.zip` SHA-256 `671a02b92ffde5a9bf4e3c56e0f9a19b491ddf68799092b9a0236119abdbc9c1`, verificado contra `app.zip.sha256`). Detalle, origen (reintento del run #2 con el `release.yml` anterior) e integridad en `CIERRE_FINAL_FASE5.md` §13.3. Con esto, los puntos 4 y 5 del §5 («release publicado y comprobado») quedan **resueltos**; no se debe ejecutar de nuevo `publicar=true` para `1.0.0` (la etiqueta existe y el control anti-duplicados lo rechazará).
 
 **AC-28 sigue PARCIALMENTE CUMPLIDO y pendiente de la verificación externa del usuario (§7).** Para el paso 3 del §7: el `app.zip` que sirve Pages cita el commit de `main` vigente al desplegar (`f8c80c6c3d2d6935c0d1649c1cabc9581394f91d` o posterior), mientras que el `app.zip` de la release cita `428eceeef3e776286e1ec8053ef3cffc0bd9caa9`; ambos tienen el mismo código empaquetado y solo difiere `_build_info.json`. Ver la observación técnica 1 de la §13.3.
+
+## 9. Resultado de la verificación externa del usuario (2026-11-06)
+Realizada por el usuario desde un **dispositivo Android**, con **Chrome**; fecha **2026-11-06, hora local aproximada de México** (la hora exacta no se registró). **No se registraron** el modelo del dispositivo ni la versión del navegador, y no se inventan. Los resultados los confirma el usuario; esta sesión no los observó.
+
+| Paso del §7 | Resultado | Nota |
+|---|---|---|
+| 1. Abrir el sitio | **APROBADO** | «La aplicación abre correctamente desde GitHub Pages» |
+| (navegación) | **APROBADO** | «La navegación funciona correctamente» |
+| 2. Consola del navegador | **NO VERIFICADA** | no se pudo inspeccionar la consola de Chrome Android: no hay una computadora para usar Chrome DevTools remoto. No es una aprobación ni un error |
+| 3. Commit del `app.zip` publicado | **NO REPORTADO** | no consta que se ejecutara |
+| 4. Validar y ver el panel de escenarios/anexo | **NO REPORTADO por separado** | la generación del reporte (siguiente fila) funcionó, pero no se confirmó el panel de forma específica |
+| 5. Generar el reporte PPTX | **APROBADO** | «La generación del reporte PPTX funciona» |
+| 5. Descargar el PPTX | **APROBADO** | «La descarga del PPTX funciona» |
+| 5. Abrir el PPTX descargado | **APROBADO** | «El archivo PPTX descargado abre correctamente» (no se informaron el nombre del archivo, el número de diapositivas ni el texto del banner) |
+| 6. Anexo de calidad activado/desactivado | **NO REPORTADO** | |
+| 7. Registro | parcial | fecha y hora aproximada, plataforma (Android) y navegador (Chrome); sin modelo ni versión |
+
+«No se detectaron problemas funcionales durante estas pruebas» (usuario). **Distinción que debe mantenerse:** las pruebas **funcionales** de los pasos 1 y 5 están aprobadas; la **inspección de la consola** (paso 2) no se realizó y permanece **NO VERIFICADA**.
+
+**Build probado:** no se registró qué commit tenía desplegado Pages durante la prueba (se redespliega con cada push a `main`). Todos los commits de `main` desde `428ecee` hasta `6ea53b9` solo cambian archivos que no forman parte del paquete (workflow de release, `tools/release_app.py`, pruebas y documentación; verificado con `git diff --name-only`), de modo que el código de la aplicación probada es el mismo, con independencia del despliegue concreto.
+
+**Distinguir esta prueba de las automatizadas:** es la primera prueba de una persona usuaria con un navegador real (§2 y §8 solo tenían Chromium automatizado con Pyodide y plantilla locales). Aporta evidencia sobre Pyodide desde el CDN real y la descarga en un navegador móvil, pero no sustituye a los pasos no reportados.
+
+### 9.1 Evaluación del estado de AC-28
+* **Criterio de la especificación de la 3A** (`release.yml` etiqueta `app-vX.Y.Z` y publica `app.zip` con su SHA-256): **cumplido** por la release publicada y su integridad verificada (`CIERRE_FINAL_FASE5.md` §13.3).
+* **Criterio de verificación de la Fase 5** (§7: abrir, revisar la consola sin errores bloqueantes, verificar el commit, generar y descargar el PPTX; «solo pasa a CUMPLIDO con este resultado y con el release publicado»): el release está publicado y los pasos funcionales están aprobados, pero **la consola está NO VERIFICADA** y los pasos 3, 4 y 6 no constan.
+* **Conclusión: AC-28 se conserva como PARCIALMENTE CUMPLIDO.** «Cumplido con observación» no es uno de los estados definidos (CUMPLIDO, PARCIALMENTE CUMPLIDO, NO CUMPLIDO, NO VERIFICABLE, FUERA DEL ALCANCE) y rebajar a posteriori un paso del procedimiento aprobado sería cambiar el criterio. Pasa a CUMPLIDO si ocurre una de dos cosas: (a) se inspecciona la consola en el dispositivo (p. ej. Chrome DevTools remoto desde una computadora) y se reportan los pasos 3, 4 y 6; o (b) **el usuario decide expresamente** dispensar la inspección de consola, y entonces se registra como desviación aceptada por el usuario. Esta sesión no toma esa decisión.
