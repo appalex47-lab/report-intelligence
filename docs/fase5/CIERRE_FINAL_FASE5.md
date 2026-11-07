@@ -184,3 +184,33 @@ No se validó: el aspecto en PowerPoint, el sitio publicado desde un navegador e
 
 ### 16.2 Dictamen técnico vigente tras la verificación externa (2026-11-07)
 **FASE 5 FUSIONADA Y PUBLICADA, CON VERIFICACIÓN EXTERNA FUNCIONAL REALIZADA POR EL USUARIO; AC-28 PARCIALMENTE CUMPLIDO (consola NO VERIFICADA).** Sustituye a la §16.1 en lo relativo a la verificación externa: ya existe evidencia de una persona usuaria con un navegador real (§13.5). **No** se declara «cerrada y verificada» mientras AC-28 no sea CUMPLIDO por el criterio original; la decisión de cómo cerrar el punto de la consola es del usuario. Siguen pendientes AC-11, AC-12, A-3 y las observaciones de la §13.3. No se inició la Fase 6.
+
+### 16.3 Dictamen final de la Fase 5 (cierre formal, 2026-11-07)
+**FASE 5: COMPLETADA, FUSIONADA Y PUBLICADA, CON OBSERVACIONES DE VERIFICACIÓN EXTERNA.** Sustituye a las §16.1 y §16.2 como dictamen vigente; ambas se conservan como registro histórico. El cierre formal lo **autoriza expresamente el usuario** el 2026-11-07, una vez fusionado el PR [#29](https://github.com/appalex47-lab/report-intelligence/pull/29) (merge `4df15399dce8cde762535d62d626d3e7cec3fde6`).
+
+**Qué se afirma:** el trabajo de la Fase 5 está completo, integrado en `main` con CI en verde, y publicado (Pages desplegado y release `app-v1.0.0` publicada con su integridad verificada, §13.3). La aplicación se probó en un navegador Android real (Chrome) y el usuario confirmó: apertura, navegación, generación del reporte PPTX, descarga del archivo y apertura correcta del PPTX descargado, sin problemas funcionales (§13.5).
+
+**Qué NO se afirma (observaciones de verificación externa, sin cambio de estado):**
+* **AC-28: PARCIALMENTE CUMPLIDO.** No pasa a CUMPLIDO y el cierre de la fase no dispensa ninguno de los pasos pendientes.
+* **Consola de Chrome Android: NO VERIFICADA** (ni aprobada ni error).
+* **Pasos 3, 4 y 6 del procedimiento de AC-28: NO REPORTADOS** (commit del `app.zip`, panel de validación y anexo activado/desactivado).
+* No se registraron el modelo del dispositivo ni la versión del navegador.
+
+Estas limitaciones no invalidan las pruebas funcionales que sí se realizaron.
+
+## 17. Separación entre el cierre de la Fase 5 y los pendientes posteriores
+**Trabajo necesario para declarar terminada la Fase 5: concluido** (PR #24, #26, #25, #27, #28 y #29 fusionados; CI y Pages en verde; release publicada e íntegra; documentación de cierre coherente).
+
+**Pendientes posteriores que permanecen ABIERTOS** (no se marcan como resueltos; detalle, causa, acción y evidencia en `PENDIENTES_POSTERIORES.md`):
+
+| Pendiente | Estado |
+|---|---|
+| AC-11 (estados de reproducibilidad en la interfaz) | NO CUMPLIDO · FUERA DEL ALCANCE de la Fase 5; fase de interfaz por definir |
+| AC-12 (reportes previos como legado en la interfaz) | NO CUMPLIDO · FUERA DEL ALCANCE de la Fase 5; fase de interfaz por definir |
+| A-3 (narrativa protegida «Mounjaro (74 %, $9.20 M)» sin base declarada) | decisión narrativa posterior pendiente; no se tocó la narrativa |
+| Versionado de la release (fija `428ecee`; Pages registra `main` vigente) | decisión del usuario pendiente |
+| Primera publicación real con el `release.yml` corregido (PR #26) | sin ejercitar en real |
+| AC-28: consola de Chrome Android y pasos 3, 4 y 6 | NO VERIFICADA / NO REPORTADOS; AC-28 PARCIALMENTE CUMPLIDO |
+| Firefox, Safari y WebViews; causa raíz de `data.htm`; pruebas `golden` (35 omitidas); plantillas de versiones anteriores | abiertos (ver `PENDIENTES_POSTERIORES.md` §5) |
+
+No se inició ninguna fase posterior (escenarios y SlideSpec, diseño adaptativo, QA y previsualización ni la siguiente fase general); requieren autorización expresa.

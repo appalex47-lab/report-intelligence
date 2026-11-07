@@ -1,6 +1,6 @@
 # Pendientes que pasan a fases posteriores (registro formal)
 
-Estado al 2026-11-06. Este documento **no cierra ni cumple** ningún requisito: los formaliza para que no desaparezcan de la matriz de trazabilidad. Cada «propuesta» se deriva de textos ya aprobados (`ESPECIFICACION_FASE3A_PROCEDENCIA.md` §12.1, `ESPECIFICACION_FASE1…FINAL.md` §5.3) y se marca como tal; no es un requisito nuevo.
+Estado al 2026-11-07, tras el cierre formal de la Fase 5 (`CIERRE_FINAL_FASE5.md` §16.3 y §17). **Todo lo de este documento permanece ABIERTO y separado del trabajo necesario para terminar la Fase 5, que está concluido; ningún pendiente se marca como resuelto por ese cierre.** Este documento **no cierra ni cumple** ningún requisito: los formaliza para que no desaparezcan de la matriz de trazabilidad. Cada «propuesta» se deriva de textos ya aprobados (`ESPECIFICACION_FASE3A_PROCEDENCIA.md` §12.1, `ESPECIFICACION_FASE1…FINAL.md` §5.3) y se marca como tal; no es un requisito nuevo.
 
 ## 1. AC-11 · estados de reproducibilidad visibles en la interfaz — NO CUMPLIDO
 
@@ -42,7 +42,7 @@ Decisión del usuario: **no** incorporar todavía el resumen del anexo de calida
 
 | Pendiente | Prioridad | Impacto | Causa | Fase | Acción | Evidencia necesaria |
 |---|---|---|---|---|---|---|
-| AC-28: consola del navegador y pasos no reportados de la verificación externa | media | la consola de Chrome Android está NO VERIFICADA y los pasos 3 (commit del `app.zip`), 4 (panel) y 6 (anexo) no constan; AC-28 sigue PARCIALMENTE CUMPLIDO | el usuario verificó desde Android (2026-11-06) y no dispone de una computadora para Chrome DevTools remoto | 5 (cierre) | inspeccionar la consola con DevTools remoto y reportar los pasos 3, 4 y 6; **o** dispensa expresa del usuario de la consola (desviación aceptada, a registrar) | consola sin errores bloqueantes, o decisión del usuario registrada (`PUBLICACION_AC28.md` §9) |
+| AC-28: consola del navegador y pasos no reportados de la verificación externa | media | la consola de Chrome Android está NO VERIFICADA y los pasos 3 (commit del `app.zip`), 4 (panel) y 6 (anexo) no constan; AC-28 sigue PARCIALMENTE CUMPLIDO | el usuario verificó desde Android (2026-11-06) y no dispone de una computadora para Chrome DevTools remoto | posterior (observación de verificación externa de la Fase 5) | inspeccionar la consola con DevTools remoto y reportar los pasos 3, 4 y 6; **o** dispensa expresa del usuario de la consola (desviación aceptada, a registrar) | consola sin errores bloqueantes, o decisión del usuario registrada (`PUBLICACION_AC28.md` §9) |
 | Atascos de `deploy-pages` en `deployment_queued` | media | publicaciones que requieren reintento | lado de GitHub; la concurrencia no se demuestra causal | por definir | si se repite, valorar `cancel-in-progress: false` con nueva evidencia | logs de nuevos casos |
 | Descarga `data.htm`: causa raíz y navegadores adicionales | baja | riesgo residual en Firefox, Safari y WebViews | no reproducida; el entorno solo trae Chromium | 5 / posterior | repetir `test_descarga_regresion.py` en Firefox/WebKit y probar a mano en un WebView | ejecución real por navegador |
 | Plantillas de versiones anteriores | baja | compatibilidad NO VERIFICABLE | solo existe la versión 1 de la plantilla | posterior | probar cuando exista otra versión | plantilla real anterior |
