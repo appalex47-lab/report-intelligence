@@ -68,6 +68,37 @@ Para poder comprobarlo se permitió el host `appalex47-lab.github.io` en la red 
 * No se forzó ni se publicó por otra vía. El borrador bloquea un nuevo intento (`etiqueta-libre` incluye borradores); el borrado fue denegado primero por el clasificador de permisos y, tras la autorización expresa del usuario, por la propia API (`HTTP 403: Creating, editing, or deleting releases is not permitted for this session type`). No se eludió. Queda pendiente de eliminarse desde fuera de esta sesión (interfaz de GitHub).
 * **Qué falta:** (a) eliminar el borrador 437146660; (b) corregir `release.yml` con una espera/reintento tras crear el borrador (PR propio, ver el PR de corrección de `release.yml`); (c) volver a ejecutar `publicar=true`. Mientras tanto el release **no está publicado**.
 
+### 13.1 Corrección de `release.yml` y estado posterior (2026-11-06/07)
+Se conserva lo anterior como evidencia histórica. Después:
+* **PR de corrección [#26](https://github.com/appalex47-lab/report-intelligence/pull/26)** (`release.yml` + `tools/release_app.py` + pruebas): el borrador se identifica por la URL que imprimió `gh release create`, se lee por su identificador y se reintenta con espera progresiva (2, 4, 8, 16 s…; máximo 90 s) solo ante retraso de propagación; un defecto real (duplicados, otra release, assets inesperados, estado erróneo) falla de inmediato. Lo mismo para la release publicada y su etiqueta. Se conservan todos los controles (ensayo, CI del SHA exacto, etiqueta libre, SHA-256, tamaños, zip, permisos). Pruebas: 44 nuevas (41 + 3 mutaciones del workflow), mutación de la herramienta 7 de 7 detectadas, unit 1426 y regresión 90 aprobadas. CI `Pruebas` #69 en success sobre `187e59b4b26cd9e5ebc37d0643dc0357e778e933`. **Fusionado** como `a5402838324af7dbdde86bc04fb108062ed4d5b2`.
+* **PR documental [#25](https://github.com/appalex47-lab/report-intelligence/pull/25)**: revisado (se corrigieron tres afirmaciones: la causa del fallo pasó de «condición de carrera» a «consistente con consistencia eventual», el alcance de la verificación del sitio y la causa del bloqueo del borrado); CI `Pruebas` #70 en success sobre `0da6c935854f3d636f5877e5de8f6b87e5096c46`. **Fusionado** como `86bc9cc2a4d3355b6ef0fff435c001fc0c166d36`.
+* **`main` = `86bc9cc`**: `Pruebas` #72 en success y `Publicar en GitHub Pages` #23 en success.
+* **Ensayo tras la corrección** (`publicar=false`, [run 42319718449](https://github.com/appalex47-lab/report-intelligence/actions/runs/42319718449)): **success**; no creó etiquetas, borradores ni releases (sigue habiendo una sola release, el borrador 437146660, y 0 etiquetas).
+* **Borrador residual 437146660: NO eliminado.** La API respondió `HTTP 403: Creating, editing, or deleting releases is not permitted for this session type` incluso con la autorización expresa del usuario; no se eludió (ni vía otro workflow). Que el ensayo pasara con el borrador presente es coherente con que el job `construir` usa un token `contents: read` y GitHub no lista borradores con él (**inferencia, no verificada**); el job `publicar` (escritura) repite la comprobación de etiqueta libre y debería rechazarlo.
+* **`publicar=true` NO se ejecutó**: la precondición «no queda un borrador residual» no se cumple. **El release `app-v1.0.0` no está publicado**, no existe la etiqueta y no hay artefactos publicados que verificar. La verificación de integridad hecha es sobre el **borrador** (SHA-256 `671a02b92ffde5a9bf4e3c56e0f9a19b491ddf68799092b9a0236119abdbc9c1` coincide con su `.sha256`; contenido idéntico al `app.zip` de Pages: 83 entradas, 0 diferencias).
+* **Para terminar el release (acciones fuera de esta sesión):** (1) eliminar el borrador en GitHub (Releases → Drafts → «Aplicación 1.0.0» → Delete); (2) ejecutar *Release de la aplicación* con `publicar` desmarcado y, si termina en success, marcado; (3) comprobar etiqueta, release no borrador, `app.zip` y `.sha256` descargados (`sha256sum -c app.zip.sha256`) y que `_build_info.json` cite el commit etiquetado. La rama de publicación corregida **aún no se ha ejecutado de verdad**: sus pruebas simulan GitHub.
+
+### 13.2 Matriz definitiva (2026-11-07)
+| Elemento | Estado | Nota |
+|---|---|---|
+| PR #24 | CUMPLIDO | fusionado como `428ecee` con CI en verde sobre el SHA exacto |
+| CI sobre `main` | CUMPLIDO | `Pruebas` #67 (`428ecee`) y #72 (`86bc9cc`) en success; Pages #21 y #23 en success |
+| Regresión | CUMPLIDO | 1500/0/35 antes de fusionar; tras la corrección de release: unit 1426, regresión 90 (las 35 omitidas son `tests/golden`, faltan archivos reales) |
+| Archivos protegidos | CUMPLIDO | `--check` sin cambios en cada etapa |
+| QA estructural | PARCIALMENTE CUMPLIDO | RQ-13 depende de AC-14 |
+| QA visual | CUMPLIDO | solo local (LibreOffice) |
+| AC-14 | PARCIALMENTE CUMPLIDO | no garantiza el 100 % de errores; observación real GLP-1 |
+| AC-15 | CUMPLIDO | |
+| AC-16 | CUMPLIDO | |
+| AC-21 | CUMPLIDO | 8 de 8 idéntico |
+| AC-28 | PARCIALMENTE CUMPLIDO | falta la comprobación desde un navegador externo real y el release publicado |
+| GitHub Pages | CUMPLIDO | desplegado (`success`), `app.zip` con el commit fusionado; verificación funcional con Chromium desde el entorno (con Pyodide y plantilla locales) |
+| Release v1.0.0 | NO CUMPLIDO | no publicado: borrador residual que esta sesión no puede eliminar |
+| Integridad del `app.zip` | PARCIALMENTE CUMPLIDO | verificada en el borrador y contra Pages; falta verificarla en la release publicada |
+| AC-11 | FUERA DEL ALCANCE | pendiente de la fase de interfaz (`PENDIENTES_POSTERIORES.md`) |
+| AC-12 | FUERA DEL ALCANCE | ídem |
+| A-3 | FUERA DEL ALCANCE | decisión narrativa posterior; la narrativa protegida no se tocó |
+
 ## 14. Pendientes posteriores
 `PENDIENTES_POSTERIORES.md` (AC-11, AC-12, A-3, L-8, AC-28, `deployment_queued`, navegadores adicionales, plantillas anteriores, golden, anexo por omisión, release).
 
@@ -75,4 +106,4 @@ Para poder comprobarlo se permitió el host `appalex47-lab.github.io` en la red 
 No se validó: el aspecto en PowerPoint, el sitio publicado desde un navegador externo (sí se verificó parcialmente desde el entorno, §12), datos de producción, Firefox/Safari/WebViews, ni el significado de una cifra. El detector de AC-14 no es exhaustivo.
 
 ## 16. Dictamen técnico definitivo
-**FASE 5 FUSIONADA CON OBSERVACIONES.** El PR #24 está integrado en `main` (`428ecee`), con CI en verde y publicación desplegada y verificada de forma parcial. No es «cerrada y verificada» porque AC-28 carece de verificación desde un navegador externo y el release `app-v1.0.0` **no está publicado** (borrador por fallo del workflow). AC-11, AC-12 y A-3 siguen pendientes (`PENDIENTES_POSTERIORES.md`). No se inició la Fase 6.
+**FASE 5 FUSIONADA CON OBSERVACIONES** (2026-11-07). Integrados en `main` el PR #24 (Fase 5), el PR #26 (corrección de `release.yml`) y el PR #25 (registro documental); CI y Pages en verde. **No** se declara «fusionada y publicada, pendiente de verificación externa» porque el release `app-v1.0.0` **no está publicado**, y tampoco «cerrada y verificada» porque AC-28 carece de la comprobación desde un navegador externo real. Para el cierre faltan: eliminar el borrador 437146660, ejecutar el release (ensayo y publicación) y la verificación del §7 de `PUBLICACION_AC28.md`. AC-11, AC-12 y A-3 siguen pendientes. No se inició la Fase 6.

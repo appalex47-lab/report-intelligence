@@ -84,3 +84,19 @@ Con el sitio publicado desde un `main` que **ya contenga la Fase 5** (esta rama 
 
 ### Actualización posterior a la fusión (2026-11-06)
 El dictamen anterior es el de antes de fusionar. Tras la fusión del PR #24 (`428ecee`) y con el host de Pages permitido en el entorno, AC-28 pasa a **PARCIALMENTE CUMPLIDO**: despliegue `success`, `app.zip` publicado con `commit` = SHA fusionado y recorrido funcional con Chromium contra el sitio real (con el runtime de Pyodide y la plantilla servidos localmente). Falta la verificación desde un navegador externo y el release publicado (el run 42308811022 falló al verificar el borrador). Detalle y límites en `CIERRE_FINAL_FASE5.md` §12–13.
+
+## 7. Procedimiento para la comprobación final de AC-28 desde tu dispositivo (2026-11-07)
+La prueba con Chromium automatizado **no equivale** a esta comprobación: usó el runtime de Pyodide y la plantilla servidos desde archivos locales. Aquí se comprueba el sitio tal como lo ve una persona usuaria.
+
+**Qué necesitas:** un navegador de tu dispositivo (idealmente uno distinto de Chrome de escritorio: Safari o Firefox, y el móvil), el libro de ejemplo `data/ejemplos/AETOPS_crudo_ejemplo.xlsx` del repositorio y, para generar el PPTX, la plantilla `templates/aetops-mensual/1/template.pptx` (no se publica).
+
+1. Abre `https://appalex47-lab.github.io/report-intelligence/`. **Esperado:** la página carga y «Iniciando el motor en tu navegador…» desaparece (la primera vez descarga Pyodide del CDN, puede tardar un minuto).
+2. Abre las herramientas de desarrollo (en móvil, una consola remota o conectar el dispositivo) y revisa la consola. **Esperado:** sin errores en rojo. Son esperables 404 de `templates/*/template.pptx` mientras no cargues plantillas.
+3. Verifica el commit publicado (en cualquier terminal): `curl -sL https://appalex47-lab.github.io/report-intelligence/app.zip -o app.zip && unzip -p app.zip backend/app/_build_info.json`. **Esperado:** `commit` es el SHA del `main` vigente al desplegar (`86bc9cc2a4d3355b6ef0fff435c001fc0c166d36` o posterior) y **sin** `+dirty`.
+4. Carga el libro de ejemplo, elige AETOPS / mensual / septiembre 2026 y pulsa «Validar». **Esperado:** aparece el panel de validación con los escenarios y el anexo de calidad.
+5. Si cargas la plantilla de AETOPS mensual: genera el reporte y descarga el `.pptx`. **Esperado:** se guarda como `Resultados_AETOP_Septiembre_2026.pptx` (no `data.htm`), abre en PowerPoint y tiene 13 diapositivas; el banner dice «Revisión estructural. La revisión visual requiere render».
+6. Marca y desmarca «Incluir el anexo…» y repite: con la casilla marcada el PPTX debe terminar con la diapositiva «Calidad de datos y supuestos».
+7. Anota **fecha, dispositivo, navegador y versión, resultado de cada paso y cualquier error de consola**. Si algo falla, indica el paso y el texto exacto del error.
+
+AC-28 solo pasa a CUMPLIDO con este resultado **y** con el release publicado (§5 puntos 4 y 5 del procedimiento anterior).
+
