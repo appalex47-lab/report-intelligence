@@ -78,7 +78,7 @@ Se conserva lo anterior como evidencia histórica. Después:
 * **`publicar=true` NO se ejecutó**: la precondición «no queda un borrador residual» no se cumple. **El release `app-v1.0.0` no está publicado**, no existe la etiqueta y no hay artefactos publicados que verificar. La verificación de integridad hecha es sobre el **borrador** (SHA-256 `671a02b92ffde5a9bf4e3c56e0f9a19b491ddf68799092b9a0236119abdbc9c1` coincide con su `.sha256`; contenido idéntico al `app.zip` de Pages: 83 entradas, 0 diferencias).
 * **Para terminar el release (acciones fuera de esta sesión):** (1) eliminar el borrador en GitHub (Releases → Drafts → «Aplicación 1.0.0» → Delete); (2) ejecutar *Release de la aplicación* con `publicar` desmarcado y, si termina en success, marcado; (3) comprobar etiqueta, release no borrador, `app.zip` y `.sha256` descargados (`sha256sum -c app.zip.sha256`) y que `_build_info.json` cite el commit etiquetado. La rama de publicación corregida **aún no se ha ejecutado de verdad**: sus pruebas simulan GitHub.
 
-### 13.2 Matriz definitiva (2026-11-07)
+### 13.2 Matriz (2026-11-07, previa a la publicación; **sustituida por la §13.4**)
 | Elemento | Estado | Nota |
 |---|---|---|
 | PR #24 | CUMPLIDO | fusionado como `428ecee` con CI en verde sobre el SHA exacto |
@@ -99,11 +99,57 @@ Se conserva lo anterior como evidencia histórica. Después:
 | AC-12 | FUERA DEL ALCANCE | ídem |
 | A-3 | FUERA DEL ALCANCE | decisión narrativa posterior; la narrativa protegida no se tocó |
 
+### 13.3 Publicación real de `app-v1.0.0` (verificada el 2026-11-07)
+Registro posterior a la §13.1, tras el diagnóstico de solo lectura del estado de GitHub. No se modificó la release, la etiqueta, `APP_VERSION` ni Pages.
+* **Release:** id 437239935, «Aplicación 1.0.0», **publicada** (no borrador ni pre-release) el 2026-11-07 a las 01:28:53 UTC; única release del repositorio. El `created_at` de la API muestra 22:38:10 UTC del día 6 porque GitHub copia ahí la fecha del commit, no la creación real.
+* **Etiqueta:** `app-v1.0.0`, ligera, apunta a `428eceeef3e776286e1ec8053ef3cffc0bd9caa9` (merge del PR #24). Es la única etiqueta.
+* **Assets:** la API lista 2: `app.zip` (264 195 B) y `app.zip.sha256` (74 B), ambos `uploaded`. La página de la release muestra 4; los otros dos son, con toda probabilidad, los archivos de código fuente que GitHub genera automáticamente (inferencia: no aparecen en la API).
+* **Origen:** el **intento 2 del run #2** ([42308811022](https://github.com/appalex47-lab/report-intelligence/actions/runs/42308811022)), relanzado el 2026-11-07 a las 01:28:38 UTC (success a las 01:28:58). En ese intento el job `construir` conserva las horas del intento 1 (2026-11-06 23:00:15–23:00:26): **no se volvió a construir**; solo se re-ejecutó `publicar`, con el artefacto `release-app-v1.0.0` (id 13547456717, creado 23:00:24 UTC, sin caducar). Por eso el SHA-256 coincide con el del borrador analizado el día 6. Se ejecutó la definición de `release.yml` de `428ecee` (la **anterior** a la corrección del PR #26: sin el paso «Esperar el borrador…»); esta vez el listado devolvió el borrador a tiempo. Todos los pasos terminaron en success: CI del commit exacto, etiqueta libre, crear borrador, verificar borrador, publicar y verificar la publicada (etiqueta → commit → artefacto → SHA-256).
+* **Orden respecto al borrado del borrador:** el borrador 437146660 ya no existe (la API responde 404), el id de la release publicada es posterior, y el paso «etiqueta (o un borrador) no existe» del job `publicar` (token de escritura) pasó en ese intento, por lo que el borrador ya estaba eliminado. La hora exacta del borrado no se puede determinar con la API. La eliminación no se hizo desde esta sesión.
+* **Otros runs de `release.yml` sobre `f8c80c6`:** #4 ([42322926982](https://github.com/appalex47-lab/report-intelligence/actions/runs/42322926982)): los intentos 1 y 2 fallaron en «El commit exacto debe haber superado el CI» (el CI de `f8c80c6` seguía en curso) y el intento 3 terminó en success como ensayo (`publicar` omitido). #5 ([42324625930](https://github.com/appalex47-lab/report-intelligence/actions/runs/42324625930)): los intentos 1 y 2 fallaron en «La etiqueta no debe existir», como debe ser (control anti-duplicados). No se creó ninguna release ni etiqueta adicional.
+* **CI de `main` (`f8c80c6`):** `Pruebas` #74 y `Publicar en GitHub Pages` #24 en success.
+
+**Integridad de los assets (comprobación independiente, descargando de GitHub):**
+* SHA-256 de `app.zip`: `671a02b92ffde5a9bf4e3c56e0f9a19b491ddf68799092b9a0236119abdbc9c1`; coincide con el contenido de `app.zip.sha256` (`sha256sum -c`: OK) y con el `digest` que reporta GitHub; `app.zip.sha256` tiene `digest` `1d667290ec765a9e2260b4e16c6104800b38ca8db1fb90704ba75b324b1c23b9`.
+* Contenido: las 83 entradas de `app.zip` son **idénticas** a las de un paquete regenerado desde `428ecee` (`tools/build_site.py`); `_build_info.json` cita `428eceeef3e776286e1ec8053ef3cffc0bd9caa9`. Los SHA-256 de los zips regenerados no coinciden con el publicado porque el zip no es reproducible bit a bit; por eso se comparó entrada por entrada.
+* Frente a `f8c80c6` (final de `main`) solo difiere `backend/app/_build_info.json` (el campo `commit`). Las diferencias de código fuente entre `428ecee` y `f8c80c6` son 7 archivos (+603/−17): `.github/workflows/release.yml`, `tools/release_app.py`, `tests/unit/test_release_espera.py`, `tests/unit/test_release_workflow.py` y tres documentos de `docs/fase5/`; **ninguno forma parte del paquete**. El `app.zip` que sirve Pages hoy (commit `f8c80c6`) es igual al regenerado desde `f8c80c6`.
+* Conclusión: la release corresponde al código aprobado de la Fase 5 (`428ecee`) y su paquete equivale al de `f8c80c6` salvo el campo `commit`.
+
+**Observaciones técnicas (no bloquean el cierre de la release):**
+1. **La release fija `428ecee`, no el final de `main`.** Pages se redespliega con cada push a `main`; un reporte generado hoy registra en su procedencia `commit = f8c80c6` (o posterior), que no tiene release ni etiqueta. El código empaquetado es el mismo, pero esa referencia no se podrá regenerar mediante una etiqueta. Es una limitación del procedimiento, no un defecto del paquete.
+2. **La corrección de `release.yml` (PR #26) no se ha ejercitado en una publicación real.** Esta publicación usó el `release.yml` anterior (reintento del run #2 en `428ecee`). Los runs #4 y #5 solo ejercieron los controles del job `construir`. La rama de publicación corregida sigue validada únicamente por pruebas que simulan GitHub; su primera ejecución real será la de la próxima versión.
+
+### 13.4 Matriz vigente (2026-11-07, tras verificar la publicación)
+Sustituye a la §13.2; los cambios respecto a ella son **Release v1.0.0**, **Integridad del `app.zip`** y la nota de AC-28.
+
+| Elemento | Estado | Nota |
+|---|---|---|
+| PR #24 | CUMPLIDO | fusionado como `428ecee` con CI en verde sobre el SHA exacto |
+| CI sobre `main` | CUMPLIDO | `Pruebas` #67 (`428ecee`), #72 (`86bc9cc`) y #74 (`f8c80c6`) en success; Pages #21, #23 y #24 en success |
+| Regresión | CUMPLIDO | 1500/0/35 antes de fusionar; tras la corrección de release: unit 1426, regresión 90 (las 35 omitidas son `tests/golden`, faltan archivos reales) |
+| Archivos protegidos | CUMPLIDO | `--check` sin cambios en cada etapa |
+| QA estructural | PARCIALMENTE CUMPLIDO | RQ-13 depende de AC-14 |
+| QA visual | CUMPLIDO | solo local (LibreOffice) |
+| AC-14 | PARCIALMENTE CUMPLIDO | no garantiza el 100 % de errores; observación real GLP-1 |
+| AC-15 | CUMPLIDO | |
+| AC-16 | CUMPLIDO | |
+| AC-21 | CUMPLIDO | 8 de 8 idéntico |
+| AC-28 | PARCIALMENTE CUMPLIDO | **pendiente de la verificación externa del usuario** (`PUBLICACION_AC28.md` §7); la release ya está publicada |
+| GitHub Pages | CUMPLIDO | desplegado (`success`), `app.zip` con el commit de `main`; verificación funcional con Chromium desde el entorno (con Pyodide y plantilla locales) |
+| Release v1.0.0 | CUMPLIDO | publicada: etiqueta `app-v1.0.0` → `428ecee`, release 437239935, no borrador (§13.3) |
+| Integridad del `app.zip` | CUMPLIDO | SHA-256 coincide con `.sha256` y con GitHub; contenido idéntico al regenerado desde `428ecee` (§13.3) |
+| AC-11 | FUERA DEL ALCANCE | pendiente de la fase de interfaz (`PENDIENTES_POSTERIORES.md`) |
+| AC-12 | FUERA DEL ALCANCE | ídem |
+| A-3 | FUERA DEL ALCANCE | decisión narrativa posterior; la narrativa protegida no se tocó |
+
 ## 14. Pendientes posteriores
 `PENDIENTES_POSTERIORES.md` (AC-11, AC-12, A-3, L-8, AC-28, `deployment_queued`, navegadores adicionales, plantillas anteriores, golden, anexo por omisión, release).
 
 ## 15. Limitaciones y riesgos
 No se validó: el aspecto en PowerPoint, el sitio publicado desde un navegador externo (sí se verificó parcialmente desde el entorno, §12), datos de producción, Firefox/Safari/WebViews, ni el significado de una cifra. El detector de AC-14 no es exhaustivo.
 
-## 16. Dictamen técnico definitivo
+## 16. Dictamen técnico (2026-11-07, previo a la publicación; **sustituido por la §16.1**)
 **FASE 5 FUSIONADA CON OBSERVACIONES** (2026-11-07). Integrados en `main` el PR #24 (Fase 5), el PR #26 (corrección de `release.yml`) y el PR #25 (registro documental); CI y Pages en verde. **No** se declara «fusionada y publicada, pendiente de verificación externa» porque el release `app-v1.0.0` **no está publicado**, y tampoco «cerrada y verificada» porque AC-28 carece de la comprobación desde un navegador externo real. Para el cierre faltan: eliminar el borrador 437146660, ejecutar el release (ensayo y publicación) y la verificación del §7 de `PUBLICACION_AC28.md`. AC-11, AC-12 y A-3 siguen pendientes. No se inició la Fase 6.
+
+### 16.1 Dictamen técnico vigente (2026-11-07)
+**FASE 5 FUSIONADA Y PUBLICADA, PENDIENTE DE VERIFICACIÓN EXTERNA.** PR #24, #26, #25 y #27 integrados en `main` (`f8c80c6`) con CI y Pages en verde; la release `app-v1.0.0` está publicada y su integridad verificada (§13.3). **No** se declara «cerrada y verificada» porque AC-28 sigue PARCIALMENTE CUMPLIDO: falta la comprobación del sitio desde un navegador externo real, que debe hacer el usuario (`PUBLICACION_AC28.md` §7). Quedan además las observaciones técnicas 1 y 2 de la §13.3, y AC-11, AC-12 y A-3 siguen pendientes. No se inició la Fase 6.

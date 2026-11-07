@@ -100,3 +100,7 @@ La prueba con Chromium automatizado **no equivale** a esta comprobación: usó e
 
 AC-28 solo pasa a CUMPLIDO con este resultado **y** con el release publicado (§5 puntos 4 y 5 del procedimiento anterior).
 
+## 8. Actualización de la publicación (2026-11-07)
+La release `app-v1.0.0` ya está **publicada** (id 437239935, etiqueta → `428eceeef3e776286e1ec8053ef3cffc0bd9caa9`, `app.zip` SHA-256 `671a02b92ffde5a9bf4e3c56e0f9a19b491ddf68799092b9a0236119abdbc9c1`, verificado contra `app.zip.sha256`). Detalle, origen (reintento del run #2 con el `release.yml` anterior) e integridad en `CIERRE_FINAL_FASE5.md` §13.3. Con esto, los puntos 4 y 5 del §5 («release publicado y comprobado») quedan **resueltos**; no se debe ejecutar de nuevo `publicar=true` para `1.0.0` (la etiqueta existe y el control anti-duplicados lo rechazará).
+
+**AC-28 sigue PARCIALMENTE CUMPLIDO y pendiente de la verificación externa del usuario (§7).** Para el paso 3 del §7: el `app.zip` que sirve Pages cita el commit de `main` vigente al desplegar (`f8c80c6c3d2d6935c0d1649c1cabc9581394f91d` o posterior), mientras que el `app.zip` de la release cita `428eceeef3e776286e1ec8053ef3cffc0bd9caa9`; ambos tienen el mismo código empaquetado y solo difiere `_build_info.json`. Ver la observación técnica 1 de la §13.3.
