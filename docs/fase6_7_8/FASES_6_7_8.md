@@ -4,7 +4,7 @@ Documento de aceptación de las Fases 6, 7 y 8 (PR #32, sobre `main` en `3b85e06
 
 ## 0. Dictamen
 
-**ACEPTACIÓN TÉCNICA AL 100 %** de los 17 criterios F6-1 a F8-5 (matriz de trazabilidad en §9), con las limitaciones reales de §8 (la principal: no se probó en dispositivos físicos). Todas las pruebas que antes solo corrían en el equipo de desarrollo se ejecutan ahora en CI. Cifras y SHA finales: §7.
+**ACEPTACIÓN TÉCNICA AL 100 %** de los 17 criterios F6-1 a F8-5 (matriz de trazabilidad en §9), con las limitaciones reales de §8 (la principal: no se probó en dispositivos físicos). Las 33 pruebas que antes solo corrían en el equipo de desarrollo (y los e2e del bloque integral) se ejecutan ahora en CI; siguen omitidas, con motivo, las que por naturaleza exigen los archivos reales o LibreOffice (§4.2). Cifras y SHA finales: §7.
 
 ## 1. Punto de control 1 — línea base, especificaciones y plan
 
@@ -84,7 +84,7 @@ Las pruebas añadidas en la primera entrega que solo corrían en el equipo de de
 | `unit` | `tests/unit` (incluye el recorrido real de los 4 formatos, el flujo integral por el puente, rendimiento y contratos, con plantillas sintéticas), `tests/regression` y el hash canónico en Pyodide |
 | `navegador (chromium)`, `(firefox)`, `(webkit)` | `tests/e2e` completo (59 pruebas por motor): flujo integral, vista previa, persistencia, descarga, panel de escenarios, responsivo en 5 anchos, táctil, revisión visual y estabilización |
 
-**Siguen sin ejecutarse en CI, por su naturaleza** (no se presentan como aprobadas): las pruebas **golden** y las que exigen la plantilla o el archivo real (la línea base de contenido `capture_baseline`, que compara contra los reales; 35 pruebas omitidas con motivo); y las 2 pruebas con render de LibreOffice (`test_plan_adaptativo_render`), que se omiten sin LibreOffice. Las ejecuta el equipo de desarrollo (`capture_baseline --check`: 8 de 8 idéntico; LibreOffice: en la suite local).
+**Omitidas en CI, con motivo (no se presentan como aprobadas).** Las pruebas heredadas que antes se omitían por falta de plantilla (`test_plan_api_fastapi`, `test_tabla_compacta`, `test_anexo_pptx`, `test_qa_cifras`, `test_qa_pptx_export`, `test_compatibilidad`, `test_discovery`, `test_bridge`: 31 pruebas) usan ahora el selector de plantillas y **corren** en CI. Siguen omitiéndose, porque su naturaleza lo exige: (a) las **golden** (35, `tests/golden`) y las de regresión que comparan contra la plantilla o el resultado **real** registrado (`test_linea_base`, `test_hash_resultado`, `test_procedencia_build`, `test_procedencia_regeneracion`, `capture_baseline`: 23); (b) las que necesitan **LibreOffice** (render real: `test_plan_adaptativo_render`, `test_glp1_deck`, `test_qa_visual`, partes de `test_web` y `test_procedencia_servicio`); (c) la comparación de la plantilla sintética con la real (4), que necesita la real. El equipo de desarrollo las ejecuta con las plantillas reales y LibreOffice (suite local, `capture_baseline --check` 8 de 8 idéntico).
 
 ### 4.3 Contratos, artefactos, dependencias, rendimiento, persistencia
 
@@ -117,7 +117,14 @@ Sin divergencias entre el puente y la API (§4.3). La prueba ya no admite excepc
 
 ## 7. Resultados finales
 
-_Se completa con los resultados reales de la ejecución final._
+| Verificación | Resultado |
+|---|---|
+| Suite completa local, modo desarrollo (plantillas reales; Pyodide, Chromium y LibreOffice; `REPORT_PYODIDE_REQUIRED=1`) | **1852 aprobadas, 0 fallidas, 35 omitidas** (56 min 50 s). Las 35 omitidas son `tests/golden` (archivos reales ausentes) y no cuentan como aprobadas. Colección total: 1887 pruebas (1855 de la línea base + 32 nuevas de la aceptación). Tras esa ejecución, 8 archivos de prueba pasaron a usar el selector de plantillas; se volvieron a ejecutar en modo desarrollo (**206 aprobadas, 0 omitidas**) y con plantillas sintéticas (**185 aprobadas, 0 omitidas** en los 6 archivos que antes se omitían en CI) |
+| Simulación de CI en un clon limpio (sin plantillas reales) de `tests/unit` y `tests/regression` | 1717 aprobadas y 75 omitidas antes de la última conversión; las omitidas se explican en §4.2 |
+| `capture_baseline --check` (plantillas reales) | 8 de 8 idéntico (motor y diapositivas de los 4 formatos) |
+| `archivos_protegidos --check` | sin cambios (integridad por hash; no es autorización del propietario) |
+| CI sobre el SHA definitivo | consta en el PR (un documento no puede citar el CI de su propio commit): trabajos `unit`, `navegador (chromium)`, `navegador (firefox)` y `navegador (webkit)` |
+| CI en iteraciones previas del PR | 4 de 4 trabajos en verde en la ejecución 91 (`unit`: 1621 aprobadas y 74 omitidas en `tests/unit`, 74 aprobadas y 23 omitidas en `tests/regression`, hash en Pyodide aprobado; cada navegador: 59 aprobadas, 0 omitidas) |
 
 ## 8. Limitaciones reales
 
