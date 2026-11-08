@@ -155,9 +155,10 @@ def _celdas_y_textos(prs, omitir=()):
             continue
         for sh in s.shapes:
             if getattr(sh, "has_table", False) and sh.has_table:
+                codigos = {j for j, c in enumerate(sh.table.rows[0].cells) if c.text_frame.text.strip().lower() == "sivec"}     # columna de CÓDIGOS de producto: no son cifras (un código de 4 cifras, «7928», parecía una)
                 for r in sh.table.rows:
-                    for c in r.cells:
-                        if c.text_frame.text.strip():
+                    for j, c in enumerate(r.cells):
+                        if j not in codigos and c.text_frame.text.strip():
                             yield i, "tab", c.text_frame.text, sh
             elif sh.has_text_frame:
                 for p in sh.text_frame.paragraphs:
