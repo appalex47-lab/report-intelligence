@@ -32,8 +32,6 @@
   "backend/app/pipeline.py": "f87bf4e7387da97ee6b6eb05f916d23fe9464932f407d03eada86d73b42f1228",
   "backend/app/qa/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "backend/app/raw/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "backend/app/raw/aetops.py": "4bbd90ebe6bc3f304a9330a565e65389851149f1574503796d80073aca75186f",
-  "backend/app/raw/common.py": "ece58ac98eb9e8f06a1c873c0d8e01381418c481ad61f18a71f94e58764ffbd2",
   "backend/app/raw/glp1.py": "b4edb2d72fc35938f476e2471d42197e9a968bc48ea64e4ffb8ad5e6e910da1c",
   "backend/app/render.py": "8e65cbdd60ee95b82ad8951b8b559cb7873181d0647f5b60fc52caf2f69be09e",
   "backend/app/targets.py": "3bca28ab8efa5456e2674f1ba1f83659dafba1417e33263335a0c78bf66663ff",
@@ -94,6 +92,14 @@
   "backend/app/qa/checks.py": {
    "motivo": "row_min_heights y row_content_floors (misma corrección)",
    "sha256": "4960e01ccb49112c434b50a03c26142879d4461a4438b8aaa0a1e259455e2fa2"
+  },
+  "backend/app/raw/aetops.py": {
+   "motivo": "Corrección de códigos numéricos (autorizada por el propietario): _rows aplica la lectura de códigos como texto de raw/common.py a sku, id_pedido e id_paciente. Sin otros cambios.",
+   "sha256": "f777072d5654e5bf976f518612127a0e597abf2ff6a6be4dafa585e272d65572"
+  },
+  "backend/app/raw/common.py": {
+   "motivo": "Corrección de códigos numéricos (autorizada por el propietario): las columnas sku, id_pedido e id_paciente se leen como texto; un entero guardado como número (23522 o 23522.0) se escribe «23522», sin el «.0» que aparecía como código Sivec y disparaba PPTX_CIFRA_NO_TRAZADA. Sin otros cambios de comportamiento.",
+   "sha256": "2f068d66c326468fb7acd3c3616fa33c8e2c805a5a1ede36a15b6fca97fc3580"
   },
   "backend/app/web/app.py": {
    "motivo": "Bloque integral: mismas rutas que el puente (escenarios, plan, vista previa) y parámetro adaptativo en generate Antes — Fase 5 (RQ-19): parámetro opcional anexo al generar (solicitud expresa de incluir el anexo de calidad como última diapositiva)",
