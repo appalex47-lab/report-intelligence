@@ -93,3 +93,23 @@ def test_un_cambio_muestra_el_aviso_de_resultados_desactualizados_y_quita_la_des
 def test_sin_errores_de_consola_y_con_las_cinco_capturas(resultado):
     assert not resultado["consola"], resultado["consola"]
     assert len(list(Path(resultado["_salida"]).glob("*.png"))) == 5
+
+
+def test_con_resultados_desactualizados_el_recuadro_de_qa_se_ve_como_aviso_y_no_como_aprobado(resultado):
+    """Corrección D-7: el veredicto del QA anterior ya no se muestra en verde junto a «descarga bloqueada». Los valores reales no cambian."""
+    for k in ("obsoleto_escritorio", "obsoleto_movil"):
+        v = resultado["vistas"][k]
+        b = v["qa_banner"]
+        assert b["estado"] == "desactualizado" and b["clase_warn"] and not b["clase_ok"] and not b["clase_bad"], (k, b)
+        assert b["titulo"] == "QA del reporte anterior (desactualizado) · descarga bloqueada", b
+        assert "aprobado" not in b["titulo"].lower().replace("desactualizado", "")
+        r = v["valores_reales"]
+        assert r["vigente"] is False and r["downloadable"] is False and r["qa_passed"] is True, (k, r)      # el estado real no se altera: solo cambia la presentación
+
+
+def test_con_resultados_vigentes_el_recuadro_de_qa_sigue_igual(resultado):
+    for k in ("generado_escritorio", "generado_movil"):
+        v = resultado["vistas"][k]
+        assert v["qa_banner"]["estado"] == "ok" and v["qa_banner"]["clase_ok"] and v["qa_banner"]["titulo"] == "QA aprobado · descarga habilitada", (k, v["qa_banner"])
+        assert v["valores_reales"]["vigente"] is True and v["valores_reales"]["downloadable"] is True
+

@@ -109,7 +109,7 @@
   },
   "frontend/index.html": {
    "motivo": "Bloque integral: escenario, etapas del flujo, calidad por severidad con motivo y acción, vista previa navegable y aviso de resultados desactualizados en el paso Generar Antes — Fase 5 (RQ-19): casilla para incluir el anexo como última diapositiva. Antes — Fase 5: panel del anexo de calidad, etiqueta de revisión estructural (AC-15) y descarga robusta (INC-001: nombre y tipo no dependen del motor, validación del contenido). Fase 4: panel de escenarios E1/E2 e IND-01 en el paso Validar (solo se agrega; no cambia cifras ni láminas); avisos del escenario (auditoría independiente). Antes — cambio del usuario (commit 67fd179): descarga con validación ZIP y MIME",
-   "sha256": "3244ae9e9b6364f9d23674af1deac387b4a72d201568dc2e1bba2e4f0765ad70"
+   "sha256": "b9ac87a56bf8e31581c1c512a2603cb05cf53db4de7a48ce0f7bab109449466b"
   },
   "frontend/worker.js": {
    "motivo": "Bloque integral: persistir el historial al guardar o borrar escenarios propios Antes — Cambio del usuario (commit 67fd179): nombre de archivo de respaldo",

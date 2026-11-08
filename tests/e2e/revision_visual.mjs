@@ -32,7 +32,9 @@ try {
     return { nombre, ancho: window.innerWidth, scrollW: de.scrollWidth, desborde_horizontal: de.scrollWidth > window.innerWidth + 1,
       etapas: [...document.querySelectorAll(".flow .fl")].map((x) => x.textContent.trim().replace(/\s+/g, " ")), escenario: vis("#escSel"), generar: vis("#go"),
       vista_previa: vis("#pvs"), lista_diapositivas: document.querySelectorAll(".pvit").length, hallazgos: document.querySelectorAll(".find").length,
-      banner_obsoleto: /Resultados desactualizados/.test(document.body.innerText), descarga_habilitada: pptx.length > 0 && pptx.every((b) => !b.disabled) };
+      banner_obsoleto: /Resultados desactualizados/.test(document.body.innerText), descarga_habilitada: pptx.length > 0 && pptx.every((b) => !b.disabled),
+      qa_banner: (() => { const e = document.querySelector("[data-qa-banner]"); return e ? { estado: e.dataset.qaBanner, clase_warn: e.classList.contains("warn"), clase_ok: e.classList.contains("ok"), clase_bad: e.classList.contains("bad"), titulo: e.querySelector("strong").textContent.trim() } : null; })(),
+      valores_reales: (typeof S !== "undefined" && S.result) ? { qa_passed: S.result.qa_passed, vigente: S.result.vigente, downloadable: S.result.downloadable } : null };
   }, nombre);
   const captura = async (nombre) => { await p.screenshot({ path: `${outdir}/${nombre}.png`, fullPage: true }); };
 
