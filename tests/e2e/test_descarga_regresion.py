@@ -22,28 +22,27 @@ from pathlib import Path
 import pytest
 from pptx import Presentation
 
+from tests.e2e import _sitio as S
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = Path(__file__).with_name("descarga_regresion.mjs")
 
 
-def _omitir(motivo: str):
-    if os.environ.get("REPORT_PYODIDE_REQUIRED") == "1":
-        pytest.fail(f"REPORT_PYODIDE_REQUIRED=1 y falta un requisito: {motivo}")
-    pytest.skip(f"OMITIDA (no ejecutada): {motivo}")
+_omitir = S.omitir
 
 
 @pytest.fixture(scope="module")
 def navegador():
     if not shutil.which("node"):
         _omitir("Node.js no está instalado")
-    npm_root = subprocess.run(["npm", "root", "-g"], capture_output=True, text=True).stdout.strip() if shutil.which("npm") else ""
-    if not npm_root or not (Path(npm_root) / "playwright").exists():
-        _omitir("el paquete 'playwright' de Node no está instalado globalmente")
+    pw = S._playwright_dir()
+    if not (pw / "playwright").exists():
+        _omitir(f"el paquete 'playwright' de Node no está en {pw}")
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(ROOT / "frontend"))
     handler.log_message = lambda *a, **k: None
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
-    yield f"http://127.0.0.1:{srv.server_address[1]}/index.html", Path(npm_root)
+    yield f"http://127.0.0.1:{srv.server_address[1]}/index.html", pw
     srv.shutdown()
 
 

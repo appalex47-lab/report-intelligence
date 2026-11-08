@@ -3,7 +3,7 @@
 // Imprime «RESULTADO {json}». Lo invoca tests/e2e/test_persistencia_escenarios.py.
 import { createRequire } from "node:module";
 const require = createRequire(process.env.PLAYWRIGHT_REQUIRE_FROM || import.meta.url);
-const { chromium } = require("playwright");
+const pw = require("playwright"); const chromium = pw[process.env.REPORT_BROWSER || "chromium"];     // REPORT_BROWSER: chromium | firefox | webkit
 const [, , site] = process.argv;
 
 const browser = await chromium.launch();

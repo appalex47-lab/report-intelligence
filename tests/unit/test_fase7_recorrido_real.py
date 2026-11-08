@@ -97,6 +97,32 @@ def test_las_cifras_impresas_se_trazan_al_motor_en_los_cuatro_formatos(br, unit,
     assert not sin_trazar, sin_trazar
 
 
+@pytest.mark.parametrize("unit,per,year,idx,libro,metas", REFERENCIAS, ids=IDS)
+def test_las_tablas_y_los_graficos_de_la_vista_previa_son_los_del_pptx(br, unit, per, year, idx, libro, metas):
+    """Integridad de tablas y gráficos: mismo número de tablas, mismas filas y columnas y mismo texto de cada celda (leído con python-pptx, independiente del modelo), y las
+    gráficas del PPTX (marcos gráficos) están representadas en la vista previa."""
+    from pptx import Presentation
+    rid = correr(br, unit, per, year, idx, libro, metas)
+    assert generar(br, rid)["status"] == 200
+    out = out_dir(br, rid)
+    vista = json.loads((out / "previsualizacion.json").read_text(encoding="utf-8"))
+    prs = Presentation(str(next(out.glob("*.pptx"))))
+    assert len(prs.slides) == len(vista["diapositivas"])
+    total_tablas = total_graficas = 0
+    for sl, d in zip(prs.slides, vista["diapositivas"]):
+        tablas_pptx = [[[c.text_frame.text for c in r.cells] for r in sh.table.rows] for sh in sl.shapes if sh.has_table]
+        tablas_vista = [[[("".join(run["t"] for pa in c["parrafos"] for run in pa["runs"])) for c in fila["celdas"]] for fila in f["filas"]] for f in d["formas"] if f["tipo"] == "tabla"]
+        assert [(len(t), len(t[0])) for t in tablas_pptx] == [(len(t), len(t[0])) for t in tablas_vista], d["id"]
+        for tp, tv in zip(tablas_pptx, tablas_vista):
+            assert tp == tv, d["id"]                                                           # mismo texto, celda por celda
+        total_tablas += len(tablas_pptx)
+        tiene_grafica = "chartex" in sl._element.xml.lower()                                   # gráfica avanzada (mc:AlternateContent + chartEx): python-pptx no la expone como forma
+        assert any(f["tipo"] == "grafica" for f in d["formas"]) == tiene_grafica, d["id"]       # la vista previa marca su lugar exactamente donde el PPTX la tiene
+        total_graficas += tiene_grafica
+    assert total_tablas >= 9                                                                   # los 4 formatos traen entre 9 y 14 tablas
+    assert total_graficas == (1 if unit == "glp1" else 0)                                      # GLP-1 trae una gráfica avanzada (embudo); AETOPS no trae ninguna
+
+
 def test_los_indicadores_del_panel_son_los_mismos_que_imprime_el_pptx(br):
     """Lo que la pantalla «Validar» muestra (Lectura rápida del motor) aparece, con el mismo valor, en el PPTX generado."""
     from pptx import Presentation

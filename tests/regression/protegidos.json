@@ -64,8 +64,8 @@
  },
  "autorizados": {
   ".github/workflows/tests.yml": {
-   "motivo": "Fase 3A-2: paso de CI que ejecuta tests/e2e/test_hash_pyodide.py con Pyodide 0.27.7 (npm, solo el núcleo) y REPORT_PYODIDE_REQUIRED=1; no toca el flujo de publicación (pages.yml)",
-   "sha256": "77d966cd7517b05e85496d27a03b61cf2c372ce0d9258f5c7e1c225cf5f705ea"
+   "motivo": "Fases 6-8 (autorizado por el propietario solo para habilitar validaciones): trabajo «unit» con timeout y plantillas sintéticas, y nuevo trabajo «navegador» (Chromium, Firefox y WebKit de Playwright con Pyodide desde la CDN fijada por el worker) que ejecuta tests/e2e. No toca los workflows de publicación ni de release. Antes — Fase 3A-2: paso de CI que ejecuta tests/e2e/test_hash_pyodide.py con Pyodide 0.27.7 (npm, solo el núcleo) y REPORT_PYODIDE_REQUIRED=1; no toca el flujo de publicación (pages.yml)",
+   "sha256": "af1ce7322019d0d016293700fbc310a26ca13f4f0f1c29a0faa6f487ea8ecd49"
   },
   "backend/app/build.py": {
    "motivo": "Bloque integral (escenarios y SlideSpec, diseño adaptativo, QA y previsualización): parámetro opcional plan y dos ganchos (ajuste de diseño tras guardar el PPTX y antes del QA/manifiesto/historial; revisión integral antes del manifiesto). Sin plan el comportamiento es idéntico Antes — Fase 5 (AC-14, RQ-19): revisión de cifras, fórmulas, unidades y denominadores (qa/cifras.py) y parámetro opcional anexo que agrega la diapositiva final (deck/anexo.py); con anexo=None el PPTX es idéntico. Antes — Fase 5 (RQ-13): re-lectura estructural del PPTX guardado (qa/pptx_export.py), sin poder impedir la generación. Antes — Fase 3A-3: llama a la captura de procedencia tras guardar PPTX y corrida; añade parámetro opcional ia y campo BuildResult.procedencia; no altera la generación del reporte",

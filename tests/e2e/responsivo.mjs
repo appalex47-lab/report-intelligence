@@ -4,7 +4,7 @@
 // Uso: node responsivo.mjs <url_del_sitio> <libro.xlsx> <carpeta_salida> [mes]. Imprime «RESULTADO {json}». Lo invoca test_responsivo.py.
 import { createRequire } from "node:module";
 const require = createRequire(process.env.PLAYWRIGHT_REQUIRE_FROM || import.meta.url);
-const { chromium } = require("playwright");
+const pw = require("playwright"); const chromium = pw[process.env.REPORT_BROWSER || "chromium"];     // REPORT_BROWSER: chromium | firefox | webkit
 const [, , site, xlsx, outdir, month = "9"] = process.argv;
 
 const ANCHOS = { escritorio: 1280, portatil: 1024, tablet: 768, movil: 390, movil_pequeno: 320 };

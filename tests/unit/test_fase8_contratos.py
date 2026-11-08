@@ -1,7 +1,7 @@
 """Fase 8 · estabilización: contratos entre módulos y verificación de artefactos. Corre en CI (sin plantillas ni navegador).
 
-1. El puente del navegador (`bridge.py` + `plan_routes.py`) y la API (`app.py` + `plan_api.py`) exponen EXACTAMENTE las mismas rutas y métodos: la aplicación publicada (puente) y la de
-   desarrollo (API) no pueden divergir en silencio.
+1. El puente del navegador (`bridge.py` + `plan_routes.py`) y la API (`app.py` + `plan_api.py`) exponen EXACTAMENTE las mismas rutas y métodos, sin excepciones: la aplicación publicada
+   (puente) y la de desarrollo (API) no pueden divergir en silencio.
 2. Cada ruta del contrato responde con las mismas claves por ambos caminos.
 3. El paquete que se publica (`app.zip`) contiene todo lo que el motor necesita y nada que no deba publicarse; su construcción es determinista en contenido.
 4. Las dependencias declaradas coinciden con las que se empaquetan para el navegador."""
@@ -51,12 +51,8 @@ def test_el_puente_y_la_api_exponen_las_mismas_rutas_y_metodos(entorno):
             de_la_api.add((metodo.upper(), re.sub(r"\{[^}]+\}", "{id}", ruta)))
     de_la_api -= {("GET", "/")}                                                        # la página estática solo existe en la API de desarrollo
     solo_puente, solo_api = del_puente - de_la_api, de_la_api - del_puente
-    # Divergencias CONOCIDAS (documentadas en docs/fase6_7_8/FASES_6_7_8.md §6): se listan para que cualquier otra diferencia falle.
-    # El producto publicado es el puente; el servidor de desarrollo (API) no tiene la comprobación de la IA ni la exportación del historial.
-    SOLO_PUENTE_CONOCIDAS = {("GET", "/api/history/export"), ("POST", "/api/runs/{id}/ia/check")}
-    SOLO_API_CONOCIDAS = {("POST", "/api/templates/{id}"), ("GET", "/api/runs/{id}/files/{id}")}                # el puente las atiende con otro patrón (archivo)
-    assert not (solo_puente - SOLO_PUENTE_CONOCIDAS), f"rutas solo en el puente: {sorted(solo_puente - SOLO_PUENTE_CONOCIDAS)}"
-    assert not (solo_api - SOLO_API_CONOCIDAS), f"rutas solo en la API: {sorted(solo_api - SOLO_API_CONOCIDAS)}"
+    assert not solo_puente, f"rutas solo en el puente: {sorted(solo_puente)}"
+    assert not solo_api, f"rutas solo en la API: {sorted(solo_api)}"                     # sin excepciones: el contrato es el mismo por ambos caminos
 
 
 # ------------------------------------------------------------------------------------------------------------ 2. mismas respuestas por ambos caminos
@@ -155,3 +151,29 @@ def test_las_dependencias_que_importa_el_motor_estan_declaradas():
     for modulo, paquete in externas.items():
         if modulo in importadas:
             assert paquete in declaradas, f"{modulo} se importa pero «{paquete}» no está en requirements.txt ({sorted(declaradas)})"
+
+
+# ------------------------------------------------------------------------------------------------------------ 5. las dos rutas que antes solo existían en el puente
+def test_el_historial_se_exporta_igual_por_la_api_y_por_el_puente(entorno):
+    appmod, bridge, _, tmp = entorno
+    c = TestClient(appmod.app, raise_server_exceptions=False)
+    a, b = c.get("/api/history/export"), _por_puente(bridge, "GET", "/api/history/export")
+    assert a.status_code == b["status"] == 404 and a.json()["error"] == b["error"] == "Aún no hay historial."
+    from backend.app.web import service
+    from backend.app.history import store
+    store.connect(service.HISTORY_DB).close()                                          # crea el historial vacío
+    a, b = c.get("/api/history/export"), _por_puente(bridge, "GET", "/api/history/export")
+    assert a.status_code == b["status"] == 200 and a.content[:15] == b"SQLite format 3"
+    assert Path(b["file"]).read_bytes() == a.content and b["name"] == "historial.sqlite" and "historial.sqlite" in a.headers["content-disposition"]
+
+
+def test_la_comprobacion_de_la_ia_responde_igual_por_la_api_y_por_el_puente(entorno):
+    appmod, bridge, _, _ = entorno
+    c = TestClient(appmod.app, raise_server_exceptions=False)
+    rid_api = c.post("/api/runs", json={"unit": "aetops", "periodicity": "mensual", "year": 2026, "index": 9}).json()["id"]
+    rid_br = _por_puente(bridge, "POST", "/api/runs", {"unit": "aetops", "periodicity": "mensual", "year": 2026, "index": 9})["json"]["id"]
+    cuerpo = {"model": "modelo-x", "items": [{"original": "La venta fue de $1.00 M.", "rewritten": "La venta fue de $1.00 M, sin cambios."}, {"original": "Texto.", "rewritten": None}]}
+    a = c.post(f"/api/runs/{rid_api}/ia/check", json=cuerpo)
+    b = _por_puente(bridge, "POST", f"/api/runs/{rid_br}/ia/check", cuerpo)
+    assert a.status_code == b["status"] == 200 and a.json() == b["json"] and len(a.json()) == 2
+    assert c.post("/api/runs/0000/ia/check", json=cuerpo).status_code == _por_puente(bridge, "POST", "/api/runs/0000/ia/check", cuerpo)["status"] == 404

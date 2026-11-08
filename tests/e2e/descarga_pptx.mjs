@@ -5,7 +5,7 @@
 import { createRequire } from "node:module";
 import fs from "node:fs";
 const require = createRequire(process.env.PLAYWRIGHT_REQUIRE_FROM || import.meta.url);
-const { chromium } = require("playwright");
+const pw = require("playwright"); const chromium = pw[process.env.REPORT_BROWSER || "chromium"];     // REPORT_BROWSER: chromium | firefox | webkit
 const [, , site, xlsx, outdir, month = "9"] = process.argv;
 
 const browser = await chromium.launch();
