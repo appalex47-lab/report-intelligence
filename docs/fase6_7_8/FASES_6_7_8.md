@@ -112,14 +112,18 @@ El producto publicado usa el puente (Pyodide). El servidor de desarrollo (FastAP
 
 ## 7. Punto de control 3 — validación integral
 
-Resultados de la suite completa, `capture_baseline`, comprobación de protegidos y CI sobre el SHA definitivo: ver la tabla de abajo (se completa con los resultados reales de la ejecución final).
+Resultados reales de la ejecución final (tras el último cambio de código):
 
 | Verificación | Resultado |
 |---|---|
-| Suite completa local (Pyodide, Chromium, LibreOffice) | _se registra tras la ejecución final_ |
-| `capture_baseline --check` | _se registra tras la ejecución final_ |
-| `archivos_protegidos --check` | _se registra tras la ejecución final_ |
-| CI sobre el SHA definitivo | _se registra en el PR_ |
+| Suite completa local (Pyodide, Chromium, LibreOffice; `REPORT_PYODIDE_REQUIRED=1`) | **1820 aprobadas, 0 fallidas, 35 omitidas** (45 min 46 s). Las 35 omitidas son `tests/golden` (archivos reales ausentes) y no cuentan como aprobadas. Evolución: 1719 (línea base) + 101 nuevas = 1820 |
+| `capture_baseline --check` | 8 de 8 idéntico (motor y diapositivas de los 4 formatos) |
+| `archivos_protegidos --check` | sin cambios (integridad por hash; no es autorización del propietario) |
+| CI sobre el SHA definitivo | consta en el PR (un documento no puede citar el CI de su propio commit) |
+
+**Las 101 pruebas nuevas:** Fase 6 — 13 (`test_adaptativo_ui` 7 en CI; `test_responsivo` 6 local). Fase 7 — 70 (`test_fase7_validacion_entradas` 49 en CI; `test_fase7_recorrido_real` 21 local con plantillas). Fase 8 — 18 (`test_fase8_contratos` 12 en CI; `test_fase8_rendimiento` 2 local; `test_estabilizacion_navegador` 4 local con Pyodide). **En CI corren 68; las 33 restantes son locales** (plantillas reales, Chromium + Pyodide) y el CI actual no demuestra por sí solo que se ejecuten.
+
+Recorrido extremo a extremo y funcionamiento conjunto de las tres fases: `test_estabilizacion_navegador` recorre en Chromium con Pyodide real cargar → validar → metas → narrativa → escenario → generar → descargar → recargar → historial, sobre la interfaz ya adaptada (Fase 6) y con el QA y la vista previa validados (Fase 7); `test_responsivo` y las 18 pruebas e2e previas se ejecutan en la misma suite sin regresiones.
 
 ## 8. Limitaciones
 
