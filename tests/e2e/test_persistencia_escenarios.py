@@ -28,7 +28,7 @@ _omitir = S.omitir
 
 @pytest.fixture(scope="module")
 def sitio(tmp_path_factory):
-    s = S.construir(tmp_path_factory, con_plantillas=False)
+    s = S.construir(tmp_path_factory)
     yield s.url, s.npm_root
 
 

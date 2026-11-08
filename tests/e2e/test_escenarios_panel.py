@@ -29,7 +29,7 @@ _omitir = S.omitir
 
 @pytest.fixture(scope="module")
 def sitio(tmp_path_factory):
-    s = S.construir(tmp_path_factory, con_plantillas=False)
+    s = S.construir(tmp_path_factory)
     yield s.url, s.npm_root
 
 
@@ -43,8 +43,7 @@ def _correr(sitio, tmp_path, unidad, libro):
     res = json.loads(linea[len("RESULTADO "):])
     assert res["ok"], res
     assert not [c for c in res["consola"] if c.startswith(("error", "pageerror"))], res["consola"]      # sin errores de consola
-    # las plantillas PPTX no se versionan: su 404 es el comportamiento normal de la aplicación sin plantillas, no un recurso caído
-    assert not [x for x in res["red"] if "favicon" not in x and "/templates/" not in x], res["red"]       # sin otros recursos caídos
+    assert not [x for x in res["red"] if "favicon" not in x], res["red"]                              # sin recursos caídos (el sitio incluye las plantillas, reales o sintéticas)
     assert res["paso_validar_visible"] and res["hay_boton_continuar"]                                     # el flujo normal sigue disponible
     return res
 
