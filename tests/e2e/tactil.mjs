@@ -16,7 +16,17 @@ try {
   p.on("console", (m) => { if (m.type() === "error") out.consola.push(m.text().slice(0, 200)); });
   p.on("pageerror", (e) => out.consola.push("pageerror: " + String(e).slice(0, 200)));
   const objetivo = async (sel) => p.evaluate((s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), visible: r.width > 0 && r.height > 0 }; }, sel);
-  const toque = async (sel, etiqueta) => { const o = await objetivo(sel); (out.objetivos ||= {})[etiqueta || sel] = o; await p.locator(sel).first().scrollIntoViewIfNeeded(); await p.tap(sel); };
+  // La aplicación muestra una capa de carga mientras trabaja el motor; un toque durante la carga no llega al control (es el comportamiento correcto). Se espera a que termine.
+  const esperarCarga = () => p.waitForFunction(() => { const l = document.querySelector("#loader"); return !l || l.hidden; }, null, { timeout: 120000 });
+  const toque = async (sel, etiqueta) => {
+    out.ultimo_toque = etiqueta || sel;
+    await esperarCarga();
+    const loc = p.locator(sel).first();
+    await loc.waitFor({ state: "visible", timeout: 60000 });
+    (out.objetivos ||= {})[etiqueta || sel] = await objetivo(sel);
+    await loc.scrollIntoViewIfNeeded({ timeout: 60000 });
+    await loc.tap({ timeout: 60000 });
+  };
 
   await p.goto(site);
   await p.waitForSelector("#boot", { state: "hidden", timeout: 300000 });
@@ -52,7 +62,7 @@ try {
   const k0 = await idx();
   await toque("#pvNext", "Vista previa: siguiente"); const k1 = await idx();
   await toque("#pvPrev", "Vista previa: anterior"); const k2 = await idx();
-  await p.locator(".pvit").nth(4).scrollIntoViewIfNeeded(); await p.tap(".pvit >> nth=4"); const k3 = await idx();
+  out.ultimo_toque = "Vista previa: diapositiva 5 de la lista"; await esperarCarga(); await p.locator(".pvit").nth(4).scrollIntoViewIfNeeded(); await p.locator(".pvit").nth(4).tap({ timeout: 60000 }); const k3 = await idx();
   out.pasos.vista_previa = { k0, k1, k2, k3 };
   out.pasos.vista_previa_desplazable = await p.evaluate(() => { const w = document.querySelector(".pvwrap"); return { ancho_visible: w.clientWidth, ancho_diapositiva: document.querySelector("#pvs").getBoundingClientRect().width, desplaza: w.scrollWidth > w.clientWidth }; });
   await p.screenshot({ path: `${outdir}/tactil_vista_previa.png`, fullPage: false });
