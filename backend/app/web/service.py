@@ -21,6 +21,7 @@ from ..deck.aetops_mensual import DataMissing, TemplateMismatch, fill_aetops_men
 from ..deck.aetops_trimestral import fill_aetops_trimestral
 from ..deck.glp1_mensual import fill_glp1
 from ..history import store as hist
+from ..importer.base_sheet import ImportRejected
 from ..models import Period
 from ..narrative import trends
 from ..narrative.executive import build_executive
@@ -171,6 +172,13 @@ def _input(run_id: str) -> Path:
 
 
 def _run_engine(run_id: str, st: dict):
+    try:
+        return _run_engine_sin_traducir(run_id, st)
+    except ImportRejected as e:                      # Fase 7: un libro que no tiene el formato esperado es una entrada inválida (400), no un error del servidor
+        raise ServiceError(f"El libro no tiene el formato esperado: {e}", 400) from None
+
+
+def _run_engine_sin_traducir(run_id: str, st: dict):
     p, per = _input(run_id), period_of(st)
     if st["unit"] == "glp1":
         if is_raw_workbook(p):
@@ -246,7 +254,7 @@ def _has_template(st: dict) -> bool:
 def template_path(st: dict) -> Path:
     p = TEMPLATES_DIR / f"{st['unit']}-{st['periodicity']}" / "1" / "template.pptx"
     if not p.exists():
-        raise ServiceError(f"Falta la plantilla {p.relative_to(TEMPLATES_DIR.parent) if TEMPLATES_DIR.parent in p.parents else p.name}.", 500)
+        raise ServiceError(f"Falta la plantilla {p.relative_to(TEMPLATES_DIR.parent) if TEMPLATES_DIR.parent in p.parents else p.name}.", 409)
     return p
 
 
