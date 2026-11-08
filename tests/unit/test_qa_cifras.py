@@ -14,6 +14,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 
 from backend.app.qa import cifras as C
+from tests import plantillas as PL
 
 ROOT = Path(__file__).resolve().parents[2]
 VALORES = {D("7853122"), D("12221525"), D("927"), D("1353"), D("8472"), D("9033"), D("0.5558"), D("0.4596"), D("0.0662"), D("18883"), D("11329"), D("2643"), D("495144"), D("0.1248")}
@@ -210,7 +211,7 @@ ESC = {"aetops_mensual_2026-09": ("aetops-mensual", set()), "aetops_trimestral_2
 def test_decks_de_referencia_sin_falsos_positivos(nombre, tmp_path):
     """Libros de EJEMPLO sintéticos y plantillas locales. Única salida admitida: la observación real documentada (GLP-1: «Mounjaro (74%, $9.20 M)» no nombra su
     base, §3.2). Cualquier otro hallazgo, o ese en AETOPS, es un falso positivo y falla."""
-    tpl = ROOT / "templates" / ESC[nombre][0] / "1" / "template.pptx"
+    tpl = PL.ruta(ESC[nombre][0])
     if not tpl.exists():
         pytest.skip("OMITIDA (no ejecutada): la plantilla no se versiona y no está disponible")
     sys.path.insert(0, str(ROOT))

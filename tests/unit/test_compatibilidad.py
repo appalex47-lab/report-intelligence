@@ -24,10 +24,11 @@ from backend.app.deck.aetops_mensual import DataMissing, TemplateMismatch  # noq
 from backend.app.models import Period  # noqa: E402
 from backend.app.pipeline import run_aetops_raw, run_glp1_raw  # noqa: E402
 from tools.capture_baseline import canon  # noqa: E402
+from tests import plantillas as PL
 
 EJ = ROOT / "data" / "ejemplos"
 PG, PA = Period("GLP1", "mensual", 2026, 9), Period("AETOPS", "mensual", 2026, 9)
-TPL = {"g": ROOT / "templates/glp1-mensual/1/template.pptx", "a": ROOT / "templates/aetops-mensual/1/template.pptx"}
+TPL = {"g": PL.ruta("glp1-mensual"), "a": PL.ruta("aetops-mensual")}
 
 
 def col(ws, nombre):

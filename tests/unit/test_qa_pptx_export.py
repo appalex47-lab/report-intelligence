@@ -21,6 +21,7 @@ from pptx.util import Emu, Inches, Pt
 
 from backend.app.qa import pptx_export as P
 from backend.app.qa.checks import QAReport
+from tests import plantillas as PL
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -320,7 +321,7 @@ ESCENARIOS = {"aetops_mensual_2026-09": "aetops-mensual", "aetops_trimestral_202
 @pytest.mark.parametrize("nombre", sorted(ESCENARIOS))
 def test_decks_de_referencia_generados_no_tienen_hallazgos(nombre, tmp_path):
     """0 falsos positivos en decks reales de referencia (libros de EJEMPLO sintéticos + plantillas locales). Sin plantilla: omitida con motivo."""
-    tpl = ROOT / "templates" / ESCENARIOS[nombre] / "1" / "template.pptx"
+    tpl = PL.ruta(ESCENARIOS[nombre])
     if not tpl.exists():
         pytest.skip(f"OMITIDA (no ejecutada): la plantilla {ESCENARIOS[nombre]} no se versiona y no está disponible")
     import sys

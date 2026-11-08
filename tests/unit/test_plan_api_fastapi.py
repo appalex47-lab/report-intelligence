@@ -7,9 +7,10 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from tests import plantillas as PL
 
 ROOT = Path(__file__).resolve().parents[2]
-TPL = ROOT / "templates" / "aetops-mensual" / "1" / "template.pptx"
+TPL = PL.ruta("aetops-mensual")
 
 NUEVAS = {("GET", "/api/escenarios-reporte"), ("PUT", "/api/escenarios-reporte/{eid}"), ("DELETE", "/api/escenarios-reporte/{eid}"),
           ("GET", "/api/runs/{rid}/plan"), ("PUT", "/api/runs/{rid}/plan"), ("GET", "/api/runs/{rid}/preview")}
@@ -162,7 +163,7 @@ def test_las_rutas_anteriores_responden_igual_que_siempre(api):
     assert c.post("/api/runs", json={"unit": "x"}).status_code in (400, 422)
 
 
-@pytest.mark.skipif(not TPL.exists(), reason="OMITIDA (no ejecutada): la plantilla real de AETOPS mensual no está disponible (no se versiona)")
+@pytest.mark.skipif(not TPL.exists(), reason="OMITIDA (no ejecutada): no hay plantilla de AETOPS mensual (ni real ni sintética)")
 def test_generar_por_la_api_agrega_los_campos_nuevos_sin_quitar_los_anteriores(api):
     c, appmod, tmp = api
     from backend.app.web import service
