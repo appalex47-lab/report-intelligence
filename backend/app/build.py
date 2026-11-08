@@ -117,7 +117,7 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
                          fix_titles: bool = True, executive: bool = True,
                  context: list[str] | None = None, history_db: Path | None = None,
                  sources: list[Path] | None = None, targets=None, render: bool = True, discovery: dict | None = None,
-                 ia: dict | None = None, anexo: dict | None = None) -> BuildResult:
+                 ia: dict | None = None, anexo: dict | None = None, plan=None) -> BuildResult:
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
     if blockers and not allow_blockers:
@@ -142,6 +142,8 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_AETOP_{stem}_{period.year}.pptx"
     prs.save(pptx)
+    if plan:                                        # bloque integral: el diseño adaptativo corre ANTES del QA, del manifiesto y del historial (que registran el hash del PPTX)
+        plan.ajustar(pptx, result, fill)
 
     qa = checks.QAReport()
     pdf, pngs, tpl_dir = _render_and_check(pptx, template, out_dir, slide_map, qa, render)
@@ -168,6 +170,8 @@ def build_aetops(result: Result, period: Period, template: Path, out_dir: Path,
         qa.add("GENERATED_WITH_BLOCKERS", "error", None,
                "Generado ignorando hallazgos bloqueantes (solo desarrollo): NO apto para descarga.")
 
+    if plan:                                        # bloque integral: SlideSpec, vista previa y QA integral sobre el archivo final; sus errores bloquean la descarga
+        plan.revisar(qa, pptx, fill, result, out_dir)
     manifest = {
         "periodo": period.label if period.periodicity == "trimestral" else f"{period.month_name} {period.year}", "plantilla": template.name,
         "plantilla_sha256": _sha(template), "pptx_sha256": _sha(pptx), "pdf_sha256": _sha(pdf) if pdf else None,
@@ -221,7 +225,7 @@ def _record(result, period, template, out_dir, pptx, pdf, qa, fill, context, sou
 def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path, narrative: dict | None = None,
                allow_blockers: bool = False, sources: list[Path] | None = None, executive: bool = True,
                context: list[str] | None = None, targets=None, history_db: Path | None = None, render: bool = True,
-               discovery: dict | None = None, ia: dict | None = None, anexo: dict | None = None) -> BuildResult:
+               discovery: dict | None = None, ia: dict | None = None, anexo: dict | None = None, plan=None) -> BuildResult:
     """GLP-1 mensual: rellena la plantilla, convierte a PDF y aplica el QA (sin resumen ejecutivo ni metas por ahora)."""
     template, out_dir = Path(template), Path(out_dir)
     blockers = [f for f in result.findings if f.severity == "block"]
@@ -245,6 +249,8 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
     stem = period.month_name.capitalize() if period.periodicity == "mensual" else f"Q{period.index}"
     pptx = out_dir / f"Resultados_GLP1_{stem}_{period.year}.pptx"
     prs.save(pptx)
+    if plan:                                        # bloque integral: el diseño adaptativo corre ANTES del QA, del manifiesto y del historial (que registran el hash del PPTX)
+        plan.ajustar(pptx, result, fill)
     qa = checks.QAReport()
     pdf, pngs, tpl_dir = _render_and_check(pptx, template, out_dir, slide_map, qa, render, DECORATIVE)
     checks.check_stale(fill, qa)
@@ -268,6 +274,8 @@ def build_glp1(result: GlpResult, period: Period, template: Path, out_dir: Path,
             qa.add(f"DATA_{f.id}", "warn", None, f.message)
     if blockers:
         qa.add("GENERATED_WITH_BLOCKERS", "error", None, "Generado ignorando hallazgos bloqueantes (solo desarrollo): NO apto para descarga.")
+    if plan:                                        # bloque integral: SlideSpec, vista previa y QA integral sobre el archivo final; sus errores bloquean la descarga
+        plan.revisar(qa, pptx, fill, result, out_dir)
     manifest = {"periodo": period.label if period.periodicity == "trimestral" else f"{period.month_name} {period.year}", "plantilla": template.name, "plantilla_sha256": _sha(template),
                 "pptx_sha256": _sha(pptx), "pdf_sha256": _sha(pdf) if pdf else None, "qa_passed": qa.passed,
                 "hallazgos_bloqueantes": [f.id for f in blockers], "fuente_render": "Carlito (sustituye Aptos Narrow solo en PDF/QA)"}

@@ -96,7 +96,7 @@ def create_run(unit: str, periodicity: str, year: int, index: int) -> dict:
 
 def public(st: dict) -> dict:
     return {**{k: st[k] for k in ("id", "unit", "periodicity", "year", "index", "filename", "targets", "context", "edits", "generated")},
-            "discovery": st.get("discovery")}
+            "discovery": st.get("discovery"), "plan": st.get("plan")}
 
 
 def get_run(run_id: str) -> dict:
@@ -335,28 +335,31 @@ def history_runs(unit: str | None = None) -> list[dict]:
 OUT_FILES = {"pptx", "pdf"}
 
 
-def generate(run_id: str, anexo: bool | None = None) -> dict:
-    """`anexo`: True/False = petición expresa de incluir (o no) el anexo de calidad como última diapositiva; None = lo decide el flag `anexo_calidad`."""
+def generate(run_id: str, anexo: bool | None = None, adaptativo: bool | None = None) -> dict:
+    """`anexo`: True/False = petición expresa de incluir (o no) el anexo de calidad como última diapositiva; None = lo decide el flag `anexo_calidad`.
+    `adaptativo`: activa/desactiva el diseño adaptativo (bloque integral: ver `plan_service`)."""
     from .. import calidad
+    from . import plan_service as P
     st = _load(run_id)
     res = _run_engine(run_id, st)
     out = _dir(run_id) / "out"
     shutil.rmtree(out, ignore_errors=True)
     anexo_d = _anexo(run_id, st, res, _escenarios(run_id, st, res))
     en_deck = anexo_d if calidad.anexo_activado(anexo) else None
+    plan, contexto = P.preparar(run_id, st, res, anexo, adaptativo)         # escenario, plan y contexto efectivo (ver plan_service)
     try:
         if st["unit"] == "glp1":
             b = build_glp1(res, period_of(st), template_path(st), out, narrative=st["edits"] or None, sources=[_input(run_id)],
-                           context=st["context"] or None, targets=_targets(st), history_db=HISTORY_DB, render=RENDER,
-                           discovery=st.get("discovery"), ia=_ia_info(run_id, st), anexo=en_deck)
+                           context=contexto or None, targets=_targets(st), history_db=HISTORY_DB, render=RENDER,
+                           discovery=st.get("discovery"), ia=_ia_info(run_id, st), anexo=en_deck, plan=plan)
             st["generated"] = True
             _save(run_id, st)
             _copy_ia_log(run_id)
             _escribir_anexo(anexo_d, out)
             return result_info(run_id, b.qa.passed)
         b = build_aetops(res, period_of(st), template_path(st), out, narrative=st["edits"] or None,
-                         context=st["context"] or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st),
-                         render=RENDER, discovery=st.get("discovery"), ia=_ia_info(run_id, st), anexo=en_deck)
+                         context=contexto or None, history_db=HISTORY_DB, sources=[_input(run_id)], targets=_targets(st),
+                         render=RENDER, discovery=st.get("discovery"), ia=_ia_info(run_id, st), anexo=en_deck, plan=plan)
     except ReportBlocked as e:
         raise ServiceError(f"No se genera: hay hallazgos bloqueantes ({e}).", 409) from None
     except (DataMissing, TemplateMismatch) as e:
@@ -399,15 +402,19 @@ def result_info(run_id: str, passed: bool | None = None) -> dict:
     pdf = next(out.glob("*.pdf"), None)
     pngs = sorted(p.name for p in (out / "png").glob("*.png")) if (out / "png").is_dir() else []
     ok = bool(qa.get("passed", passed))
-    return {"ia_log": (out / "ia_log.json").exists(), "qa": qa, "qa_passed": ok, "downloadable": ok, "pptx": pptx.name if pptx else None, "pdf": pdf.name if pdf else None,
+    from . import plan_service as P
+    r = {"ia_log": (out / "ia_log.json").exists(), "qa": qa, "qa_passed": ok, "downloadable": ok, "pptx": pptx.name if pptx else None, "pdf": pdf.name if pdf else None,
             "slides": pngs, "trends": json.loads((out / "trends.json").read_text(encoding="utf-8")) if (out / "trends.json").exists() else []}
+    r.update(P.estado_resultado(run_id, ok))                      # vigencia, QA integral y downloadable (un reporte desactualizado no se descarga)
+    return r
 
 
 def file_path(run_id: str, name: str) -> Path:
     out = _dir(run_id) / "out"
+    from . import plan_service as P
     if not out.is_dir():
         raise ServiceError("Aún no se ha generado el reporte.", 404)
-    if name in ("qa_report.json", "narrative.json", "manifest.json", "trends.json", "ia_log.json", "procedencia.json", "procedencia_error.json", "anexo_calidad.json") \
+    if name in ("qa_report.json", "narrative.json", "manifest.json", "trends.json", "ia_log.json", "procedencia.json", "procedencia_error.json", "anexo_calidad.json", *P.ARCHIVOS) \
             or name.lower().endswith((".pptx", ".pdf")):
         p, base = out / name, out
     elif re.fullmatch(r"[\w\-]+\.png", name):
@@ -418,6 +425,7 @@ def file_path(run_id: str, name: str) -> Path:
         raise ServiceError("Archivo no encontrado.", 404)
     if name.lower().endswith((".pptx", ".pdf")) and not json.loads((out / "qa_report.json").read_text(encoding="utf-8")).get("passed"):
         raise ServiceError("Descarga bloqueada: el QA no aprobó el reporte.", 403)
+    P.verificar_descarga(run_id, name)
     return p
 
 

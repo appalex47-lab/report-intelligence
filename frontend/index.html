@@ -78,6 +78,13 @@ th:first-child,td:first-child{text-align:left}th{font-size:11px;text-transform:u
 .mini:hover{text-decoration:underline}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
 .thumbs img{width:100%;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:zoom-in}
+.flow{display:flex;flex-wrap:wrap;gap:6px}.fl{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:4px 10px;border:1px solid var(--line-2);border-radius:99px;color:var(--muted);background:var(--surface)}
+.fl i{font-style:normal;font-weight:700}.fl.ok{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}.fl.warn{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}.fl.bad{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}.fl.stale{border-style:dashed}
+.pvlay{display:grid;grid-template-columns:230px 1fr;gap:12px}@media(max-width:900px){.pvlay{grid-template-columns:1fr}.pvlist{max-height:180px}}
+.pvlist{display:grid;gap:4px;align-content:start;max-height:560px;overflow:auto}.pvit{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 8px;cursor:pointer;font-size:12px;color:var(--ink)}.pvit.now{border-color:var(--primary);background:var(--primary-soft)}
+.pvs{position:relative;width:100%;background:#fff;border:1px solid var(--line-2);overflow:hidden;--k:1;margin:8px 0}.pvbg{position:absolute;inset:0}.pvf{position:absolute;box-sizing:border-box;line-height:1.2;overflow:visible;color:#111}
+.pvtab{width:100%;border-collapse:collapse;table-layout:fixed}.pvtab td{padding:0 2px;border:1px solid rgba(0,0,0,.08);overflow:hidden;vertical-align:middle}
+.pvph{display:grid;place-items:center;border:1px dashed var(--line-2);color:var(--muted);font-size:10px;text-align:center;background:rgba(128,128,128,.06)}
 .kv{display:flex;justify-content:space-between;gap:10px}
 .trend{display:grid;gap:4px;padding:10px 0;border-top:1px solid var(--line)}
 svg.spark{width:100%;height:42px}
@@ -145,7 +152,7 @@ const KIND = {hecho:"Hecho", interpretacion:"Interpretación", recomendacion:"Re
 const fmtM = v => v == null ? "—" : Math.abs(v) >= 1e6 ? `$${(v/1e6).toFixed(2)} M` : `$${Math.round(v).toLocaleString("es-MX")}`;
 const fmtP = v => v == null ? "—" : `${v>=0?"+":""}${(v*100).toFixed(1)} %`;
 
-const S = {disc:null, discSeen:[], discOpen:false, aiOpen:false, ai:{}, info:{render:false}, tpls:[], run:null, step:0, analysis:null, narr:null, edits:{}, sec:0, result:null, busy:false, err:null};
+const S = {disc:null, discSeen:[], discOpen:false, aiOpen:false, ai:{}, info:{render:false}, tpls:[], run:null, step:0, analysis:null, narr:null, edits:{}, sec:0, result:null, busy:false, err:null, escCat:null, plan:null, planErr:null, pv:null, pvErr:null, pvI:0};
 const store = {get(k){try{return localStorage.getItem(k)}catch{return null}}, set(k,v){try{localStorage.setItem(k,v)}catch{}}};
 
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3500)}
@@ -456,7 +463,7 @@ function stepState(){
     {done:!!a && !blocks.length, bad:!!a && blocks.some(f=>f.id!=="TARGETS_MISSING"), ok:!!(r && r.filename)},
     {done:!!a && !!a.can_generate, bad:targetsOnly, ok:!!a},
     {done:!!S.narr, ok:!!(a && a.can_generate && a.generator_available)},
-    {done:!!S.result, bad:S.result && !S.result.qa_passed, ok:!!(a && a.can_generate && a.generator_available)},
+    {done:!!S.result && S.result.vigente!==false, bad:S.result && (!S.result.qa_passed || S.result.vigente===false), ok:!!(a && a.can_generate && a.generator_available)},
   ];
 }
 function renderSteps(){
@@ -469,6 +476,7 @@ async function go(i){
   try{
     if(i===1 || i===2) await refreshAnalysis();
     if(i===3 && !S.narr) await loadNarrative();
+    if(i===4){ await loadPlan(); if(S.result || S.run.generated){ S.result = await api(`/runs/${S.run.id}/result`).catch(()=>S.result); await loadPreview() } }
   }catch(e){ S.err = e.message }
   render();
 }
@@ -768,35 +776,161 @@ async function persistEdits(){
   }catch(e){ toast(e.message) }
 }
 
-/* ---- generar */
+/* ---- generar: escenario → estructura (SlideSpec) → diseño adaptativo → calidad → vista previa → exportación */
+async function loadPlan(){
+  if(!S.run) return;
+  try{ const [c, p] = await Promise.all([api("/escenarios-reporte"), api(`/runs/${S.run.id}/plan`)]); S.escCat = c; S.plan = p; S.planErr = null }
+  catch(e){ S.planErr = e.message }
+}
+async function loadPreview(){
+  S.pv = null; S.pvErr = null;
+  if(!S.result || !S.plan || !S.plan.generado) return;
+  try{ S.pv = await api(`/runs/${S.run.id}/preview`); if(S.pvI == null || S.pvI >= S.pv.diapositivas.length) S.pvI = 0 }
+  catch(e){ S.pvErr = e.message }
+}
+const SEVCLS = {"ERROR":"block", "ADVERTENCIA":"warn", "INFORMACIÓN":"info"};
+const colorOk = c => /^#[0-9a-fA-F]{6}$/.test(c || "") ? c : "";
+const imgOk = u => /^data:image\/(png|jpeg|gif|bmp|webp);base64,[A-Za-z0-9+\/=]+$/.test(u || "");
+function escCardHtml(){
+  const p = S.plan, e = p.escenario, op = S.escCat.opciones;
+  const o = x => `<option value="${esc(x.id)}" ${x.id===p.escenario_id?"selected":""}>${esc(x.nombre)}${x.origen==="usuario"?" (propio)":""}</option>`;
+  const ta = (id, label, val) => `<label class="f">${label}<textarea id="${id}" rows="2" maxlength="${op.max_texto}" placeholder="No definido en la especificación">${esc(val || "")}</textarea></label>`;
+  const sel = (id, label, vals, cur) => `<label class="f">${label}<select id="${id}">${vals.map(v=>`<option ${v===cur?"selected":""}>${esc(v)}</option>`).join("")}</select></label>`;
+  return `<div class="card grid" id="escCard"><strong>1 · Escenario del reporte</strong>
+    <div class="sub">El escenario define para qué es el reporte (objetivo, audiencia, orden narrativo, diapositivas obligatorias, indicadores relevantes y tipo de conclusión) y es lo que el control de calidad exige. No inventa datos: lo que la especificación no define aparece como «no definido».</div>
+    <label class="f">Escenario<select id="escSel">${S.escCat.catalogo.map(o).join("")}${S.escCat.propios.length?`<optgroup label="Propios">${S.escCat.propios.map(o).join("")}</optgroup>`:""}</select></label>
+    <div class="sub">${e.objetivo?`<b>Objetivo:</b> ${esc(e.objetivo)}`:"<b>Objetivo:</b> no definido en la especificación."} · <b>Orden:</b> ${esc(e.orden_narrativo.join(" → ") || "no definido")} · <b>Obligatorias:</b> ${esc(e.tipos_obligatorios.join(", ") || "ninguna")}</div>
+    ${e.origen==="ajustado"?`<div class="sub"><span class="chip contexto">Ajustado para este reporte</span></div>`:""}
+    <details><summary>Ajustar este reporte</summary><div class="grid" style="margin-top:8px">
+      ${ta("escObj","Objetivo",e.objetivo)}${ta("escAud","Audiencia",e.audiencia)}${ta("escCtx","Contexto de negocio (una línea por punto; llega a «Contexto aportado por el equipo», sin verificar)",e.contexto_negocio)}${ta("escMsg","Mensaje central (sus cifras se validan contra los datos)",e.mensaje_central)}
+      <div class="grid g2">${sel("escProf","Profundidad",op.profundidades,e.profundidad)}${sel("escConc","Tipo de conclusión",op.tipos_conclusion,e.tipo_conclusion)}</div>
+      <div class="row"><button class="btn" id="escSave">Aplicar ajustes</button><button class="btn" id="escNew">Guardar como escenario propio…</button>${e.origen==="usuario"?'<button class="btn" id="escDel">Borrar este escenario propio</button>':""}</div></div></details>
+    <label class="sub"><input type="checkbox" id="adaptChk" ${p.adaptativo?"checked":""}> Diseño adaptativo: si el texto o una tabla no caben, redistribuye o reduce la letra de forma proporcional (nunca bajo 9 pt) y avisa si aun así no cabe; si todo cabe, no cambia nada.</label></div>`;
+}
+function bindEsc(){
+  const id = S.run.id, put = async (b) => { try{ S.plan = await api(`/runs/${id}/plan`, J("PUT", b)); S.planErr = null }catch(e){ toast(e.message) } if(S.result) S.result = await api(`/runs/${id}/result`).catch(()=>S.result); await loadPreview(); render() };
+  $("#escSel").onchange = () => put({escenario_id: $("#escSel").value});
+  $("#adaptChk").onchange = () => put({adaptativo: $("#adaptChk").checked});
+  $("#escSave").onclick = () => {
+    const base = [...S.escCat.catalogo, ...S.escCat.propios].find(x => x.id === S.plan.escenario_id) || {};
+    const val = {objetivo:$("#escObj").value, audiencia:$("#escAud").value, contexto_negocio:$("#escCtx").value, mensaje_central:$("#escMsg").value, profundidad:$("#escProf").value, tipo_conclusion:$("#escConc").value};
+    const cambios = {}; for(const [k, v] of Object.entries(val)){ const t = (v || "").trim() || null; if(t !== (base[k] ?? null)) cambios[k] = t }
+    put({cambios: Object.keys(cambios).length ? cambios : null});
+  };
+  $("#escNew").onclick = async () => {
+    const eid = (prompt("Id del escenario propio (minúsculas, dígitos, - y _):") || "").trim(); if(!eid) return;
+    const nombre = (prompt("Nombre del escenario:") || "").trim(); if(!nombre) return;
+    const e = S.plan.escenario;
+    try{ await api(`/escenarios-reporte/${encodeURIComponent(eid)}`, J("PUT", {nombre, perfil:e.perfil, objetivo:e.objetivo, audiencia:e.audiencia, contexto_negocio:e.contexto_negocio, mensaje_central:e.mensaje_central,
+        profundidad:e.profundidad, tipo_analisis:e.tipo_analisis, orden_narrativo:e.orden_narrativo, tipos_obligatorios:e.tipos_obligatorios, indicadores_relevantes:e.indicadores_relevantes, tipo_conclusion:e.tipo_conclusion}));
+      S.escCat = await api("/escenarios-reporte"); await put({escenario_id: eid}); toast("Escenario guardado") }catch(err){ toast(err.message) }
+  };
+  $("#escDel")?.addEventListener("click", async () => {
+    if(!confirm("¿Borrar este escenario propio? Los reportes ya generados con él quedarán como desactualizados.")) return;
+    try{ await api(`/escenarios-reporte/${encodeURIComponent(S.plan.escenario_id)}`, {method:"DELETE"}); S.escCat = await api("/escenarios-reporte"); await put({escenario_id: null}) }catch(err){ toast(err.message) }
+  });
+}
+function flowHtml(){
+  const p = S.plan, r = S.result, gen = !!(p && p.generado), vig = gen && p.vigente !== false, q = vig && p.qa_integral ? p.qa_integral.resumen : null, nAj = vig && p.diseno ? p.diseno.acciones.length : 0;
+  const it = (n, t, cls, extra) => `<span class="fl ${cls}"><i>${n}</i>${t}${extra?` <span class="sub">${esc(extra)}</span>`:""}</span>`;
+  return `<div class="flow" aria-label="Etapas del flujo">
+    ${it(1,"Escenario",p?"ok":"")}${it(2,"Estructura (SlideSpec)",vig?"ok":gen?"stale":"",vig?`${p.diapositivas.length} diapositivas`:"")}${it(3,"Diseño adaptativo",vig?"ok":gen?"stale":"",vig?(p.adaptativo?`${nAj} ajuste(s)`:"desactivado"):"")}
+    ${it(4,"Calidad",q?(q.errores?"bad":q.advertencias?"warn":"ok"):gen?"stale":"",q?`${q.errores} error(es) · ${q.advertencias} advertencia(s)`:"")}${it(5,"Vista previa",S.pv&&vig?"ok":gen?"stale":"")}${it(6,"Exportación",r&&r.downloadable?"ok":r?"bad":"",r?(r.downloadable?"habilitada":"bloqueada"):"")}</div>`;
+}
+function hallazgoHtml(h){
+  return `<div class="find"><span class="sev ${SEVCLS[h.severidad]||"info"}">${esc(h.severidad)}</span><div><code>${esc(h.id)}</code> ${esc(h.descripcion)}${h.indice?` <span class="sub">(diap. ${h.indice}${h.elemento?` · ${esc(h.elemento)}`:""})</span>`:""}
+    <div class="sub"><b>Motivo:</b> ${esc(h.motivo)} <b>Acción sugerida:</b> ${esc(h.accion)}</div></div></div>`;
+}
+function calidadHtml(){
+  const q = S.plan && S.plan.qa_integral; if(!q) return "";
+  const g = [["ERROR","Errores (bloquean la exportación)"], ["ADVERTENCIA","Advertencias (requieren revisión)"], ["INFORMACIÓN","Información"]];
+  return `<div class="card grid"><strong>Calidad del reporte</strong>${g.map(([s, t]) => { const hs = q.hallazgos.filter(h => h.severidad === s); return hs.length ? `<details ${s!=="INFORMACIÓN"?"open":""}><summary><b>${t}</b> · ${hs.length}</summary>${hs.map(hallazgoHtml).join("")}</details>` : "" }).join("") || '<div class="okline">✓ sin hallazgos</div>'}</div>`;
+}
+function slideHtml(pv, d){
+  const W = pv.ancho_pt, H = pv.alto_pt, pc = (v, t) => (v / t * 100).toFixed(3) + "%";
+  const fam = f => `'${String(f || "Aptos Narrow").replace(/[^\w \-]/g, "")}','Arial Narrow',Arial,sans-serif`;
+  const al = {center:"center", right:"right", justify:"justify"};
+  const ps = pa => pa.map(p => `<div style="text-align:${al[p.a] || "left"}">${p.runs.length ? p.runs.map(r => `<span style="${r.pt?`font-size:calc(var(--k)*${+r.pt}px);`:""}${r.b?"font-weight:700;":""}${r.i?"font-style:italic;":""}${colorOk(r.c)?`color:${colorOk(r.c)};`:""}font-family:${fam(r.f)}">${esc(r.t)}</span>`).join("") : "&nbsp;"}</div>`).join("");
+  return `<div class="pvbg" style="background:${colorOk(d.fondo) || "#fff"}"></div>` + d.formas.map(f => {
+    const pos = `left:${pc(f.x,W)};top:${pc(f.y,H)};width:${pc(f.w,W)};height:${pc(f.h,H)};z-index:${f.z}`;
+    const bg = colorOk(f.relleno) ? `background:${colorOk(f.relleno)};` : "";
+    if(f.tipo === "texto") return `<div class="pvf pvt" title="${esc(f.nombre)}" style="${pos};${bg}white-space:${f.ajuste==="sin_ajuste_linea"?"nowrap":"pre-wrap"}">${ps(f.parrafos)}</div>`;
+    if(f.tipo === "tabla"){
+      const tw = f.columnas.reduce((a, b) => a + b, 0) || 1;
+      return `<div class="pvf" title="${esc(f.nombre)}" style="${pos}"><table class="pvtab"><colgroup>${f.columnas.map(c=>`<col style="width:${(c/tw*100).toFixed(2)}%">`).join("")}</colgroup>${f.filas.map(r=>`<tr style="height:calc(var(--k)*${+r.h}px)">${r.celdas.filter(c=>!c.oculta).map(c=>`<td colspan="${+c.span||1}" style="${colorOk(c.relleno)?`background:${colorOk(c.relleno)};`:""}">${ps(c.parrafos)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+    }
+    if(f.tipo === "imagen"){
+      const u = (pv.imagenes || {})[f.imagen];
+      return imgOk(u) ? `<img class="pvf" alt="" title="${esc(f.nombre)}" style="${pos};object-fit:fill" src="${esc(u)}">` : `<div class="pvf pvph" title="${esc(f.nombre)}" style="${pos}">${esc(f.nota || "imagen (no incluida en la vista previa)")}</div>`;
+    }
+    if(f.tipo === "grafica") return `<div class="pvf pvph" title="${esc(f.nombre)}" style="${pos}">${esc(f.nota || "gráfica")}</div>`;
+    return bg ? `<div class="pvf" style="${pos};${bg}"></div>` : "";
+  }).join("");
+}
+function previewHtml(){
+  if(S.pvErr) return `<div class="banner warn"><div><strong>Vista previa no disponible</strong><span class="sub">${esc(S.pvErr)}</span></div></div>`;
+  if(!S.pv) return "";
+  const pv = S.pv, i = S.pvI || 0, d = pv.diapositivas[i], hs = (S.plan && S.plan.qa_integral && S.plan.qa_integral.hallazgos) || [];
+  const titulos = Object.fromEntries(((S.plan && S.plan.diapositivas) || []).map(x => [x.id, x]));
+  const cnt = id => ({e: hs.filter(h => h.diapositiva === id && h.severidad === "ERROR").length, w: hs.filter(h => h.diapositiva === id && h.severidad === "ADVERTENCIA").length});
+  const sp = titulos[d.id] || {}, mios = hs.filter(h => h.diapositiva === d.id);
+  return `<div class="card grid" id="pvBox"><strong>Vista previa</strong>
+    <div class="sub">Se dibuja desde el mismo PPTX que se descargará (posiciones, textos, tablas e imágenes). No es PowerPoint: usa las tipografías del navegador, muestra las gráficas avanzadas como recuadros y no detecta por sí sola el desborde real (eso lo hace el QA visual con render).</div>
+    <div class="pvlay"><div class="pvlist">${pv.diapositivas.map((s, k) => { const c = cnt(s.id), t = (titulos[s.id] || {}).titulo || "(sin título)"; return `<button class="pvit ${k===i?"now":""}" data-k="${k}" ${k===i?'aria-current="true"':""}><b>${s.indice}</b> ${esc(t)}${c.e?` <span class="sev block">${c.e}</span>`:""}${c.w?` <span class="sev warn">${c.w}</span>`:""}</button>` }).join("")}</div>
+    <div><div class="row"><button class="btn" id="pvPrev" ${i===0?"disabled":""}>←</button><span class="sub">Diapositiva ${d.indice} de ${pv.diapositivas.length} · ${esc(d.tipo || "")} · densidad ${esc(sp.densidad || "—")} · estado ${esc(sp.estado || "—")}</span><button class="btn" id="pvNext" ${i===pv.diapositivas.length-1?"disabled":""}>→</button></div>
+      <div class="pvs" id="pvs" style="aspect-ratio:${+pv.ancho_pt}/${+pv.alto_pt}" tabindex="0" aria-label="Diapositiva ${d.indice}">${slideHtml(pv, d)}</div>
+      ${sp.mensaje?`<div class="sub"><b>Mensaje principal:</b> ${esc(sp.mensaje)}</div>`:""}${mios.length?`<div>${mios.map(hallazgoHtml).join("")}</div>`:'<div class="okline">✓ sin hallazgos en esta diapositiva</div>'}
+      <div class="row"><button class="btn" id="pvEsc">← Escenario</button><button class="btn" id="pvMetas">← Metas y contexto</button><button class="btn" id="pvNarr">← Narrativa</button></div></div></div></div>`;
+}
+function bindPreview(){
+  if(!S.pv){ if(pvRO){ pvRO.disconnect(); pvRO = null } return }
+  const set = k => { S.pvI = Math.max(0, Math.min(S.pv.diapositivas.length - 1, k)); const box = $("#pvBox"); if(box){ box.outerHTML = previewHtml(); bindPreview(); $("#pvs")?.focus() } };
+  document.querySelectorAll(".pvit").forEach(b => b.onclick = () => set(+b.dataset.k));
+  $("#pvPrev")?.addEventListener("click", () => set((S.pvI||0) - 1)); $("#pvNext")?.addEventListener("click", () => set((S.pvI||0) + 1));
+  $("#pvs")?.addEventListener("keydown", e => { if(e.key === "ArrowLeft") set((S.pvI||0) - 1); if(e.key === "ArrowRight") set((S.pvI||0) + 1) });
+  $("#pvEsc")?.addEventListener("click", () => $("#escCard")?.scrollIntoView({behavior:"smooth"})); $("#pvMetas")?.addEventListener("click", () => go(2)); $("#pvNarr")?.addEventListener("click", () => go(3));
+  const el = $("#pvs"); if(pvRO){ pvRO.disconnect(); pvRO = null }
+  if(el){ const fit = () => { if(S.pv && el.isConnected) el.style.setProperty("--k", el.clientWidth / S.pv.ancho_pt) }; fit(); if(window.ResizeObserver){ pvRO = new ResizeObserver(fit); pvRO.observe(el) } }
+}
+let pvRO = null;
 function vGen(box){
   const res = S.result, a = S.analysis;
   const nEdits = Object.keys(S.run.edits||{}).length;
-  box.innerHTML = `<div class="card grid"><strong>Generar presentación${S.info.render?" y PDF":""}</strong>
+  box.innerHTML = (S.planErr ? `<div class="banner bad"><div><strong>No se pudo cargar el escenario</strong><span class="sub">${esc(S.planErr)}</span></div></div>` : "") + (S.plan && S.escCat ? flowHtml() + escCardHtml() : "") + `<div class="card grid"><strong>Generar presentación${S.info.render?" y PDF":""}</strong>
     <div class="sub">Se rellena la plantilla original (tablas y textos editables)${S.info.render?", se convierte a PDF y":" y"} se aplica el QA: si el QA no aprueba, la descarga queda bloqueada.
-    ${S.info.render?"":"<br><b>QA estructural:</b> esta versión corre 100 % en tu navegador, sin PDF ni vista previa. Revisa el PPTX en PowerPoint (Guardar como PDF) o usa el flujo opcional «PDF en GitHub» del README."}
+    ${S.info.render?"":"<br><b>QA estructural:</b> esta versión corre 100 % en tu navegador, sin PDF. La vista previa se dibuja desde el PPTX; revisa el PPTX en PowerPoint (Guardar como PDF) o usa el flujo opcional «PDF en GitHub» del README."}
     ${nEdits?`<br>Incluye ${nEdits} diapositiva(s) con texto editado a mano.`:""}${S.run.discovery?`<br>Incluye la hoja de descubrimiento «${esc(S.run.discovery.titulo)}» (propuesta por IA y validada por ti).`:""}</div>
     <label class="sub"><input type="checkbox" id="anexoChk" ${S.anexoPpt?"checked":""}> Incluir el anexo «Calidad de datos y supuestos» como última diapositiva (el anexo completo siempre está en el panel de «Validar» y en anexo_calidad.json)</label>
     <div class="row"><button class="btn" id="b4">← Narrativa</button><button class="btn primary" id="go" ${S.busy?"disabled":""}>${S.busy?'<span class="spin" style="display:inline-block;vertical-align:-3px;margin-right:6px"></span>Generando…':res?"Volver a generar":"Generar reporte"}</button></div></div><div id="out"></div>`;
   $("#b4").onclick = () => go(3);
+  if(S.plan && S.escCat) bindEsc();
   $("#go").onclick = async () => {
     S.anexoPpt = !!$("#anexoChk")?.checked;
     S.busy = true; render();
-    try{ S.result = await api(`/runs/${S.run.id}/generate`, S.anexoPpt ? {method:"POST", body: JSON.stringify({anexo:true})} : {method:"POST"}); S.err = null }catch(e){ S.err = e.message; S.result = null }
+    try{
+      S.result = await api(`/runs/${S.run.id}/generate`, {method:"POST", body: JSON.stringify({...(S.anexoPpt ? {anexo:true} : {}), adaptativo: S.plan ? !!S.plan.adaptativo : true})}); S.err = null;
+      S.run = await api(`/runs/${S.run.id}`); await loadPlan(); await loadPreview(); S.pvI = 0;
+    }catch(e){ S.err = e.message; S.result = null; S.pv = null }
     S.busy = false; render();
   };
   if(res) outView($("#out"), res);
 }
 function outView(host, r){
-  const id = S.run.id, issues = r.qa.issues.filter(i=>i.severity!=="info"), infos = r.qa.issues.length - issues.length;
+  const id = S.run.id, integral = !!(S.plan && S.plan.generado && S.plan.qa_integral);
+  const issues = r.qa.issues.filter(i=>i.severity!=="info"), infos = r.qa.issues.length - issues.length;
+  const obsoleto = r.vigente === false;
   const dl = (name, label) => name ? `<button class="btn ${r.downloadable?"primary":""}" data-dl="${esc(name)}" ${r.downloadable?"":"disabled"}>${label}</button>` : "";
-  host.innerHTML = `<div class="card grid"><div class="banner ${r.qa_passed?"ok":"bad"}"><div><strong>QA ${r.qa_passed?"aprobado":"rechazado"} · descarga ${r.downloadable?"habilitada":"bloqueada"}</strong><span class="sub">${issues.length} observación(es) · ${infos} nota(s) informativa(s)</span>${r.qa.issues.some(i=>i.id==="QA_VISUAL_OMITIDO"||i.id==="PPTX_REVISION_ESTRUCTURAL")?`<span class="sub" data-qa-limite="1"><b>Revisión estructural.</b> La revisión visual requiere render: aquí no se hizo, revisa las diapositivas antes de distribuirlas.</span>`:""}</div>
+  const resumenQa = integral ? S.plan.qa_integral.resumen : null;
+  host.innerHTML = (obsoleto ? `<div class="banner warn" role="alert"><div><strong>Resultados desactualizados</strong><span class="sub">${esc((r.motivos_obsoleto || []).join(" "))} La vista previa y el QA ya no corresponden a lo que se descargaría: vuelve a generar el reporte.</span></div></div>` : "")
+    + `<div class="card grid"><div class="banner ${obsoleto?"warn":r.qa_passed?"ok":"bad"}" data-qa-banner="${obsoleto?"desactualizado":r.qa_passed?"ok":"bad"}"><div><strong>${obsoleto?"QA del reporte anterior (desactualizado) · descarga bloqueada":`QA ${r.qa_passed?"aprobado":"rechazado"} · descarga ${r.downloadable?"habilitada":"bloqueada"}`}</strong><span class="sub">${resumenQa?`${resumenQa.errores} error(es) · ${resumenQa.advertencias} advertencia(s) · ${resumenQa.informacion} nota(s) informativa(s)`:`${issues.length} observación(es) · ${infos} nota(s) informativa(s)`}</span>${r.qa.issues.some(i=>i.id==="QA_VISUAL_OMITIDO"||i.id==="PPTX_REVISION_ESTRUCTURAL")?`<span class="sub" data-qa-limite="1"><b>Revisión estructural.</b> La revisión visual requiere render: aquí no se hizo, revisa las diapositivas antes de distribuirlas.</span>`:""}${!r.downloadable && r.qa_passed && !obsoleto ? '<span class="sub">La descarga está bloqueada por una condición del reporte.</span>':""}</div>
       <div class="row">${dl(r.pptx,"Descargar PPTX")}${dl(r.pdf,"Descargar PDF")}</div></div>
-    ${issues.length?issues.map(i=>`<div class="find"><span class="sev ${i.severity==="error"?"block":"warn"}">${esc(i.severity.toUpperCase())}</span><div><code>${esc(i.id)}</code> ${esc(i.message)}${i.slide?` <span class="sub">(diap. ${i.slide})</span>`:""}</div></div>`).join(""):""}
-    <div class="row"><button class="mini" data-dl="narrative.json">narrative.json</button><button class="mini" data-dl="qa_report.json">qa_report.json</button><button class="mini" data-dl="manifest.json">manifest.json</button><button class="mini" data-dl="anexo_calidad.json">anexo_calidad.json</button>${r.ia_log?'<button class="mini" data-dl="ia_log.json">ia_log.json (qué se envió a la IA)</button>':""}</div></div>
+    ${integral ? "" : issues.map(i=>`<div class="find"><span class="sev ${i.severity==="error"?"block":"warn"}">${esc(i.severity.toUpperCase())}</span><div><code>${esc(i.id)}</code> ${esc(i.message)}${i.slide?` <span class="sub">(diap. ${i.slide})</span>`:""}</div></div>`).join("")}
+    <div class="row"><button class="mini" data-dl="narrative.json">narrative.json</button><button class="mini" data-dl="qa_report.json">qa_report.json</button><button class="mini" data-dl="manifest.json">manifest.json</button><button class="mini" data-dl="anexo_calidad.json">anexo_calidad.json</button>${integral?'<button class="mini" data-dl="slidespec.json">slidespec.json</button><button class="mini" data-dl="qa_integral.json">qa_integral.json</button><button class="mini" data-dl="plan_reporte.json">plan_reporte.json</button>':""}${r.ia_log?'<button class="mini" data-dl="ia_log.json">ia_log.json</button>':""}</div></div>
+    ${integral && !obsoleto ? calidadHtml() : ""}${!obsoleto ? previewHtml() : ""}
     ${r.slides.length?`<div class="card grid"><strong>Diapositivas generadas</strong><div class="thumbs">${r.slides.map(n=>`<button class="mini" data-dl="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`:""}
     <div class="card"><strong>Tendencias del historial</strong>${trendsHtml(r.trends)}</div>`;
   host.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>download(`/runs/${id}/files/${encodeURIComponent(b.dataset.dl)}`));
+  bindPreview();
 }
 
 /* ---------------------------------------------------------------- historial */
