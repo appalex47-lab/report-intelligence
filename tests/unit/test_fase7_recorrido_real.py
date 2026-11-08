@@ -1,7 +1,7 @@
 """Fase 7 · QA y previsualización: recorrido real  datos de entrada → motor → reglas → escenario → previsualización → PPTX → resultado.
 
-Usa el puente (el mismo que la interfaz), el motor, los libros de ejemplo y las plantillas locales. Las plantillas no se versionan: sin ellas estas pruebas se OMITEN con motivo
-(en CI corren las sintéticas de test_flujo_integral_api_ci.py y test_fase7_validacion_entradas.py). No basta con que el archivo se genere: se comprueba qué contiene, que lo
+Usa el puente (el mismo que la interfaz), el motor, los libros de ejemplo y las plantillas: las REALES si están en `templates/` y, si no (CI, clon limpio), las SINTÉTICAS versionadas
+(tests/plantillas.py): misma estructura, sin marca ni datos. Nada se omite en CI. No basta con que el archivo se genere: se comprueba qué contiene, que lo
 previsualizado coincide con él (lector independiente), que lo que bloquea bloquea y que lo regenerado es el mismo contenido."""
 import importlib
 import io
@@ -13,10 +13,11 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-TPL = ROOT / "templates"
+from tests import plantillas as PL
+
 EJ = ROOT / "data" / "ejemplos"
-FALTAN = [k for k in ("aetops-mensual", "aetops-trimestral", "glp1-mensual", "glp1-trimestral") if not (TPL / k / "1/template.pptx").exists()]
-pytestmark = pytest.mark.skipif(bool(FALTAN), reason=f"OMITIDA (no ejecutada): faltan plantillas reales ({', '.join(FALTAN)}); no se versionan")
+FALTAN = [k for k in PL.FORMATOS if not PL.disponible(k)]
+pytestmark = pytest.mark.skipif(bool(FALTAN), reason=f"OMITIDA (no ejecutada): faltan plantillas ({', '.join(FALTAN)}); ni reales ni sintéticas")
 
 LARGO = "El canal digital mantiene un desempeño sostenido en el periodo, con variaciones moderadas entre líneas y categorías que conviene seguir. "
 
@@ -31,8 +32,8 @@ def br(tmp_path, monkeypatch):
     importlib.reload(bridge)
     service.RENDER = False
     (tmp_path / "h").mkdir()
-    for k in ("aetops-mensual", "aetops-trimestral", "glp1-mensual", "glp1-trimestral"):
-        assert call(bridge, "POST", f"/api/templates/{k}", up=TPL / k / "1/template.pptx")["status"] == 200
+    for k in PL.FORMATOS:
+        assert call(bridge, "POST", f"/api/templates/{k}", up=PL.ruta(k))["status"] == 200
     return bridge, service
 
 
