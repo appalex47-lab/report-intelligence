@@ -19,6 +19,7 @@ import openpyxl
 
 from ..calc import indicators as ind
 from ..calc.tables_extra import derive_alta
+from .common import IDENTIFICADORES, como_identificador
 from ..models import (MONTHS, Finding, Group, Lineage, NegadoRow, NegadosTable, Period, PeriodRow, ProductRow,
                       ProductTable, Table, Value)
 
@@ -56,7 +57,7 @@ def _rows(header_row, rows_iter, required: list[str], name: str, findings: list[
     for i, r in enumerate(rows_iter, 2):
         if r is None or all(c in (None, "") for c in r):
             continue
-        d = {h: (r[k] if k < len(r) else None) for k, h in enumerate(hdr) if h}
+        d = {h: (como_identificador(r[k] if k < len(r) else None) if h in IDENTIFICADORES else (r[k] if k < len(r) else None)) for k, h in enumerate(hdr) if h}
         d["_row"] = i
         out.append(d)
     return out
