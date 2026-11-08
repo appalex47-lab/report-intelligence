@@ -37,7 +37,7 @@ def resultado(tmp_path_factory):
 def test_el_recorrido_tactil_termina_sin_errores(resultado):
     assert resultado["ok"], resultado
     assert not resultado["consola"], resultado["consola"]
-    assert resultado["pasos"]["es_tactil"]["coarse"] is True                    # puntero táctil (WebKit en Linux informa maxTouchPoints = 0 aunque haya toques)
+    assert resultado["objetivos"] and len(resultado["objetivos"]) >= 10        # hubo toques reales (`tap` exige un contexto táctil); Firefox y WebKit en Linux informan maxTouchPoints = 0 aunque los haya
 
 
 def test_los_toques_avanzan_el_flujo_hasta_generar(resultado):

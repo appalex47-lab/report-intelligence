@@ -14,7 +14,8 @@ const out = { ok: false, consola: [], pantallas: {} };
 // Se ejecuta DENTRO de la página: todo lo medible de la pantalla visible con el ancho actual.
 const medir = () => {
   const W = window.innerWidth, de = document.documentElement;
-  const vis = (e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && cs.display !== "none"; };
+  const enDetallesCerrado = (e) => { for (let d = e.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) { if (!d.open && !(e.closest("summary") && e.closest("summary").parentElement === d)) return true; } return false; };   // Firefox da caja a lo que hay dentro de un <details> cerrado; no es contenido visible
+  const vis = (e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && cs.display !== "none" && !enDetallesCerrado(e); };
   const sel = (e) => (e.id ? "#" + e.id : e.tagName.toLowerCase() + (e.className && typeof e.className === "string" ? "." + e.className.trim().split(/\s+/).slice(0, 2).join(".") : ""));
   const dentroDeContenedorConDesplazamiento = (e) => { for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) { const o = getComputedStyle(p).overflowX; if ((o === "auto" || o === "scroll") && p.scrollWidth > p.clientWidth - 1) return true; if (o === "auto" || o === "scroll") return true; } return false; };
   const fuera = [...document.querySelectorAll("body *")].filter((e) => vis(e) && !e.closest("[hidden]") && !e.closest("#pvs") && !e.closest(".pvlist")).filter((e) => { const r = e.getBoundingClientRect(); return r.right > W + 1 && !dentroDeContenedorConDesplazamiento(e); });
