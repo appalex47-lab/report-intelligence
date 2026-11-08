@@ -6,10 +6,11 @@ import shutil
 from pathlib import Path
 
 import pytest
+from tests import plantillas as PL
 
 ROOT = Path(__file__).resolve().parents[2]
-TPL_DIR = ROOT / "templates"
-HAS_TPL = (TPL_DIR / "aetops-mensual/1/template.pptx").exists() and (TPL_DIR / "glp1-mensual/1/template.pptx").exists()
+TPL_DIR = PL.REALES if PL.origen() == "reales" else PL.SINTETICAS        # misma estructura de carpetas
+HAS_TPL = PL.disponible("aetops-mensual") and PL.disponible("glp1-mensual")
 
 
 @pytest.fixture()

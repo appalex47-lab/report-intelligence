@@ -9,13 +9,14 @@ import pytest
 from backend.app.models import Period
 from backend.app.narrative.facts import Fact, aetops_facts, glp1_facts, tokens, verify_discovery
 from backend.app.pipeline import run_aetops_raw, run_glp1_raw
+from tests import plantillas as PL
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("mrs", ROOT / "tools/make_realistic_samples.py")
 mrs = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mrs)
-TPL = ROOT / "templates"
-HAS_TPL = (TPL / "aetops-mensual/1/template.pptx").exists() and (TPL / "glp1-mensual/1/template.pptx").exists()
+TPL = PL.REALES if PL.origen() == "reales" else PL.SINTETICAS            # misma estructura de carpetas
+HAS_TPL = PL.disponible("aetops-mensual") and PL.disponible("glp1-mensual")
 P9, G9 = Period("AETOPS", "mensual", 2026, 9), Period("GLP1", "mensual", 2026, 9)
 
 
@@ -147,7 +148,7 @@ def call(bridge, method, path, body=None, up=None):
     return json.loads(bridge.handle(method, path, json.dumps(body) if body is not None else "", str(up) if up else "", up.name if up else ""))
 
 
-@pytest.mark.skipif(not HAS_TPL, reason="plantillas reales no disponibles")
+@pytest.mark.skipif(not HAS_TPL, reason="no hay plantillas (ni reales ni sintéticas)")
 @pytest.mark.parametrize("unit", ["aetops", "glp1"])
 def test_end_to_end_full_sheet_cannot_be_forged_and_adds_one_slide(br, tmp_path, unit):
     bridge, S = br

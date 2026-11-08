@@ -114,6 +114,19 @@ details>summary .chev{transition:transform .15s;color:var(--muted)}details[open]
 .chip.ia{background:var(--primary-soft);color:var(--primary)}
 .plan{border:1px solid var(--line-2);border-radius:10px;padding:10px;display:grid;gap:8px;background:var(--surface)}
 .plan pre{white-space:pre-wrap;word-break:break-word;margin:0;font:12px/1.4 var(--sans);max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface-2)}
+/* Fase 6 · diseño adaptativo: contención del contenido, tarjetas con desplazamiento propio cuando una tabla no cabe, controles táctiles y texto largo */
+.wrap{grid-template-columns:minmax(0,1fr)}.wrap>section,#view,.grid:not(.g2){grid-template-columns:minmax(0,1fr)}.wrap>section,#view{min-width:0}
+code,.find>div,.sub{overflow-wrap:anywhere}
+.pvwrap{max-width:100%;overflow-x:auto}
+@media(max-width:900px){
+.card{overflow-x:auto}
+summary{min-height:24px}
+input[type=checkbox],input[type=radio]{width:24px;height:24px}
+input[type=password]{border:1px solid var(--line-2);border-radius:8px;padding:8px 10px;background:var(--surface);width:100%}
+.mini{min-height:28px;padding:4px 8px}
+.pvlay>div{min-width:0}
+}
+@media(max-width:600px){.pvwrap .pvs{min-width:720px}.tabs{overflow-x:auto}.tab{white-space:nowrap}table:has(tr>:nth-child(4)){min-width:520px}}
 </style>
 </head>
 <body>
@@ -878,7 +891,7 @@ function previewHtml(){
     <div class="sub">Se dibuja desde el mismo PPTX que se descargará (posiciones, textos, tablas e imágenes). No es PowerPoint: usa las tipografías del navegador, muestra las gráficas avanzadas como recuadros y no detecta por sí sola el desborde real (eso lo hace el QA visual con render).</div>
     <div class="pvlay"><div class="pvlist">${pv.diapositivas.map((s, k) => { const c = cnt(s.id), t = (titulos[s.id] || {}).titulo || "(sin título)"; return `<button class="pvit ${k===i?"now":""}" data-k="${k}" ${k===i?'aria-current="true"':""}><b>${s.indice}</b> ${esc(t)}${c.e?` <span class="sev block">${c.e}</span>`:""}${c.w?` <span class="sev warn">${c.w}</span>`:""}</button>` }).join("")}</div>
     <div><div class="row"><button class="btn" id="pvPrev" ${i===0?"disabled":""}>←</button><span class="sub">Diapositiva ${d.indice} de ${pv.diapositivas.length} · ${esc(d.tipo || "")} · densidad ${esc(sp.densidad || "—")} · estado ${esc(sp.estado || "—")}</span><button class="btn" id="pvNext" ${i===pv.diapositivas.length-1?"disabled":""}>→</button></div>
-      <div class="pvs" id="pvs" style="aspect-ratio:${+pv.ancho_pt}/${+pv.alto_pt}" tabindex="0" aria-label="Diapositiva ${d.indice}">${slideHtml(pv, d)}</div>
+      <div class="pvwrap"><div class="pvs" id="pvs" style="aspect-ratio:${+pv.ancho_pt}/${+pv.alto_pt}" tabindex="0" aria-label="Diapositiva ${d.indice}">${slideHtml(pv, d)}</div></div>
       ${sp.mensaje?`<div class="sub"><b>Mensaje principal:</b> ${esc(sp.mensaje)}</div>`:""}${mios.length?`<div>${mios.map(hallazgoHtml).join("")}</div>`:'<div class="okline">✓ sin hallazgos en esta diapositiva</div>'}
       <div class="row"><button class="btn" id="pvEsc">← Escenario</button><button class="btn" id="pvMetas">← Metas y contexto</button><button class="btn" id="pvNarr">← Narrativa</button></div></div></div></div>`;
 }

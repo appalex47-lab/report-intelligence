@@ -17,38 +17,20 @@ from pathlib import Path
 
 import pytest
 
+from tests.e2e import _sitio as S
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = Path(__file__).with_name("persistencia_escenarios.mjs")
 
 
-def _omitir(motivo: str):
-    if os.environ.get("REPORT_PYODIDE_REQUIRED") == "1":
-        pytest.fail(f"REPORT_PYODIDE_REQUIRED=1 y falta un requisito: {motivo}")
-    pytest.skip(f"OMITIDA (no ejecutada): {motivo}")
+_omitir = S.omitir
 
 
 @pytest.fixture(scope="module")
 def sitio(tmp_path_factory):
-    pyodide = os.environ.get("REPORT_PYODIDE_DIR")
-    if not pyodide or not (Path(pyodide) / "pyodide.js").exists():
-        _omitir("REPORT_PYODIDE_DIR no apunta a una distribución de Pyodide (pyodide.js)")
-    if not shutil.which("node"):
-        _omitir("Node.js no está instalado")
-    npm_root = subprocess.run(["npm", "root", "-g"], capture_output=True, text=True).stdout.strip() if shutil.which("npm") else ""
-    if not npm_root or not (Path(npm_root) / "playwright").exists():
-        _omitir("el paquete 'playwright' de Node no está instalado globalmente")
-    site = tmp_path_factory.mktemp("sitio")
-    cmd = [sys.executable, str(ROOT / "tools" / "build_site.py"), "--out", str(site)]
-    if os.environ.get("REPORT_WHEELS_DIR"):
-        cmd += ["--wheels", os.environ["REPORT_WHEELS_DIR"]]
-    subprocess.run(cmd, check=True, cwd=ROOT, capture_output=True)
-    (site / "pyodide").symlink_to(Path(pyodide), target_is_directory=True)
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(site))
-    handler.log_message = lambda *a, **k: None
-    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
-    yield f"http://127.0.0.1:{srv.server_address[1]}/index.html?py=/pyodide/", Path(npm_root)
-    srv.shutdown()
+    s = S.construir(tmp_path_factory)
+    yield s.url, s.npm_root
+
 
 
 def test_un_escenario_propio_sobrevive_a_la_recarga_y_el_borrado_tambien(sitio):

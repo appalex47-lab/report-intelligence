@@ -5,7 +5,7 @@
 import { createRequire } from "node:module";
 import fs from "node:fs";
 const require = createRequire(process.env.PLAYWRIGHT_REQUIRE_FROM || import.meta.url);
-const { chromium } = require("playwright");
+const pw = require("playwright"); const chromium = pw[process.env.REPORT_BROWSER || "chromium"];     // REPORT_BROWSER: chromium | firefox | webkit
 const [, , url, casosJson, outdir] = process.argv;
 const casos = JSON.parse(fs.readFileSync(casosJson, "utf-8"));
 const browser = await chromium.launch();

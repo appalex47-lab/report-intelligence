@@ -3,7 +3,7 @@
 // de docs/bloque_integral/BLOQUE_INTEGRAL.md §15. Uso: node revision_visual.mjs <url> <libro.xlsx> <carpeta_salida> [mes]. Lo invoca test_revision_visual.py.
 import { createRequire } from "node:module";
 const require = createRequire(process.env.PLAYWRIGHT_REQUIRE_FROM || import.meta.url);
-const { chromium } = require("playwright");
+const pw = require("playwright"); const chromium = pw[process.env.REPORT_BROWSER || "chromium"];     // REPORT_BROWSER: chromium | firefox | webkit
 const [, , site, xlsx, outdir, month = "9"] = process.argv;
 
 const browser = await chromium.launch();

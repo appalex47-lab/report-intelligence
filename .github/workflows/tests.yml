@@ -8,6 +8,7 @@ on:
 jobs:
   unit:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -15,7 +16,9 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Pruebas unitarias (las que necesitan plantillas reales se omiten)
+      # Las pruebas que necesitan plantilla usan las SINTÉTICAS versionadas (tests/fixtures/plantillas_sinteticas; sin marca ni datos) cuando no están las reales (que no se versionan).
+      # Siguen omitiéndose, con motivo, las que exigen la plantilla o los archivos reales (línea base de contenido y pruebas golden).
+      - name: Pruebas unitarias y de integración por el puente (plantillas sintéticas)
         run: python -m pytest tests/unit -q
       - name: Regresión contra la línea base (motor y hallazgos; la capa del PPTX se omite sin plantillas)
         run: python -m pytest tests/regression -q
@@ -29,3 +32,34 @@ jobs:
           REPORT_PYODIDE_WORK: ${{ runner.temp }}/pyodide-work
           REPORT_PYODIDE_REQUIRED: "1"
         run: python -m pytest tests/e2e/test_hash_pyodide.py -q
+
+  # Pruebas de navegador: Chromium, Firefox y WebKit de Playwright con el motor REAL (Pyodide 0.27.7 desde la CDN fijada por el worker), el sitio construido con build_site y las
+  # plantillas sintéticas. Cada navegador es un trabajo independiente (un fallo en uno no oculta los demás). No toca los workflows de publicación.
+  navegador:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Playwright 1.63.0 y el navegador (${{ matrix.browser }})
+        run: |
+          npm install --prefix "$RUNNER_TEMP/pw" playwright@1.63.0 --no-audit --no-fund --fetch-retries=5 --loglevel=error
+          "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps ${{ matrix.browser }}
+      - name: Pruebas de navegador (${{ matrix.browser }}; si falta un requisito FALLA, no se omite)
+        env:
+          REPORT_BROWSER: ${{ matrix.browser }}
+          REPORT_PYODIDE_CDN: "1"
+          REPORT_PYODIDE_REQUIRED: "1"
+          REPORT_PLAYWRIGHT_DIR: ${{ runner.temp }}/pw
+        run: python -m pytest tests/e2e -q --ignore=tests/e2e/test_hash_pyodide.py

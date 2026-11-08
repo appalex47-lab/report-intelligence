@@ -19,6 +19,7 @@ from backend.app.deck import anexo as A
 from backend.app.deck.extras import BODY, TITLE
 from backend.app.models import Period
 from backend.app.qa import cifras, pptx_export, visual
+from tests import plantillas as PL
 
 ROOT = Path(__file__).resolve().parents[2]
 EJ = ROOT / "data" / "ejemplos"
@@ -148,7 +149,7 @@ ESC = {"aetops_mensual_2026-09": "aetops-mensual", "aetops_trimestral_2026-Q3": 
 @pytest.mark.parametrize("nombre", sorted(ESC))
 def test_decks_de_referencia_con_el_anexo(nombre, tmp_path):
     """Plantillas locales: el deck con anexo = el deck sin anexo + 1 diapositiva al final; mismas cifras; QA estructural y visual sin hallazgos nuevos."""
-    tpl = ROOT / "templates" / ESC[nombre] / "1" / "template.pptx"
+    tpl = PL.ruta(ESC[nombre])
     if not tpl.exists():
         pytest.skip("OMITIDA (no ejecutada): la plantilla no se versiona y no está disponible")
     sys.path.insert(0, str(ROOT))

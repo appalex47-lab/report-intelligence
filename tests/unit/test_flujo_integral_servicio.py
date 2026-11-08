@@ -1,5 +1,5 @@
 """Bloque integral · flujo completo por el puente (el mismo que usa la interfaz) con el motor, los libros de ejemplo y las plantillas locales.
-Las plantillas no se versionan: sin ellas estas pruebas se OMITEN con motivo (en CI corren las sintéticas de test_plan_*)."""
+Usa las plantillas reales si están en `templates/` y, si no, las sintéticas versionadas (tests/plantillas.py); la equivalencia con la línea base de los 4 decks solo se comprueba con las reales."""
 import hashlib
 import importlib
 import json
@@ -10,9 +10,10 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-TPL = ROOT / "templates"
-HAS_AE = (TPL / "aetops-mensual/1/template.pptx").exists()
-HAS_GLP = (TPL / "glp1-mensual/1/template.pptx").exists()
+from tests import plantillas as PL
+
+HAS_AE = PL.disponible("aetops-mensual")
+HAS_GLP = PL.disponible("glp1-mensual")
 pytestmark = pytest.mark.skipif(not HAS_AE, reason="OMITIDA (no ejecutada): la plantilla real de AETOPS mensual no está disponible (no se versiona)")
 
 
@@ -35,7 +36,7 @@ def call(bridge, method, path, body=None, up=None):
 
 def nuevo(br, unit="aetops", per="mensual", libro="AETOPS_crudo_ejemplo.xlsx", tpl="aetops-mensual"):
     bridge, _s, _t = br
-    assert call(bridge, "POST", f"/api/templates/{tpl}", up=TPL / tpl / "1/template.pptx")["status"] == 200
+    assert call(bridge, "POST", f"/api/templates/{tpl}", up=PL.ruta(tpl))["status"] == 200
     rid = call(bridge, "POST", "/api/runs", {"unit": unit, "periodicity": per, "year": 2026, "index": 9 if per == "mensual" else 3})["json"]["id"]
     assert call(bridge, "POST", f"/api/runs/{rid}/file", up=ROOT / "data" / "ejemplos" / libro)["status"] == 200
     if unit == "aetops":
@@ -117,7 +118,7 @@ def test_el_plan_no_altera_ninguno_de_los_cuatro_decks_de_referencia(nombre, tmp
     from backend.app.plan import escenario as es, flujo
     from tools import capture_baseline as cb
     unit, period, path, tpl, res, _ = cb._run(nombre)
-    plantilla = cb.TEMPLATES / tpl / "1" / "template.pptx"
+    plantilla = PL.ruta(tpl)
     if not plantilla.exists():
         pytest.skip(f"OMITIDA (no ejecutada): falta la plantilla {tpl}")
     f = __import__("backend.app.build", fromlist=["x"])

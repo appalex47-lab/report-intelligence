@@ -4,7 +4,7 @@
 // Imprime una línea JSON. No modifica el repositorio. Lo invoca tests/e2e/test_escenarios_panel.py.
 import { createRequire } from "node:module";
 const require = createRequire(process.env.PLAYWRIGHT_REQUIRE_FROM || import.meta.url);
-const { chromium } = require("playwright");
+const pw = require("playwright"); const chromium = pw[process.env.REPORT_BROWSER || "chromium"];     // REPORT_BROWSER: chromium | firefox | webkit
 const [, , site, xlsx, outdir, unidad = "glp1", month = "9"] = process.argv;
 
 const browser = await chromium.launch();

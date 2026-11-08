@@ -17,9 +17,10 @@ from pptx.util import Emu, Pt
 from backend.app.deck import pptx_ops as ops
 from backend.app.models import Period
 from backend.app.qa.checks import estimate_table_height, row_content_floors, row_min_heights
+from tests import plantillas as PL
 
 ROOT = Path(__file__).resolve().parents[2]
-TPL = ROOT / "templates" / "aetops-mensual" / "1" / "template.pptx"
+TPL = PL.ruta("aetops-mensual")
 LIBRO = ROOT / "data" / "ejemplos" / "AETOPS_crudo_ejemplo.xlsx"
 
 
@@ -127,7 +128,7 @@ def test_el_caso_normal_de_cuatro_lineas_no_se_compacta():
         assert not any("compactó" in n for n in b.fill.notes) and b.qa.passed
 
 
-TPL_Q = ROOT / "templates" / "aetops-trimestral" / "1" / "template.pptx"
+TPL_Q = PL.ruta("aetops-trimestral")
 
 
 @pytest.mark.skipif(not TPL_Q.exists(), reason="plantilla real no disponible (no se versiona)")
